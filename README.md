@@ -1,2 +1,2 @@
 # tr
-Threat Radar (tr) command line tool and libraries.
+Threat Radar (tr) command line tool and associated libraries.
