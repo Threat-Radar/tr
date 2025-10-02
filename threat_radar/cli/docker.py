@@ -7,7 +7,6 @@ from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from ..core.container_analyzer import ContainerAnalyzer
-from ..core.python_sbom import PythonPackageExtractor
 from ..core.docker_integration import DockerClient
 
 app = typer.Typer(help="Docker container analysis commands")
@@ -241,75 +240,6 @@ def _display_analysis(analysis):
 
         if len(analysis.packages) > 10:
             console.print(f"[dim]... and {len(analysis.packages) - 10} more packages[/dim]")
-
-
-@app.command()
-def python_sbom(
-    image: str = typer.Argument(..., help="Image name"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save SBOM to file"),
-    format: str = typer.Option("cyclonedx", "--format", "-f", help="SBOM format (cyclonedx, csv, txt)"),
-):
-    """
-    Generate Python package SBOM from Docker image.
-
-    Extracts pip packages and generates CycloneDX SBOM.
-    """
-    # Parse image name and tag
-    if ':' in image:
-        image_name, image_tag = image.rsplit(':', 1)
-    else:
-        image_name = image
-        image_tag = "latest"
-
-    try:
-        docker_client = DockerClient()
-        extractor = PythonPackageExtractor(docker_client)
-
-        console.print(f"\n[cyan]Extracting Python packages from {image_name}:{image_tag}...[/cyan]")
-
-        packages = extractor.extract_pip_packages(f"{image_name}:{image_tag}")
-
-        if not packages:
-            console.print(f"[yellow]No Python packages found in {image}[/yellow]")
-            docker_client.close()
-            return
-
-        # Display packages
-        table = Table(title=f"Python Packages in {image_name}:{image_tag}")
-        table.add_column("Package", style="cyan")
-        table.add_column("Version", style="green")
-
-        for pkg in packages:
-            table.add_row(pkg.name, pkg.version)
-
-        console.print(table)
-        console.print(f"\n[blue]Total: {len(packages)} Python packages[/blue]")
-
-        # Generate and save SBOM
-        if output:
-            if format == "cyclonedx":
-                import json
-                sbom = extractor.generate_cyclonedx_sbom(f"{image_name}:{image_tag}", packages)
-                with open(output, 'w') as f:
-                    json.dump(sbom, f, indent=2)
-                console.print(f"\n[green]CycloneDX SBOM saved to {output}[/green]")
-            elif format == "csv":
-                with open(output, 'w') as f:
-                    f.write("name,version\n")
-                    for pkg in packages:
-                        f.write(f"{pkg.name},{pkg.version}\n")
-                console.print(f"\n[green]CSV saved to {output}[/green]")
-            elif format == "txt":
-                with open(output, 'w') as f:
-                    for pkg in packages:
-                        f.write(f"{pkg.name}=={pkg.version}\n")
-                console.print(f"\n[green]Requirements format saved to {output}[/green]")
-
-        docker_client.close()
-
-    except Exception as e:
-        console.print(f"[red]Error generating Python SBOM: {e}[/red]")
-        raise typer.Exit(code=1)
 
 
 def _format_size(size_bytes: int) -> str:
