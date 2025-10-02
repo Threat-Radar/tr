@@ -1,0 +1,19 @@
+FROM ubuntu:22.04
+
+# Prevent interactive prompts during build
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install some common packages for testing
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    git \
+    python3 \
+    python3-pip \
+    openssl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Add metadata
+LABEL description="Test Ubuntu image for Docker analysis"
+LABEL test.distro="ubuntu"

@@ -1,0 +1,103 @@
+{
+  "image_name": "alpine:3.18",
+  "image_id": "sha256:de0eb0b3f2a47ba1eb89389859a9bd88b28e82f5826b6969ad604979713c2d4f",
+  "distro": "alpine",
+  "distro_version": "3.18.12",
+  "base_image": null,
+  "packages": [
+    {
+      "name": "alpine-baselayout",
+      "version": "3.4.3-r1",
+      "architecture": null,
+      "description": null
+    },
+    {
+      "name": "alpine-baselayout-data",
+      "version": "3.4.3-r1",
+      "architecture": null,
+      "description": null
+    },
+    {
+      "name": "alpine-keys",
+      "version": "2.4-r1",
+      "architecture": null,
+      "description": null
+    },
+    {
+      "name": "apk-tools",
+      "version": "2.14.4-r0",
+      "architecture": null,
+      "description": null
+    },
+    {
+      "name": "busybox",
+      "version": "1.36.1-r7",
+      "architecture": null,
+      "description": null
+    },
+    {
+      "name": "busybox-binsh",
+      "version": "1.36.1-r7",
+      "architecture": null,
+      "description": null
+    },
+    {
+      "name": "ca-certificates-bundle",
+      "version": "20241121-r1",
+      "architecture": null,
+      "description": null
+    },
+    {
+      "name": "libc-utils",
+      "version": "0.7.2-r5",
+      "architecture": null,
+      "description": null
+    },
+    {
+      "name": "libcrypto3",
+      "version": "3.1.8-r0",
+      "architecture": null,
+      "description": null
+    },
+    {
+      "name": "libssl3",
+      "version": "3.1.8-r0",
+      "architecture": null,
+      "description": null
+    },
+    {
+      "name": "musl",
+      "version": "1.2.4-r3",
+      "architecture": null,
+      "description": null
+    },
+    {
+      "name": "musl-utils",
+      "version": "1.2.4-r3",
+      "architecture": null,
+      "description": null
+    },
+    {
+      "name": "scanelf",
+      "version": "1.3.7-r1",
+      "architecture": null,
+      "description": null
+    },
+    {
+      "name": "ssl_client",
+      "version": "1.36.1-r7",
+      "architecture": null,
+      "description": null
+    },
+    {
+      "name": "zlib",
+      "version": "1.2.13-r1",
+      "architecture": null,
+      "description": null
+    }
+  ],
+  "size": 3352365,
+  "created": "2025-02-14T03:03:06Z",
+  "architecture": "arm64",
+  "os": "linux"
+}
