@@ -1,0 +1,619 @@
+{
+  "image_name": "ubuntu:22.04",
+  "image_id": "sha256:a1af69f6c9bc3657289d23abff8ee360d2417d6cf69719e287822443dca3dc57",
+  "distro": "ubuntu",
+  "distro_version": "22.04",
+  "base_image": null,
+  "packages": [
+    {
+      "name": "adduser",
+      "version": "3.118ubuntu5",
+      "architecture": "all",
+      "description": "add and remove users and groups"
+    },
+    {
+      "name": "apt",
+      "version": "2.4.14",
+      "architecture": "arm64",
+      "description": "commandline package manager"
+    },
+    {
+      "name": "base-files",
+      "version": "12ubuntu4.7",
+      "architecture": "arm64",
+      "description": "Debian base system miscellaneous files"
+    },
+    {
+      "name": "base-passwd",
+      "version": "3.5.52build1",
+      "architecture": "arm64",
+      "description": "Debian base system master password and group files"
+    },
+    {
+      "name": "bash",
+      "version": "5.1-6ubuntu1.1",
+      "architecture": "arm64",
+      "description": "GNU Bourne Again SHell"
+    },
+    {
+      "name": "bsdutils",
+      "version": "1:2.37.2-4ubuntu3.4",
+      "architecture": "arm64",
+      "description": "basic utilities from 4.4BSD-Lite"
+    },
+    {
+      "name": "coreutils",
+      "version": "8.32-4.1ubuntu1.2",
+      "architecture": "arm64",
+      "description": "GNU core utilities"
+    },
+    {
+      "name": "dash",
+      "version": "0.5.11+git20210903+057cd650a4ed-3build1",
+      "architecture": "arm64",
+      "description": "POSIX-compliant shell"
+    },
+    {
+      "name": "debconf",
+      "version": "1.5.79ubuntu1",
+      "architecture": "all",
+      "description": "Debian configuration management system"
+    },
+    {
+      "name": "debianutils",
+      "version": "5.5-1ubuntu2",
+      "architecture": "arm64",
+      "description": "Miscellaneous utilities specific to Debian"
+    },
+    {
+      "name": "diffutils",
+      "version": "1:3.8-0ubuntu2",
+      "architecture": "arm64",
+      "description": "File comparison utilities"
+    },
+    {
+      "name": "dpkg",
+      "version": "1.21.1ubuntu2.6",
+      "architecture": "arm64",
+      "description": "Debian package management system"
+    },
+    {
+      "name": "e2fsprogs",
+      "version": "1.46.5-2ubuntu1.2",
+      "architecture": "arm64",
+      "description": "ext2/ext3/ext4 file system utilities"
+    },
+    {
+      "name": "findutils",
+      "version": "4.8.0-1ubuntu3",
+      "architecture": "arm64",
+      "description": "utilities for finding files--find, xargs"
+    },
+    {
+      "name": "gcc-12-base",
+      "version": "12.3.0-1ubuntu1~22.04.2",
+      "architecture": "arm64",
+      "description": "GCC, the GNU Compiler Collection (base package)"
+    },
+    {
+      "name": "gpgv",
+      "version": "2.2.27-3ubuntu2.4",
+      "architecture": "arm64",
+      "description": "GNU privacy guard - signature verification tool"
+    },
+    {
+      "name": "grep",
+      "version": "3.7-1build1",
+      "architecture": "arm64",
+      "description": "GNU grep, egrep and fgrep"
+    },
+    {
+      "name": "gzip",
+      "version": "1.10-4ubuntu4.1",
+      "architecture": "arm64",
+      "description": "GNU compression utilities"
+    },
+    {
+      "name": "hostname",
+      "version": "3.23ubuntu2",
+      "architecture": "arm64",
+      "description": "utility to set/show the host name or domain name"
+    },
+    {
+      "name": "init-system-helpers",
+      "version": "1.62",
+      "architecture": "all",
+      "description": "helper tools for all init systems"
+    },
+    {
+      "name": "libacl1",
+      "version": "2.3.1-1",
+      "architecture": "arm64",
+      "description": "access control list - shared library"
+    },
+    {
+      "name": "libapt-pkg6.0",
+      "version": "2.4.14",
+      "architecture": "arm64",
+      "description": "package management runtime library"
+    },
+    {
+      "name": "libattr1",
+      "version": "1:2.5.1-1build1",
+      "architecture": "arm64",
+      "description": "extended attribute handling - shared library"
+    },
+    {
+      "name": "libaudit-common",
+      "version": "1:3.0.7-1build1",
+      "architecture": "all",
+      "description": "Dynamic library for security auditing - common files"
+    },
+    {
+      "name": "libaudit1",
+      "version": "1:3.0.7-1build1",
+      "architecture": "arm64",
+      "description": "Dynamic library for security auditing"
+    },
+    {
+      "name": "libblkid1",
+      "version": "2.37.2-4ubuntu3.4",
+      "architecture": "arm64",
+      "description": "block device ID library"
+    },
+    {
+      "name": "libbz2-1.0",
+      "version": "1.0.8-5build1",
+      "architecture": "arm64",
+      "description": "high-quality block-sorting file compressor library - runtime"
+    },
+    {
+      "name": "libc-bin",
+      "version": "2.35-0ubuntu3.11",
+      "architecture": "arm64",
+      "description": "GNU C Library: Binaries"
+    },
+    {
+      "name": "libc6",
+      "version": "2.35-0ubuntu3.11",
+      "architecture": "arm64",
+      "description": "GNU C Library: Shared libraries"
+    },
+    {
+      "name": "libcap-ng0",
+      "version": "0.7.9-2.2build3",
+      "architecture": "arm64",
+      "description": "An alternate POSIX capabilities library"
+    },
+    {
+      "name": "libcap2",
+      "version": "1:2.44-1ubuntu0.22.04.2",
+      "architecture": "arm64",
+      "description": "POSIX 1003.1e capabilities (library)"
+    },
+    {
+      "name": "libcom-err2",
+      "version": "1.46.5-2ubuntu1.2",
+      "architecture": "arm64",
+      "description": "common error description library"
+    },
+    {
+      "name": "libcrypt1",
+      "version": "1:4.4.27-1",
+      "architecture": "arm64",
+      "description": "libcrypt shared library"
+    },
+    {
+      "name": "libdb5.3",
+      "version": "5.3.28+dfsg1-0.8ubuntu3",
+      "architecture": "arm64",
+      "description": "Berkeley v5.3 Database Libraries [runtime]"
+    },
+    {
+      "name": "libdebconfclient0",
+      "version": "0.261ubuntu1",
+      "architecture": "arm64",
+      "description": "Debian Configuration Management System (C-implementation library)"
+    },
+    {
+      "name": "libext2fs2",
+      "version": "1.46.5-2ubuntu1.2",
+      "architecture": "arm64",
+      "description": "ext2/ext3/ext4 file system libraries"
+    },
+    {
+      "name": "libffi8",
+      "version": "3.4.2-4",
+      "architecture": "arm64",
+      "description": "Foreign Function Interface library runtime"
+    },
+    {
+      "name": "libgcc-s1",
+      "version": "12.3.0-1ubuntu1~22.04.2",
+      "architecture": "arm64",
+      "description": "GCC support library"
+    },
+    {
+      "name": "libgcrypt20",
+      "version": "1.9.4-3ubuntu3",
+      "architecture": "arm64",
+      "description": "LGPL Crypto library - runtime library"
+    },
+    {
+      "name": "libgmp10",
+      "version": "2:6.2.1+dfsg-3ubuntu1",
+      "architecture": "arm64",
+      "description": "Multiprecision arithmetic library"
+    },
+    {
+      "name": "libgnutls30",
+      "version": "3.7.3-4ubuntu1.7",
+      "architecture": "arm64",
+      "description": "GNU TLS library - main runtime library"
+    },
+    {
+      "name": "libgpg-error0",
+      "version": "1.43-3",
+      "architecture": "arm64",
+      "description": "GnuPG development runtime library"
+    },
+    {
+      "name": "libgssapi-krb5-2",
+      "version": "1.19.2-2ubuntu0.7",
+      "architecture": "arm64",
+      "description": "MIT Kerberos runtime libraries - krb5 GSS-API Mechanism"
+    },
+    {
+      "name": "libhogweed6",
+      "version": "3.7.3-1build2",
+      "architecture": "arm64",
+      "description": "low level cryptographic library (public-key cryptos)"
+    },
+    {
+      "name": "libidn2-0",
+      "version": "2.3.2-2build1",
+      "architecture": "arm64",
+      "description": "Internationalized domain names (IDNA2008/TR46) library"
+    },
+    {
+      "name": "libk5crypto3",
+      "version": "1.19.2-2ubuntu0.7",
+      "architecture": "arm64",
+      "description": "MIT Kerberos runtime libraries - Crypto Library"
+    },
+    {
+      "name": "libkeyutils1",
+      "version": "1.6.1-2ubuntu3",
+      "architecture": "arm64",
+      "description": "Linux Key Management Utilities (library)"
+    },
+    {
+      "name": "libkrb5-3",
+      "version": "1.19.2-2ubuntu0.7",
+      "architecture": "arm64",
+      "description": "MIT Kerberos runtime libraries"
+    },
+    {
+      "name": "libkrb5support0",
+      "version": "1.19.2-2ubuntu0.7",
+      "architecture": "arm64",
+      "description": "MIT Kerberos runtime libraries - Support library"
+    },
+    {
+      "name": "liblz4-1",
+      "version": "1.9.3-2build2",
+      "architecture": "arm64",
+      "description": "Fast LZ compression algorithm library - runtime"
+    },
+    {
+      "name": "liblzma5",
+      "version": "5.2.5-2ubuntu1",
+      "architecture": "arm64",
+      "description": "XZ-format compression library"
+    },
+    {
+      "name": "libmount1",
+      "version": "2.37.2-4ubuntu3.4",
+      "architecture": "arm64",
+      "description": "device mounting library"
+    },
+    {
+      "name": "libncurses6",
+      "version": "6.3-2ubuntu0.1",
+      "architecture": "arm64",
+      "description": "shared libraries for terminal handling"
+    },
+    {
+      "name": "libncursesw6",
+      "version": "6.3-2ubuntu0.1",
+      "architecture": "arm64",
+      "description": "shared libraries for terminal handling (wide character support)"
+    },
+    {
+      "name": "libnettle8",
+      "version": "3.7.3-1build2",
+      "architecture": "arm64",
+      "description": "low level cryptographic library (symmetric and one-way cryptos)"
+    },
+    {
+      "name": "libnsl2",
+      "version": "1.3.0-2build2",
+      "architecture": "arm64",
+      "description": "Public client interface for NIS(YP) and NIS+"
+    },
+    {
+      "name": "libp11-kit0",
+      "version": "0.24.0-6build1",
+      "architecture": "arm64",
+      "description": "library for loading and coordinating access to PKCS#11 modules - runtime"
+    },
+    {
+      "name": "libpam-modules",
+      "version": "1.4.0-11ubuntu2.6",
+      "architecture": "arm64",
+      "description": "Pluggable Authentication Modules for PAM"
+    },
+    {
+      "name": "libpam-modules-bin",
+      "version": "1.4.0-11ubuntu2.6",
+      "architecture": "arm64",
+      "description": "Pluggable Authentication Modules for PAM - helper binaries"
+    },
+    {
+      "name": "libpam-runtime",
+      "version": "1.4.0-11ubuntu2.6",
+      "architecture": "all",
+      "description": "Runtime support for the PAM library"
+    },
+    {
+      "name": "libpam0g",
+      "version": "1.4.0-11ubuntu2.6",
+      "architecture": "arm64",
+      "description": "Pluggable Authentication Modules library"
+    },
+    {
+      "name": "libpcre2-8-0",
+      "version": "10.39-3ubuntu0.1",
+      "architecture": "arm64",
+      "description": "New Perl Compatible Regular Expression Library- 8 bit runtime files"
+    },
+    {
+      "name": "libpcre3",
+      "version": "2:8.39-13ubuntu0.22.04.1",
+      "architecture": "arm64",
+      "description": "Old Perl 5 Compatible Regular Expression Library - runtime files"
+    },
+    {
+      "name": "libprocps8",
+      "version": "2:3.3.17-6ubuntu2.1",
+      "architecture": "arm64",
+      "description": "library for accessing process information from /proc"
+    },
+    {
+      "name": "libseccomp2",
+      "version": "2.5.3-2ubuntu3~22.04.1",
+      "architecture": "arm64",
+      "description": "high level interface to Linux seccomp filter"
+    },
+    {
+      "name": "libselinux1",
+      "version": "3.3-1build2",
+      "architecture": "arm64",
+      "description": "SELinux runtime shared libraries"
+    },
+    {
+      "name": "libsemanage-common",
+      "version": "3.3-1build2",
+      "architecture": "all",
+      "description": "Common files for SELinux policy management libraries"
+    },
+    {
+      "name": "libsemanage2",
+      "version": "3.3-1build2",
+      "architecture": "arm64",
+      "description": "SELinux policy management library"
+    },
+    {
+      "name": "libsepol2",
+      "version": "3.3-1build1",
+      "architecture": "arm64",
+      "description": "SELinux library for manipulating binary security policies"
+    },
+    {
+      "name": "libsmartcols1",
+      "version": "2.37.2-4ubuntu3.4",
+      "architecture": "arm64",
+      "description": "smart column output alignment library"
+    },
+    {
+      "name": "libss2",
+      "version": "1.46.5-2ubuntu1.2",
+      "architecture": "arm64",
+      "description": "command-line interface parsing library"
+    },
+    {
+      "name": "libssl3",
+      "version": "3.0.2-0ubuntu1.20",
+      "architecture": "arm64",
+      "description": "Secure Sockets Layer toolkit - shared libraries"
+    },
+    {
+      "name": "libstdc++6",
+      "version": "12.3.0-1ubuntu1~22.04.2",
+      "architecture": "arm64",
+      "description": "GNU Standard C++ Library v3"
+    },
+    {
+      "name": "libsystemd0",
+      "version": "249.11-0ubuntu3.16",
+      "architecture": "arm64",
+      "description": "systemd utility library"
+    },
+    {
+      "name": "libtasn1-6",
+      "version": "4.18.0-4ubuntu0.1",
+      "architecture": "arm64",
+      "description": "Manage ASN.1 structures (runtime)"
+    },
+    {
+      "name": "libtinfo6",
+      "version": "6.3-2ubuntu0.1",
+      "architecture": "arm64",
+      "description": "shared low-level terminfo library for terminal handling"
+    },
+    {
+      "name": "libtirpc-common",
+      "version": "1.3.2-2ubuntu0.1",
+      "architecture": "all",
+      "description": "transport-independent RPC library - common files"
+    },
+    {
+      "name": "libtirpc3",
+      "version": "1.3.2-2ubuntu0.1",
+      "architecture": "arm64",
+      "description": "transport-independent RPC library"
+    },
+    {
+      "name": "libudev1",
+      "version": "249.11-0ubuntu3.16",
+      "architecture": "arm64",
+      "description": "libudev shared library"
+    },
+    {
+      "name": "libunistring2",
+      "version": "1.0-1",
+      "architecture": "arm64",
+      "description": "Unicode string library for C"
+    },
+    {
+      "name": "libuuid1",
+      "version": "2.37.2-4ubuntu3.4",
+      "architecture": "arm64",
+      "description": "Universally Unique ID library"
+    },
+    {
+      "name": "libxxhash0",
+      "version": "0.8.1-1",
+      "architecture": "arm64",
+      "description": "shared library for xxhash"
+    },
+    {
+      "name": "libzstd1",
+      "version": "1.4.8+dfsg-3build1",
+      "architecture": "arm64",
+      "description": "fast lossless compression algorithm"
+    },
+    {
+      "name": "login",
+      "version": "1:4.8.1-2ubuntu2.2",
+      "architecture": "arm64",
+      "description": "system login tools"
+    },
+    {
+      "name": "logsave",
+      "version": "1.46.5-2ubuntu1.2",
+      "architecture": "arm64",
+      "description": "save the output of a command in a log file"
+    },
+    {
+      "name": "lsb-base",
+      "version": "11.1.0ubuntu4",
+      "architecture": "all",
+      "description": "Linux Standard Base init script functionality"
+    },
+    {
+      "name": "mawk",
+      "version": "1.3.4.20200120-3",
+      "architecture": "arm64",
+      "description": "Pattern scanning and text processing language"
+    },
+    {
+      "name": "mount",
+      "version": "2.37.2-4ubuntu3.4",
+      "architecture": "arm64",
+      "description": "tools for mounting and manipulating filesystems"
+    },
+    {
+      "name": "ncurses-base",
+      "version": "6.3-2ubuntu0.1",
+      "architecture": "all",
+      "description": "basic terminal type definitions"
+    },
+    {
+      "name": "ncurses-bin",
+      "version": "6.3-2ubuntu0.1",
+      "architecture": "arm64",
+      "description": "terminal-related programs and man pages"
+    },
+    {
+      "name": "passwd",
+      "version": "1:4.8.1-2ubuntu2.2",
+      "architecture": "arm64",
+      "description": "change and administer password and group data"
+    },
+    {
+      "name": "perl-base",
+      "version": "5.34.0-3ubuntu1.5",
+      "architecture": "arm64",
+      "description": "minimal Perl system"
+    },
+    {
+      "name": "procps",
+      "version": "2:3.3.17-6ubuntu2.1",
+      "architecture": "arm64",
+      "description": "/proc file system utilities"
+    },
+    {
+      "name": "sed",
+      "version": "4.8-1ubuntu2",
+      "architecture": "arm64",
+      "description": "GNU stream editor for filtering/transforming text"
+    },
+    {
+      "name": "sensible-utils",
+      "version": "0.0.17",
+      "architecture": "all",
+      "description": "Utilities for sensible alternative selection"
+    },
+    {
+      "name": "sysvinit-utils",
+      "version": "3.01-1ubuntu1",
+      "architecture": "arm64",
+      "description": "System-V-like utilities"
+    },
+    {
+      "name": "tar",
+      "version": "1.34+dfsg-1ubuntu0.1.22.04.2",
+      "architecture": "arm64",
+      "description": "GNU version of the tar archiving utility"
+    },
+    {
+      "name": "ubuntu-keyring",
+      "version": "2021.03.26",
+      "architecture": "all",
+      "description": "GnuPG keys of the Ubuntu archive"
+    },
+    {
+      "name": "usrmerge",
+      "version": "25ubuntu2",
+      "architecture": "all",
+      "description": "Convert the system to the merged /usr directories scheme"
+    },
+    {
+      "name": "util-linux",
+      "version": "2.37.2-4ubuntu3.4",
+      "architecture": "arm64",
+      "description": "miscellaneous system utilities"
+    },
+    {
+      "name": "zlib1g",
+      "version": "1:1.2.11.dfsg-2ubuntu9.2",
+      "architecture": "arm64",
+      "description": "compression library - runtime"
+    }
+  ],
+  "size": 27392533,
+  "created": "2025-10-01T07:16:12.828165751Z",
+  "architecture": "arm64",
+  "os": "linux"
+}
