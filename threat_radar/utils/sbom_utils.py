@@ -496,3 +496,230 @@ def get_language_statistics(sbom_data: Dict) -> Dict[str, int]:
         stats[language] = stats.get(language, 0) + 1
 
     return stats
+
+
+def display_sbom_summary(sbom_data: dict, source: str, console) -> None:
+    """Display summary of SBOM."""
+    from rich.table import Table
+
+    console.print(f"\n[bold cyan]SBOM Summary[/bold cyan]\n")
+
+    packages = extract_packages(sbom_data)
+    stats = get_package_statistics(sbom_data)
+
+    # Basic info
+    info_table = Table(show_header=False, box=None)
+    info_table.add_column("Property", style="yellow")
+    info_table.add_column("Value", style="white")
+
+    info_table.add_row("Source", str(source))
+    info_table.add_row("Total Packages", str(len(packages)))
+    info_table.add_row("Package Types", str(len(stats)))
+
+    console.print(info_table)
+
+    # Package types
+    if stats:
+        console.print("\n[bold]Packages by Type:[/bold]")
+        type_table = Table()
+        type_table.add_column("Type", style="cyan")
+        type_table.add_column("Count", style="green")
+
+        for pkg_type, count in sorted(stats.items(), key=lambda x: x[1], reverse=True):
+            type_table.add_row(pkg_type, str(count))
+
+        console.print(type_table)
+
+
+def display_packages_table(packages: list, console, title: str = "Packages") -> None:
+    """Display packages in a table."""
+    from rich.table import Table
+
+    if not packages:
+        console.print("[yellow]No packages to display[/yellow]")
+        return
+
+    table = Table(title=title)
+    table.add_column("Name", style="cyan")
+    table.add_column("Version", style="green")
+    table.add_column("Type", style="magenta")
+
+    for pkg in packages[:100]:  # Limit to first 100
+        name = pkg.get("name", "")
+        version = pkg.get("version", "")
+        pkg_type = pkg.get("type", "")
+        table.add_row(name, version, pkg_type)
+
+    console.print(table)
+
+    if len(packages) > 100:
+        console.print(f"\n[dim]... and {len(packages) - 100} more packages[/dim]")
+
+
+def display_components_summary(components: list, source: str, console) -> None:
+    """Display summary of components."""
+    from rich.table import Table
+
+    console.print(f"\n[bold cyan]Components in {source}[/bold cyan]\n")
+
+    # Count by type
+    type_counts = {}
+    for comp in components:
+        comp_type = comp.get("type", "unknown")
+        type_counts[comp_type] = type_counts.get(comp_type, 0) + 1
+
+    # Summary table
+    summary_table = Table(title="Components by Type")
+    summary_table.add_column("Type", style="cyan")
+    summary_table.add_column("Count", style="green")
+
+    for comp_type, count in sorted(type_counts.items(), key=lambda x: x[1], reverse=True):
+        summary_table.add_row(comp_type, str(count))
+
+    console.print(summary_table)
+
+    # Show samples
+    console.print("\n[bold]Sample Components:[/bold]")
+    comp_table = Table()
+    comp_table.add_column("Name", style="cyan", max_width=50)
+    comp_table.add_column("Version", style="green")
+    comp_table.add_column("Type", style="magenta")
+    comp_table.add_column("Language", style="yellow")
+
+    for comp in components[:20]:
+        name = comp.get("name", "")
+        version = comp.get("version", "") or "N/A"
+        comp_type = comp.get("type", "")
+        metadata = extract_component_metadata(comp)
+        language = metadata.get("language") or "N/A"
+
+        comp_table.add_row(name, version, comp_type, language)
+
+    console.print(comp_table)
+
+    if len(components) > 20:
+        console.print(f"\n[dim]... and {len(components) - 20} more components[/dim]")
+
+
+def display_detailed_components(components: list, console) -> None:
+    """Display detailed component information."""
+    from rich.table import Table
+
+    console.print(f"\n[bold cyan]Detailed Component Information[/bold cyan]\n")
+
+    for idx, comp in enumerate(components[:50], 1):
+        details = get_component_details(comp)
+
+        console.print(f"[bold]{idx}. {details['name']}[/bold]")
+
+        info_table = Table(show_header=False, box=None, padding=(0, 2))
+        info_table.add_column("Property", style="yellow")
+        info_table.add_column("Value", style="white")
+
+        if details.get("version"):
+            info_table.add_row("Version", details["version"])
+        info_table.add_row("Type", details["type"])
+        if details.get("language"):
+            info_table.add_row("Language", details["language"])
+        if details.get("author"):
+            info_table.add_row("Author", details["author"])
+        if details.get("purl"):
+            info_table.add_row("PURL", details["purl"])
+        if details.get("location"):
+            info_table.add_row("Location", details["location"])
+        if details.get("licenses"):
+            licenses_str = ", ".join([str(l) for l in details["licenses"]])
+            info_table.add_row("Licenses", licenses_str)
+
+        console.print(info_table)
+        console.print()
+
+    if len(components) > 50:
+        console.print(f"[dim]... and {len(components) - 50} more components[/dim]")
+
+
+def display_components_grouped_by_type(sbom_data: dict, components: list, show_details: bool, console) -> None:
+    """Display components grouped by type."""
+    from rich.table import Table
+
+    console.print(f"\n[bold cyan]Components Grouped by Type[/bold cyan]\n")
+
+    grouped = {}
+    for comp in components:
+        comp_type = comp.get("type", "unknown")
+        if comp_type not in grouped:
+            grouped[comp_type] = []
+        grouped[comp_type].append(comp)
+
+    for comp_type, comps in sorted(grouped.items(), key=lambda x: len(x[1]), reverse=True):
+        console.print(f"\n[bold green]{comp_type.upper()} ({len(comps)} items)[/bold green]")
+
+        if comp_type == "file":
+            # Special handling for files - categorize them
+            file_categories = get_files_by_category({"components": comps})
+            for category, files in file_categories.items():
+                console.print(f"  [yellow]{category.capitalize()}:[/yellow] {len(files)} files")
+                if show_details:
+                    for f in files[:5]:
+                        console.print(f"    - {f.get('name', '')}")
+                    if len(files) > 5:
+                        console.print(f"    [dim]... and {len(files) - 5} more[/dim]")
+        else:
+            # Show table for libraries and other types
+            table = Table()
+            table.add_column("Name", style="cyan", max_width=40)
+            table.add_column("Version", style="green")
+
+            if comp_type == "library":
+                table.add_column("Language", style="yellow")
+
+            for comp in comps[:20]:
+                name = comp.get("name", "")
+                version = comp.get("version", "") or "N/A"
+
+                if comp_type == "library":
+                    metadata = extract_component_metadata(comp)
+                    language = metadata.get("language") or "N/A"
+                    table.add_row(name, version, language)
+                else:
+                    table.add_row(name, version)
+
+            console.print(table)
+
+            if len(comps) > 20:
+                console.print(f"[dim]... and {len(comps) - 20} more {comp_type} components[/dim]")
+
+
+def display_components_grouped_by_language(components: list, show_details: bool, console) -> None:
+    """Display components grouped by language."""
+    from rich.table import Table
+
+    console.print(f"\n[bold cyan]Components Grouped by Language[/bold cyan]\n")
+
+    grouped = {}
+    for comp in components:
+        metadata = extract_component_metadata(comp)
+        language = metadata.get("language") or "unknown"
+        if language not in grouped:
+            grouped[language] = []
+        grouped[language].append(comp)
+
+    for language, comps in sorted(grouped.items(), key=lambda x: len(x[1]), reverse=True):
+        lang_display = language.upper() if language else "UNKNOWN"
+        console.print(f"\n[bold green]{lang_display} ({len(comps)} components)[/bold green]")
+
+        table = Table()
+        table.add_column("Name", style="cyan", max_width=40)
+        table.add_column("Version", style="green")
+        table.add_column("Type", style="magenta")
+
+        for comp in comps[:20]:
+            name = comp.get("name", "")
+            version = comp.get("version", "") or "N/A"
+            comp_type = comp.get("type", "")
+            table.add_row(name, version, comp_type)
+
+        console.print(table)
+
+        if len(comps) > 20:
+            console.print(f"[dim]... and {len(comps) - 20} more {lang_display.lower()} components[/dim]")
