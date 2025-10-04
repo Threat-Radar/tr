@@ -1,0 +1,12 @@
+{
+  "image_name": "gcr.io/distroless/base:latest",
+  "image_id": "sha256:fa15492938650e1a5b87e34d47dc7d99a2b4e8aefd81b931b3f3eb6bb4c1d2f6",
+  "distro": null,
+  "distro_version": null,
+  "base_image": null,
+  "packages": [],
+  "size": 9001526,
+  "created": "0001-01-01T00:00:00Z",
+  "architecture": "arm64",
+  "os": "linux"
+}
