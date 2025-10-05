@@ -29,13 +29,6 @@ class ContainerAnalysis:
         if self.packages is None:
             self.packages = []
 
-    def to_dict(self) -> Dict:
-        """Convert to dictionary for serialization."""
-        data = asdict(self)
-        # Convert Package objects to dicts
-        data['packages'] = [asdict(p) for p in self.packages]
-        return data
-
 
 class ContainerAnalyzer:
     """Analyzes Docker containers and extracts package information."""
