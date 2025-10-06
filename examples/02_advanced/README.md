@@ -62,7 +62,31 @@ python cve_matching_example.py
 
 ---
 
-### 4. CLI Examples
+### 4. Syft SBOM Integration
+**File:** `syft_sbom_example.py`
+
+Comprehensive SBOM generation using Syft (industry-standard tool).
+
+```bash
+python syft_sbom_example.py
+```
+
+**Features:**
+- Multiple SBOM formats (CycloneDX, SPDX, Syft JSON)
+- Docker image scanning
+- Directory and file scanning
+- License analysis
+- Package comparison
+- Ecosystem support (Python, npm, Go, Java, etc.)
+
+**Prerequisites:**
+- Install Syft: https://github.com/anchore/syft#installation
+
+**Time:** ~4 minutes
+
+---
+
+### 5. CLI Examples
 **File:** `docker_cli_examples.sh`
 
 Shell script demonstrating CLI workflows.
