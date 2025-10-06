@@ -144,12 +144,29 @@ class PackageNameMatcher:
     # Common package name variations
     NAME_MAPPINGS = {
         "log4j": ["log4j-core", "log4j2", "apache-log4j"],
-        "openssl": ["libssl", "ssl"],
+        "openssl": ["libssl", "ssl", "openssl-libs"],
         "python": ["python3", "python2", "cpython"],
         "nginx": ["nginx-core", "nginx-full"],
         "apache": ["apache2", "httpd"],
         "postgresql": ["postgres", "pgsql"],
         "mysql": ["mariadb", "mysql-server"],
+        "glibc": ["libc", "libc6", "libc-bin", "glibc-common"],
+        "zlib": ["zlib1g", "libz", "zlib-devel"],
+        "pcre": ["libpcre", "pcre3", "libpcre3"],
+        "ncurses": ["libncurses", "ncurses-libs"],
+    }
+
+    # Package pairs that should NEVER match (prevent false positives)
+    # Format: set of frozensets to allow bidirectional checking
+    NEVER_MATCH = {
+        frozenset(["bash", "dash"]),      # Different shells
+        frozenset(["bash", "ash"]),       # Different shells
+        frozenset(["gzip", "bzip2"]),     # Different compression tools
+        frozenset(["gzip", "grep"]),      # Compression vs search
+        frozenset(["tar", "star"]),       # Different archive tools
+        frozenset(["glibc", "klibc"]),    # Different C libraries
+        frozenset(["glibc", "klibc-utils"]), # glibc vs klibc utilities
+        frozenset(["glibc", "libklibc"]), # glibc vs klibc library
     }
 
     @staticmethod
@@ -197,6 +214,11 @@ class PackageNameMatcher:
         Returns:
             Similarity score (0.0 to 1.0)
         """
+        # Check if this pair should never match (prevent false positives)
+        pair = frozenset([name1.lower(), name2.lower()])
+        if pair in PackageNameMatcher.NEVER_MATCH:
+            return 0.0
+
         # Exact match
         if name1.lower() == name2.lower():
             return 1.0
@@ -217,8 +239,16 @@ class PackageNameMatcher:
         # Use sequence matcher for fuzzy comparison
         ratio = SequenceMatcher(None, norm1, norm2).ratio()
 
-        # Boost score if one name contains the other
-        if norm1 in norm2 or norm2 in norm1:
+        # For short names (<=4 chars), require very high similarity to avoid false positives
+        # e.g., "dash" vs "bash" should not match
+        min_length = min(len(norm1), len(norm2))
+        if min_length <= 4:
+            # Require much higher similarity for short names
+            if ratio < 0.9:  # Must be almost identical
+                return ratio * 0.5  # Penalize dissimilar short names
+
+        # Boost score if one name contains the other (but not for very short names)
+        if min_length > 4 and (norm1 in norm2 or norm2 in norm1):
             ratio = max(ratio, 0.8)
 
         return ratio
@@ -314,23 +344,23 @@ class CVEMatcher:
 
             # Check version match
             version_match = False
-            if package.version and cpe_version != "*":
-                # Check if version is in affected range
-                version_match = VersionComparator.is_version_in_range(
-                    package.version,
-                    start_including=product.get("versionStartIncluding"),
-                    start_excluding=product.get("versionStartExcluding"),
-                    end_including=product.get("versionEndIncluding"),
-                    end_excluding=product.get("versionEndExcluding")
-                )
-
-                # If no range specified, check exact match
-                if not any([
+            if package.version:
+                # First, check if version is in affected range (works with wildcard CPE versions)
+                if any([
                     product.get("versionStartIncluding"),
                     product.get("versionStartExcluding"),
                     product.get("versionEndIncluding"),
                     product.get("versionEndExcluding")
                 ]):
+                    version_match = VersionComparator.is_version_in_range(
+                        package.version,
+                        start_including=product.get("versionStartIncluding"),
+                        start_excluding=product.get("versionStartExcluding"),
+                        end_including=product.get("versionEndIncluding"),
+                        end_excluding=product.get("versionEndExcluding")
+                    )
+                # If no range specified and CPE has specific version, check exact match
+                elif cpe_version != "*":
                     version_match = (
                         VersionComparator.compare_versions(package.version, cpe_version) == 0
                     )
