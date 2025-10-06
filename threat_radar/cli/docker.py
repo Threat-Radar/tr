@@ -197,6 +197,13 @@ def _display_analysis(analysis):
             console.print(f"[dim]... and {len(analysis.packages) - 10} more packages[/dim]")
 
 
+def _format_size(size_bytes: int) -> str:
+    """Format size in bytes to human-readable string."""
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if size_bytes < 1024.0:
+            return f"{size_bytes:.1f} {unit}"
+        size_bytes /= 1024.0
+    return f"{size_bytes:.1f} PB"
 @app.command()
 def python_sbom(
     image: str = typer.Argument(..., help="Image name"),

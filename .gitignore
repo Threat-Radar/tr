@@ -192,3 +192,7 @@ temp/
 tmp/
 .DS_Store
 Thumbs.db
+
+# SBOM generated outputs
+sbom_storage/**/*.json
+
