@@ -126,7 +126,8 @@ def example_export_to_json():
     analysis = analyzer.analyze_container("alpine:3.18")
 
     # Convert to dictionary
-    result = analysis.to_dict()
+    from dataclasses import asdict
+    result = asdict(analysis)
 
     # Save to file
     output_file = "/tmp/alpine_analysis.json"

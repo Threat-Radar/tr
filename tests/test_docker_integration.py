@@ -239,11 +239,13 @@ class TestContainerAnalyzer:
 
     def test_analysis_to_dict(self, docker_client):
         """Test converting analysis to dictionary."""
+        from dataclasses import asdict
+
         analyzer = ContainerAnalyzer()
         docker_client.pull_image("alpine", tag="3.18")
         analysis = analyzer.analyze_container("alpine:3.18")
 
-        result_dict = analysis.to_dict()
+        result_dict = asdict(analysis)
 
         assert isinstance(result_dict, dict)
         assert "image_name" in result_dict
@@ -278,8 +280,9 @@ class TestIntegration:
         assert first_pkg.name is not None
         assert first_pkg.version is not None
 
-        # Verify to_dict conversion
-        result = analysis.to_dict()
+        # Verify asdict conversion
+        from dataclasses import asdict
+        result = asdict(analysis)
         assert "packages" in result
         assert len(result["packages"]) == len(analysis.packages)
 
