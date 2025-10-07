@@ -1,0 +1,9 @@
+# Ignore all generated SBOM files
+*.json
+*.xml
+*.spdx.json
+*.syft.json
+
+# Keep structure and documentation
+!README.md
+!.gitignore
