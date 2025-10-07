@@ -4,6 +4,7 @@ import logging
 from typing import List, Optional, Tuple, Dict
 from dataclasses import dataclass
 from difflib import SequenceMatcher
+from datetime import datetime, timedelta
 
 from .nvd_client import CVEItem
 from .package_extractors import Package
@@ -167,6 +168,13 @@ class PackageNameMatcher:
         frozenset(["glibc", "klibc"]),    # Different C libraries
         frozenset(["glibc", "klibc-utils"]), # glibc vs klibc utilities
         frozenset(["glibc", "libklibc"]), # glibc vs klibc library
+        frozenset(["libmagic", "glibc"]), # File library vs C library
+        frozenset(["zlib", "glibc"]),     # Compression lib vs C library
+        frozenset(["libselinux", "gzip"]), # SELinux vs gzip
+        frozenset(["libsemanage", "bash"]), # SELinux vs bash
+        frozenset(["makedev", "quake"]),  # Device creation vs game server
+        frozenset(["ureadahead", "memcached"]), # Boot optimization vs cache server
+        frozenset(["login", "gzip"]),     # Login vs compression
     }
 
     @staticmethod
@@ -272,14 +280,26 @@ class PackageNameMatcher:
 class CVEMatcher:
     """Matches packages against CVE database."""
 
-    def __init__(self, min_confidence: float = 0.6):
+    def __init__(
+        self,
+        min_confidence: float = 0.75,
+        max_cve_age_years: Optional[int] = 15,
+        filter_disputed: bool = True,
+        vendor_allowlist: Optional[List[str]] = None
+    ):
         """
         Initialize CVE matcher.
 
         Args:
-            min_confidence: Minimum confidence threshold for reporting matches
+            min_confidence: Minimum confidence threshold for reporting matches (default: 0.75)
+            max_cve_age_years: Maximum CVE age in years (None = no limit, default: 15)
+            filter_disputed: Filter out disputed CVEs (default: True)
+            vendor_allowlist: List of allowed vendors (None = all vendors)
         """
         self.min_confidence = min_confidence
+        self.max_cve_age_years = max_cve_age_years
+        self.filter_disputed = filter_disputed
+        self.vendor_allowlist = vendor_allowlist
 
     def match_package(self, package: Package, cves: List[CVEItem]) -> List[CVEMatch]:
         """
@@ -295,6 +315,14 @@ class CVEMatcher:
         matches = []
 
         for cve in cves:
+            # Apply age filter
+            if not self._is_cve_recent_enough(cve):
+                continue
+
+            # Apply disputed filter
+            if self.filter_disputed and self._is_cve_disputed(cve):
+                continue
+
             match = self._check_cve_match(package, cve)
             if match and match.confidence >= self.min_confidence:
                 matches.append(match)
@@ -303,6 +331,66 @@ class CVEMatcher:
         matches.sort(key=lambda m: m.confidence, reverse=True)
 
         return matches
+
+    def _is_cve_recent_enough(self, cve: CVEItem) -> bool:
+        """
+        Check if CVE is recent enough based on age threshold.
+
+        Args:
+            cve: CVE to check
+
+        Returns:
+            True if CVE is recent enough or no age limit set
+        """
+        if self.max_cve_age_years is None:
+            return True
+
+        if not cve.published_date:
+            return True  # Allow CVEs without date
+
+        try:
+            # Parse published date
+            if isinstance(cve.published_date, str):
+                pub_date = datetime.fromisoformat(cve.published_date.replace('Z', '+00:00'))
+            else:
+                pub_date = cve.published_date
+
+            # Calculate age
+            age = datetime.now(pub_date.tzinfo) - pub_date
+            max_age = timedelta(days=365 * self.max_cve_age_years)
+
+            is_recent = age <= max_age
+            if not is_recent:
+                logger.debug(f"Filtering out old CVE {cve.cve_id} from {pub_date.year}")
+
+            return is_recent
+        except Exception as e:
+            logger.warning(f"Error parsing date for {cve.cve_id}: {e}")
+            return True  # Allow on error
+
+    def _is_cve_disputed(self, cve: CVEItem) -> bool:
+        """
+        Check if CVE is disputed by maintainers.
+
+        Args:
+            cve: CVE to check
+
+        Returns:
+            True if CVE is disputed
+        """
+        if not cve.description:
+            return False
+
+        # Check for dispute indicators in description
+        disputed_keywords = [
+            "disputes that this is a vulnerability",
+            "disputed",
+            "** DISPUTED **",
+            "maintainer disputes"
+        ]
+
+        desc_lower = cve.description.lower()
+        return any(keyword.lower() in desc_lower for keyword in disputed_keywords)
 
     def _check_cve_match(self, package: Package, cve: CVEItem) -> Optional[CVEMatch]:
         """
@@ -333,13 +421,18 @@ class CVEMatcher:
             cpe_product = cpe_parts[4]
             cpe_version = cpe_parts[5] if len(cpe_parts) > 5 else "*"
 
+            # Apply vendor allowlist if configured
+            if self.vendor_allowlist and cpe_vendor not in self.vendor_allowlist:
+                continue
+
             # Calculate package name similarity
             name_similarity = PackageNameMatcher.similarity_score(
                 package.name,
                 cpe_product
             )
 
-            if name_similarity < 0.5:
+            # Increased threshold from 0.5 to 0.6 for better precision
+            if name_similarity < 0.6:
                 continue
 
             # Check version match
@@ -415,21 +508,33 @@ class CVEMatcher:
         Returns:
             Confidence score (0.0-1.0)
         """
-        # Start with name similarity
-        confidence = name_similarity * 0.6
+        # Require higher name similarity for fuzzy matches
+        # Exact match (1.0) or strong match (0.9+) get normal scoring
+        # Fuzzy matches (< 0.9) get penalized more heavily
+        if name_similarity < 0.9:
+            # Penalize fuzzy matches more heavily
+            confidence = name_similarity * 0.5
+        else:
+            # Reward exact/strong matches
+            confidence = name_similarity * 0.65
 
         # Version matching is crucial
         if has_version:
             if version_match:
                 confidence += 0.35  # Strong boost for version match
             else:
-                confidence *= 0.5  # Penalize version mismatch
+                # Stronger penalty for version mismatch
+                confidence *= 0.4
         else:
-            confidence += 0.1  # Small boost if no version to compare
+            confidence += 0.05  # Smaller boost if no version to compare
 
         # Slight boost for high-severity CVEs (they're more likely to be reported)
         if cvss_score and cvss_score >= 7.0:
-            confidence += 0.05
+            confidence += 0.03
+
+        # For CRITICAL CVEs with fuzzy name match, require even higher standards
+        if cvss_score and cvss_score >= 9.0 and name_similarity < 0.95:
+            confidence *= 0.8
 
         return min(confidence, 1.0)
 
