@@ -172,18 +172,24 @@ tr-nvd/
 │   ├── 01_basic/             # Basic examples (4)
 │   ├── 02_advanced/          # Advanced examples (4)
 │   ├── 03_vulnerability_scanning/  # Scanning examples (5)
-│   └── 04_testing/           # Test scripts (1)
+│   ├── 04_testing/           # Test scripts (1)
+│   └── output/               # Example outputs (kept for demos)
 ├── docs/                      # Documentation
 │   ├── validation/           # Test results and validation
 │   ├── reports/              # Improvement reports
 │   └── development/          # Development docs
 ├── tests/                     # Unit tests
-└── sbom_storage/             # Generated SBOMs
+└── sbom_storage/             # Generated SBOMs (gitignored)
     ├── docker/               # Docker image SBOMs
     ├── local/                # Local project SBOMs
     ├── comparisons/          # Image comparison results
     └── archives/             # Historical SBOMs
 ```
+
+### Generated Outputs
+
+- **`sbom_storage/`** - Auto-organized SBOM storage (git-ignored, structure preserved)
+- **`examples/output/`** - Example script outputs (kept for demonstration)
 
 ---
 
