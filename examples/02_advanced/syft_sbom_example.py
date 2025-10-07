@@ -10,6 +10,12 @@ from threat_radar.utils.sbom_utils import (
     extract_licenses,
     search_packages
 )
+from threat_radar.utils.sbom_storage import (
+    get_docker_sbom_path,
+    get_local_sbom_path,
+    get_comparison_path,
+    ensure_storage_directories
+)
 
 
 def example_scan_current_project():
@@ -17,6 +23,9 @@ def example_scan_current_project():
     print("=" * 60)
     print("Example 1: Scan Current Project")
     print("=" * 60)
+
+    # Ensure storage directories exist
+    ensure_storage_directories()
 
     client = SyftClient()
 
@@ -34,8 +43,8 @@ def example_scan_current_project():
     for pkg_type, count in sorted(stats.items(), key=lambda x: x[1], reverse=True):
         print(f"  {pkg_type}: {count}")
 
-    # Save SBOM
-    output_file = Path("/tmp/project_sbom.json")
+    # Save SBOM to organized storage
+    output_file = get_local_sbom_path("threat-radar", format="json")
     save_sbom(sbom, output_file)
     print(f"\nSBOM saved to {output_file}")
 
@@ -83,8 +92,15 @@ def example_compare_docker_images():
     print(f"\nScanning {image1}...")
     sbom1 = client.scan_docker_image(image1, output_format=SBOMFormat.CYCLONEDX_JSON)
 
+    # Save individual Docker SBOMs
+    sbom1_path = get_docker_sbom_path("alpine", "3.17", format="json")
+    save_sbom(sbom1, sbom1_path)
+
     print(f"Scanning {image2}...")
     sbom2 = client.scan_docker_image(image2, output_format=SBOMFormat.CYCLONEDX_JSON)
+
+    sbom2_path = get_docker_sbom_path("alpine", "3.18", format="json")
+    save_sbom(sbom2, sbom2_path)
 
     # Compare
     diff = compare_sboms(sbom1, sbom2)
@@ -106,6 +122,20 @@ def example_compare_docker_images():
         for pkg in sorted(list(diff['removed']))[:10]:
             print(f"  - {pkg}")
 
+    # Save comparison result
+    comparison_path = get_comparison_path("alpine-3.17", "alpine-3.18", format="json")
+    comparison_data = {
+        "sbom1": str(sbom1_path),
+        "sbom2": str(sbom2_path),
+        "common_count": len(diff['common']),
+        "added_count": len(diff['added']),
+        "removed_count": len(diff['removed']),
+        "added": sorted(list(diff['added'])),
+        "removed": sorted(list(diff['removed']))
+    }
+    save_sbom(comparison_data, comparison_path)
+    print(f"\nComparison saved to {comparison_path}")
+
 
 def example_scan_with_multiple_formats():
     """Example: Generate SBOM in multiple formats."""
@@ -117,19 +147,20 @@ def example_scan_with_multiple_formats():
     target = "alpine:3.18"
 
     formats = [
-        (SBOMFormat.CYCLONEDX_JSON, "/tmp/sbom_cyclonedx.json"),
-        (SBOMFormat.SPDX_JSON, "/tmp/sbom_spdx.json"),
-        (SBOMFormat.SYFT_JSON, "/tmp/sbom_syft.json"),
+        (SBOMFormat.CYCLONEDX_JSON, "json"),
+        (SBOMFormat.SPDX_JSON, "spdx.json"),
+        (SBOMFormat.SYFT_JSON, "syft.json"),
     ]
 
     print(f"\nGenerating SBOMs for {target}...\n")
 
-    for sbom_format, output_path in formats:
+    for sbom_format, file_ext in formats:
         print(f"Generating {sbom_format.value}...")
         sbom = client.scan_docker_image(target, output_format=sbom_format)
 
         if isinstance(sbom, dict):
-            save_sbom(sbom, Path(output_path))
+            output_path = get_docker_sbom_path("alpine", "3.18", format=file_ext)
+            save_sbom(sbom, output_path)
             print(f"  ✓ Saved to {output_path}")
 
 
@@ -157,7 +188,9 @@ def example_license_analysis():
     license_counts = {}
     for pkg in packages_with_licenses:
         for lic in pkg.licenses:
-            license_counts[lic] = license_counts.get(lic, 0) + 1
+            # Handle both string and dict license formats
+            license_name = lic if isinstance(lic, str) else lic.get('value', str(lic))
+            license_counts[license_name] = license_counts.get(license_name, 0) + 1
 
     print("\nTop 10 licenses:")
     sorted_licenses = sorted(license_counts.items(), key=lambda x: x[1], reverse=True)
