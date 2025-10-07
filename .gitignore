@@ -193,6 +193,15 @@ tmp/
 .DS_Store
 Thumbs.db
 
-# SBOM generated outputs
+# SBOM generated outputs - ignore all generated files but keep structure
 sbom_storage/**/*.json
+sbom_storage/**/*.xml
+sbom_storage/**/*.spdx.json
+sbom_storage/**/*.syft.json
+!sbom_storage/**/.gitkeep
+!sbom_storage/README.md
+!sbom_storage/.gitignore
+
+# Example outputs - keep these for demonstration
+!examples/output/*.json
 
