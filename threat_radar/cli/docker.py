@@ -15,7 +15,7 @@ from ..utils import (
     handle_cli_error,
     create_package_table,
 )
-from ..core.python_sbom import PythonPackageExtractor
+# from ..core.python_sbom import PythonPackageExtractor  # Module doesn't exist yet
 
 app = typer.Typer(help="Docker container analysis commands")
 console = Console()
