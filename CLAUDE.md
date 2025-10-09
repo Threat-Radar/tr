@@ -63,7 +63,7 @@ flake8 threat_radar/
 ### CLI Structure
 The CLI is built with Typer and uses a modular command structure in `threat_radar/cli/`:
 - `app.py` - Main CLI app that registers all sub-commands
-- `cve.py` - CVE operations (mock implementation)
+- `cve.py` - CVE operations with SBOM integration
 - `cvss.py` - CVSS scoring operations
 - `docker.py` - Docker container analysis commands
 - `sbom.py` - SBOM operations
@@ -80,9 +80,10 @@ The CLI is built with Typer and uses a modular command structure in `threat_rada
 
 - **`container_analyzer.py`** - `ContainerAnalyzer` class for analyzing containers
   - `import_container(image_name, tag)` - Pulls and analyzes images
-  - `analyze_container(image_name)` - Analyzes existing local images
+  - `analyze_container(image_name)` - Analyzes existing local images using native package managers
+  - `analyze_container_with_sbom(image_name)` - **NEW**: Analyzes using SBOM (Syft) for comprehensive detection
   - Auto-detects Linux distributions (Alpine, Ubuntu, Debian, RHEL, CentOS, Fedora)
-  - Extracts installed packages using distro-specific commands
+  - Extracts installed packages using distro-specific commands (dpkg, apk, rpm)
 
 - **`package_extractors.py`** - Package manager parsers
   - `APTExtractor` - Debian/Ubuntu (dpkg)
@@ -102,6 +103,31 @@ The CLI is built with Typer and uses a modular command structure in `threat_rada
   - Dependency file extraction (requirements.txt, package.json, etc.)
   - Requires `GITHUB_ACCESS_TOKEN` environment variable
 
+#### CVE Integration (`threat_radar/core/`) **NEW**
+- **`nvd_client.py`** - `NVDClient` class for interacting with NVD REST API
+  - Rate-limited requests (5/30s public, 50/30s with API key)
+  - CVE retrieval by ID, search with filters (keyword, CPE, severity, dates)
+  - Local caching system (7-day cache)
+  - CVSS v3.1/v3.0/v2.0 metric extraction
+
+- **`cve_database.py`** - `CVEDatabase` class for local CVE storage
+  - SQLite database at `~/.threat_radar/cve.db`
+  - Incremental updates from NVD
+  - Fast local search with severity/CVSS filters
+  - Statistics and metadata tracking
+
+- **`cve_matcher.py`** - `CVEMatcher` engine for matching packages to CVEs
+  - Version comparison with semantic versioning support
+  - Fuzzy package name matching with known mappings
+  - Confidence scoring (name similarity + version match + CVSS)
+  - Configurable filters (age, disputed CVEs, vendor allowlist)
+
+- **`sbom_package_converter.py`** - **NEW**: Converts SBOM to CVE-matchable packages
+  - Auto-detects SBOM format (CycloneDX, SPDX, Syft JSON)
+  - Converts SBOM components to `Package` objects
+  - Package type filtering and statistics
+  - Architecture extraction from PURLs
+
 #### Utilities (`threat_radar/utils/`)
 - **`hasher.py`** - File hashing utilities for integrity verification
 
@@ -119,6 +145,51 @@ Key dataclasses in `threat_radar/core/`:
 - `ContainerAnalysis` - Container metadata and package list
 - `Package` - Installed package info (name, version, architecture)
 - `PythonPackage` - Python-specific package info with location
+
+## CVE Commands Reference **NEW**
+
+```bash
+# Scan Docker image for CVEs (SBOM-based by default)
+threat-radar cve scan-image alpine:3.18
+threat-radar cve scan-image ubuntu:22.04 --severity HIGH -o results.json
+
+# Use native package manager analysis (legacy mode)
+threat-radar cve scan-image alpine:3.18 --no-sbom
+
+# Scan pre-generated SBOM file for CVEs (CI/CD friendly)
+threat-radar cve scan-sbom my-app-sbom.json
+threat-radar cve scan-sbom docker-sbom.json --severity CRITICAL
+threat-radar cve scan-sbom sbom.json --format cyclonedx -o cve-results.json
+
+# CVE database management
+threat-radar cve update --days 30              # Update local CVE database
+threat-radar cve stats                         # Show database statistics
+threat-radar cve db-search --severity HIGH     # Search local database
+
+# Individual CVE operations
+threat-radar cve get CVE-2021-44228            # Get specific CVE
+threat-radar cve search --keyword log4j        # Search NVD by keyword
+threat-radar cve clear-cache                   # Clear CVE cache
+```
+
+### CVE Scanning Workflow
+
+**Three methods for CVE scanning:**
+
+1. **SBOM-based (Default, Recommended)**: `cve scan-image --use-sbom`
+   - Uses Syft to generate SBOM on-the-fly
+   - Detects OS packages + application dependencies (npm, pip, go, etc.)
+   - More comprehensive coverage
+
+2. **Native Package Manager**: `cve scan-image --no-sbom`
+   - Runs dpkg/apk/rpm inside container
+   - Only detects OS packages
+   - Faster, no Syft dependency
+
+3. **Pre-Generated SBOM**: `cve scan-sbom <file>`
+   - Scans existing SBOM files
+   - No Docker or Syft required
+   - Perfect for CI/CD pipelines, works offline
 
 ## Docker Commands Reference
 

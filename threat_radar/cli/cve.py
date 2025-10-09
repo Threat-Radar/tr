@@ -1,6 +1,7 @@
 """CVE operations CLI commands."""
 import typer
 from typing import List, Optional
+from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -214,11 +215,21 @@ def scan_docker_image(
     severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Filter by minimum severity"),
     confidence: float = typer.Option(0.7, "--confidence", "-c", help="Minimum confidence threshold (0.0-1.0)"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
+    use_sbom: bool = typer.Option(True, "--use-sbom/--no-sbom", help="Use SBOM-based analysis (Syft) for comprehensive package detection"),
 ):
     """
     Scan Docker image for CVE vulnerabilities.
 
     Analyzes packages in a Docker image and matches them against CVE database.
+
+    By default, uses SBOM-based analysis (Syft) which detects both OS packages
+    and application dependencies (npm, pip, go, etc.). Use --no-sbom to fall back
+    to native package manager analysis (dpkg/apk/rpm only).
+
+    Examples:
+        threat-radar cve scan-image alpine:3.18
+        threat-radar cve scan-image alpine:3.18 --no-sbom
+        threat-radar cve scan-image ubuntu:22.04 --severity HIGH -o results.json
     """
     with handle_cli_error("scanning image", console):
         with Progress(
@@ -227,17 +238,31 @@ def scan_docker_image(
             console=console,
         ) as progress:
             # Analyze container
-            task1 = progress.add_task(f"Analyzing {image}...", total=None)
+            analysis_method = "SBOM-based (Syft)" if use_sbom else "Native package manager"
+            task1 = progress.add_task(f"Analyzing {image} using {analysis_method}...", total=None)
 
             with docker_analyzer() as analyzer:
-                analysis = analyzer.analyze_container(image)
-                progress.update(task1, completed=True, description="Analysis complete!")
+                # Choose analysis method based on flag
+                if use_sbom:
+                    try:
+                        analysis = analyzer.analyze_container_with_sbom(image, fallback_to_native=True)
+                        progress.update(task1, completed=True, description="SBOM analysis complete!")
+                    except Exception as e:
+                        console.print(f"[yellow]SBOM analysis failed: {e}[/yellow]")
+                        console.print("[dim]Falling back to native package manager analysis...[/dim]")
+                        analysis = analyzer.analyze_container(image)
+                        progress.update(task1, completed=True, description="Analysis complete (fallback)!")
+                else:
+                    analysis = analyzer.analyze_container(image)
+                    progress.update(task1, completed=True, description="Native analysis complete!")
 
                 if not analysis.packages:
                     console.print(f"[yellow]No packages found in {image}[/yellow]")
                     return
 
-                console.print(f"\n[bold]Found {len(analysis.packages)} packages[/bold]")
+                # Show analysis method used
+                method_indicator = "[dim](via SBOM)[/dim]" if use_sbom else "[dim](via native package managers)[/dim]"
+                console.print(f"\n[bold]Found {len(analysis.packages)} packages {method_indicator}[/bold]")
 
             # Update CVE database
             task2 = progress.add_task("Updating CVE database...", total=None)
@@ -289,6 +314,128 @@ def scan_docker_image(
                 "image": image,
                 "total_packages": len(analysis.packages),
                 "vulnerable_packages": len(matches),
+                "matches": {
+                    pkg: [{"cve_id": m.cve.cve_id, "confidence": m.confidence,
+                          "severity": m.cve.severity, "cvss_score": m.cve.cvss_score}
+                         for m in match_list]
+                    for pkg, match_list in matches.items()
+                }
+            }
+            save_json(results, output, console)
+
+
+@app.command("scan-sbom")
+def scan_sbom_file(
+    sbom_path: Path = typer.Argument(..., exists=True, help="Path to SBOM file (CycloneDX, SPDX, or Syft JSON)"),
+    severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Filter by minimum severity"),
+    confidence: float = typer.Option(0.7, "--confidence", "-c", help="Minimum confidence threshold (0.0-1.0)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
+    format: Optional[str] = typer.Option(None, "--format", "-f", help="SBOM format (auto-detect if not specified)"),
+):
+    """
+    Scan a pre-generated SBOM file for CVE vulnerabilities.
+
+    Supports CycloneDX JSON, SPDX JSON, and Syft JSON formats.
+    Perfect for CI/CD pipelines where SBOMs are already generated.
+
+    Examples:
+        threat-radar cve scan-sbom my-app-sbom.json
+        threat-radar cve scan-sbom docker-sbom.json --severity HIGH
+        threat-radar cve scan-sbom sbom.json -o results.json
+        threat-radar cve scan-sbom sbom.json --format cyclonedx
+    """
+    with handle_cli_error("scanning SBOM", console):
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            # Load SBOM
+            task1 = progress.add_task(f"Loading SBOM from {sbom_path.name}...", total=None)
+
+            try:
+                from ..utils.sbom_utils import load_sbom
+                sbom_data = load_sbom(sbom_path)
+                progress.update(task1, completed=True, description="SBOM loaded!")
+            except Exception as e:
+                console.print(f"[red]Failed to load SBOM: {e}[/red]")
+                return
+
+            # Convert SBOM to packages
+            task2 = progress.add_task("Extracting packages from SBOM...", total=None)
+
+            try:
+                from ..core.sbom_package_converter import convert_sbom_to_packages, get_package_statistics
+                packages = convert_sbom_to_packages(sbom_data, format=format)
+                stats = get_package_statistics(packages)
+                progress.update(task2, completed=True, description=f"Extracted {len(packages)} packages!")
+            except Exception as e:
+                console.print(f"[red]Failed to extract packages from SBOM: {e}[/red]")
+                return
+
+            if not packages:
+                console.print(f"[yellow]No packages found in SBOM[/yellow]")
+                return
+
+            # Display package statistics
+            console.print(f"\n[bold]Found {len(packages)} packages in SBOM[/bold]")
+            if stats:
+                stats_str = ", ".join(f"{k}: {v}" for k, v in sorted(stats.items()))
+                console.print(f"[dim]Package types: {stats_str}[/dim]")
+
+            # Update CVE database
+            task3 = progress.add_task("Updating CVE database...", total=None)
+            db = CVEDatabase()
+            db.update_from_nvd(days=30, force=False)
+            progress.update(task3, completed=True, description="Database ready!")
+
+            # Get CVEs
+            task4 = progress.add_task("Fetching CVEs...", total=None)
+            cves = db.search_cves(severity=severity, limit=5000)
+            progress.update(task4, completed=True, description=f"Loaded {len(cves)} CVEs!")
+
+            # Match packages against CVEs
+            task5 = progress.add_task("Matching vulnerabilities...", total=None)
+            matcher = CVEMatcher(min_confidence=confidence)
+            matches = matcher.bulk_match_packages(packages, cves)
+            progress.update(task5, completed=True, description="Matching complete!")
+
+        # Display results
+        if not matches:
+            console.print("\n[green]✓ No vulnerabilities found![/green]")
+            db.close()
+            return
+
+        console.print(f"\n[red]⚠ Found vulnerabilities in {len(matches)} packages:[/red]\n")
+
+        for package_name, package_matches in matches.items():
+            console.print(f"\n[bold yellow]{package_name}[/bold yellow]")
+
+            for match in package_matches[:3]:  # Show top 3 matches per package
+                severity_color = _get_severity_color(match.cve.severity)
+                console.print(f"  [{severity_color}]● {match.cve.cve_id}[/{severity_color}] "
+                             f"(Confidence: {match.confidence:.0%})")
+                console.print(f"    Severity: [{severity_color}]{match.cve.severity or 'N/A'}[/{severity_color}] "
+                             f"| CVSS: {match.cve.cvss_score or 'N/A'}")
+                console.print(f"    {match.match_reason}")
+
+        # Summary
+        total_vulns = sum(len(m) for m in matches.values())
+        console.print(f"\n[bold]Summary:[/bold]")
+        console.print(f"  SBOM source: {sbom_path.name}")
+        console.print(f"  Total packages: {len(packages)}")
+        console.print(f"  Vulnerable packages: {len(matches)}")
+        console.print(f"  Total vulnerabilities: {total_vulns}")
+
+        db.close()
+
+        # Save to file if requested
+        if output:
+            results = {
+                "sbom_file": str(sbom_path),
+                "total_packages": len(packages),
+                "vulnerable_packages": len(matches),
+                "package_types": stats,
                 "matches": {
                     pkg: [{"cve_id": m.cve.cve_id, "confidence": m.confidence,
                           "severity": m.cve.severity, "cvss_score": m.cve.cvss_score}
