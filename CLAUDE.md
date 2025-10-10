@@ -63,8 +63,7 @@ flake8 threat_radar/
 ### CLI Structure
 The CLI is built with Typer and uses a modular command structure in `threat_radar/cli/`:
 - `app.py` - Main CLI app that registers all sub-commands
-- `cve.py` - CVE operations with SBOM integration
-- `cvss.py` - CVSS scoring operations
+- `cve.py` - CVE operations with SBOM integration (includes CVSS scoring data)
 - `docker.py` - Docker container analysis commands
 - `sbom.py` - SBOM operations
 - `hash.py` - File hashing utilities
