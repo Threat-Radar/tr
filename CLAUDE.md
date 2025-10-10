@@ -102,30 +102,20 @@ The CLI is built with Typer and uses a modular command structure in `threat_rada
   - Dependency file extraction (requirements.txt, package.json, etc.)
   - Requires `GITHUB_ACCESS_TOKEN` environment variable
 
-#### CVE Integration (`threat_radar/core/`) **NEW**
-- **`nvd_client.py`** - `NVDClient` class for interacting with NVD REST API
-  - Rate-limited requests (5/30s public, 50/30s with API key)
-  - CVE retrieval by ID, search with filters (keyword, CPE, severity, dates)
-  - Local caching system (7-day cache)
-  - CVSS v3.1/v3.0/v2.0 metric extraction
+#### CVE Vulnerability Scanning (`threat_radar/core/`)
+- **`grype_integration.py`** - `GrypeClient` wrapper for Grype vulnerability scanner
+  - Docker image scanning with automatic vulnerability detection
+  - SBOM file scanning (CycloneDX, SPDX, Syft JSON)
+  - Directory scanning for application dependencies
+  - Severity filtering (NEGLIGIBLE, LOW, MEDIUM, HIGH, CRITICAL)
+  - Automatic vulnerability database updates
+  - No API rate limits - uses locally managed database
 
-- **`cve_database.py`** - `CVEDatabase` class for local CVE storage
-  - SQLite database at `~/.threat_radar/cve.db`
-  - Incremental updates from NVD
-  - Fast local search with severity/CVSS filters
-  - Statistics and metadata tracking
-
-- **`cve_matcher.py`** - `CVEMatcher` engine for matching packages to CVEs
-  - Version comparison with semantic versioning support
-  - Fuzzy package name matching with known mappings
-  - Confidence scoring (name similarity + version match + CVSS)
-  - Configurable filters (age, disputed CVEs, vendor allowlist)
-
-- **`sbom_package_converter.py`** - **NEW**: Converts SBOM to CVE-matchable packages
-  - Auto-detects SBOM format (CycloneDX, SPDX, Syft JSON)
-  - Converts SBOM components to `Package` objects
-  - Package type filtering and statistics
-  - Architecture extraction from PURLs
+- **`syft_integration.py`** - `SyftClient` wrapper for Syft SBOM generator
+  - Generates SBOMs from Docker images, directories, and files
+  - Multiple output formats (CycloneDX, SPDX, Syft JSON)
+  - Comprehensive package detection (OS packages + app dependencies)
+  - Works seamlessly with Grype for vulnerability scanning
 
 #### Utilities (`threat_radar/utils/`)
 - **`hasher.py`** - File hashing utilities for integrity verification
@@ -145,50 +135,165 @@ Key dataclasses in `threat_radar/core/`:
 - `Package` - Installed package info (name, version, architecture)
 - `PythonPackage` - Python-specific package info with location
 
-## CVE Commands Reference **NEW**
+## CVE Commands Reference (Powered by Grype)
+
+### Installation Requirements
+Grype must be installed on your system:
 
 ```bash
-# Scan Docker image for CVEs (SBOM-based by default)
+# macOS
+brew install grype
+
+# Linux
+curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh
+
+# Verify installation
+grype version
+```
+
+### Scanning Commands
+
+```bash
+# Scan Docker image for CVEs
 threat-radar cve scan-image alpine:3.18
-threat-radar cve scan-image ubuntu:22.04 --severity HIGH -o results.json
+threat-radar cve scan-image python:3.11 --severity HIGH
+threat-radar cve scan-image ubuntu:22.04 --only-fixed -o results.json
 
-# Use native package manager analysis (legacy mode)
-threat-radar cve scan-image alpine:3.18 --no-sbom
+# Scan with automatic cleanup (removes image after scan if newly pulled)
+threat-radar cve scan-image nginx:latest --cleanup
+threat-radar cve scan-image test-app:v1.0 --cleanup --severity HIGH
 
-# Scan pre-generated SBOM file for CVEs (CI/CD friendly)
+# Auto-save results to storage/cve_storage/ directory
+threat-radar cve scan-image alpine:3.18 --auto-save
+threat-radar cve scan-image myapp:latest --as  # Short form
+threat-radar cve scan-image python:3.11 --auto-save --cleanup  # Combined
+
+# Scan pre-generated SBOM file (CI/CD friendly)
 threat-radar cve scan-sbom my-app-sbom.json
 threat-radar cve scan-sbom docker-sbom.json --severity CRITICAL
-threat-radar cve scan-sbom sbom.json --format cyclonedx -o cve-results.json
+threat-radar cve scan-sbom sbom.json --only-fixed -o cve-results.json
 
-# CVE database management
-threat-radar cve update --days 30              # Update local CVE database
-threat-radar cve stats                         # Show database statistics
-threat-radar cve db-search --severity HIGH     # Search local database
+# SBOM scanning with cleanup and auto-save
+threat-radar cve scan-sbom alpine-sbom.json --cleanup --image alpine:3.18
+threat-radar cve scan-sbom app-sbom.json --auto-save  # Auto-save results
 
-# Individual CVE operations
-threat-radar cve get CVE-2021-44228            # Get specific CVE
-threat-radar cve search --keyword log4j        # Search NVD by keyword
-threat-radar cve clear-cache                   # Clear CVE cache
+# Scan local directory for vulnerabilities
+threat-radar cve scan-directory ./my-app
+threat-radar cve scan-directory /path/to/project --severity MEDIUM
+threat-radar cve scan-directory . --only-fixed -o results.json
+threat-radar cve scan-directory ./src --auto-save  # Auto-save
+
+# Vulnerability database management
+threat-radar cve db-update                     # Update Grype database
+threat-radar cve db-status                     # Show database status
 ```
 
 ### CVE Scanning Workflow
 
-**Three methods for CVE scanning:**
+**Grype-based vulnerability scanning (automated, no manual work):**
 
-1. **SBOM-based (Default, Recommended)**: `cve scan-image --use-sbom`
-   - Uses Syft to generate SBOM on-the-fly
-   - Detects OS packages + application dependencies (npm, pip, go, etc.)
-   - More comprehensive coverage
+1. **Docker Image Scanning**: `cve scan-image <image>`
+   - Grype automatically detects OS packages + application dependencies
+   - No SBOM generation required (Grype handles this internally)
+   - Comprehensive coverage across all package ecosystems
+   - Zero API rate limits
 
-2. **Native Package Manager**: `cve scan-image --no-sbom`
-   - Runs dpkg/apk/rpm inside container
-   - Only detects OS packages
-   - Faster, no Syft dependency
+2. **SBOM Scanning**: `cve scan-sbom <file>`
+   - Scans pre-generated SBOM files (CycloneDX, SPDX, Syft JSON)
+   - Perfect for CI/CD pipelines
+   - Works offline with local vulnerability database
+   - No Docker daemon required
 
-3. **Pre-Generated SBOM**: `cve scan-sbom <file>`
-   - Scans existing SBOM files
-   - No Docker or Syft required
-   - Perfect for CI/CD pipelines, works offline
+3. **Directory Scanning**: `cve scan-directory <path>`
+   - Scans local application code for vulnerabilities
+   - Auto-detects package manifests (package.json, requirements.txt, go.mod, etc.)
+   - Great for development workflows
+
+### Image Cleanup Feature
+
+The `--cleanup` flag automatically removes Docker images after scanning to save disk space:
+
+**How it works:**
+- ✅ Checks if image existed before scan
+- ✅ If image was **newly pulled** during scan → removes it after scan
+- ✅ If image **already existed** → preserves it (never deletes user's images)
+- ✅ Only works when `--cleanup` is explicitly set
+
+**Use cases:**
+```bash
+# CI/CD pipelines - scan and cleanup
+threat-radar cve scan-image myapp:latest --cleanup --severity HIGH
+
+# Testing multiple images without storage buildup
+threat-radar cve scan-image nginx:alpine --cleanup
+threat-radar cve scan-image redis:alpine --cleanup
+
+# SBOM scanning with source image cleanup
+threat-radar cve scan-sbom app-sbom.json --cleanup --image myapp:v1.0
+```
+
+**Storage management:**
+- Without `--cleanup`: Images remain on disk (standard Docker behavior)
+- With `--cleanup`: Auto-removes newly pulled images, preserves existing ones
+- Manual cleanup: `docker image prune -a` to remove all unused images
+
+### Auto-Save Feature
+
+The `--auto-save` (or `--as`) flag automatically saves CVE scan results to the `storage/cve_storage/` directory with timestamped filenames:
+
+**How it works:**
+- ✅ Creates `./storage/cve_storage/` directory automatically if not exists
+- ✅ Saves results with format: `<target>_<type>_YYYY-MM-DD_HH-MM-SS.json`
+- ✅ Preserves scan history - never overwrites previous scans
+- ✅ Works with all scan commands (image, sbom, directory)
+- ✅ Can be combined with `--output` to save to both locations
+
+**Use cases:**
+```bash
+# Keep history of all scans in one place
+threat-radar cve scan-image myapp:v1.0 --auto-save
+threat-radar cve scan-image myapp:v1.1 --auto-save
+threat-radar cve scan-image myapp:v1.2 --auto-save
+
+# CI/CD: Auto-save + cleanup for ephemeral environments
+threat-radar cve scan-image $IMAGE --auto-save --cleanup --fail-on HIGH
+
+# Save to both custom location and auto-save
+threat-radar cve scan-image alpine:3.18 -o report.json --auto-save
+```
+
+**File naming examples:**
+- Docker image `alpine:3.18` → `alpine_3_18_image_2025-01-09_14-30-45.json`
+- SBOM `my-app.json` → `my-app_sbom_2025-01-09_14-30-45.json`
+- Directory `./src` → `src_directory_2025-01-09_14-30-45.json`
+
+**Managing stored reports:**
+```bash
+# View all stored reports
+ls -lh storage/cve_storage/
+
+# Count reports
+ls storage/cve_storage/ | wc -l
+
+# Find recent reports
+ls -t storage/cve_storage/ | head -5
+
+# Clean up old reports (manual)
+find storage/cve_storage/ -name "*.json" -mtime +30 -delete  # Remove >30 days old
+```
+
+### Recommended Workflow
+
+```bash
+# Generate SBOM with Syft
+threat-radar sbom generate docker:alpine:3.18 -o sbom.json
+
+# Scan SBOM with Grype for vulnerabilities
+threat-radar cve scan-sbom sbom.json --severity HIGH -o vulns.json
+
+# Or scan Docker image directly (Grype handles SBOM internally)
+threat-radar cve scan-image alpine:3.18 --severity HIGH -o vulns.json
+```
 
 ## Docker Commands Reference
 
@@ -226,11 +331,18 @@ These modules are currently empty but reserved for future functionality.
 - Hash tests in `test_hasher.py` test file integrity verification
 
 ### Dependencies
-Core dependencies:
+Core Python dependencies:
 - `PyGithub==2.1.1` - GitHub API integration
 - `python-dotenv==1.0.0` - Environment variable management
 - `typer>=0.9.0` - CLI framework
 - `docker>=7.0.0` - Docker SDK
+- `anchore-syft>=1.18.0` - SBOM generation (optional Python bindings)
+
+External tools (must be installed separately):
+- **Grype** - Vulnerability scanner (required for CVE scanning)
+  - Install: `brew install grype` (macOS) or see https://github.com/anchore/grype
+- **Syft** - SBOM generator (required for SBOM operations)
+  - Install: `brew install syft` (macOS) or see https://github.com/anchore/syft
 
 Dev dependencies include pytest, black, flake8, mypy for testing and code quality.
 

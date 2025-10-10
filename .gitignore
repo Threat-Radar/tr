@@ -193,14 +193,14 @@ tmp/
 .DS_Store
 Thumbs.db
 
-# SBOM generated outputs - ignore all generated files but keep structure
-sbom_storage/**/*.json
-sbom_storage/**/*.xml
-sbom_storage/**/*.spdx.json
-sbom_storage/**/*.syft.json
-!sbom_storage/**/.gitkeep
-!sbom_storage/README.md
-!sbom_storage/.gitignore
+# Storage directory - ignore all generated scan/SBOM files
+storage/
+!storage/.gitkeep
+!storage/README.md
+
+# Legacy paths (deprecated)
+sbom_storage/
+cve_storage/
 
 # Example outputs - keep these for demonstration
 !examples/output/*.json
