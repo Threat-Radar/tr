@@ -11,6 +11,7 @@ from .file_utils import save_json, save_text
 from .cli_utils import handle_cli_error, create_package_table
 from .docker_cleanup import DockerImageCleanup, ScanCleanupContext
 from .cve_storage import CVEStorageManager, get_cve_storage
+from .ai_storage import AIAnalysisManager, get_ai_storage
 
 __all__ = [
     "Hasher",
@@ -26,4 +27,6 @@ __all__ = [
     "ScanCleanupContext",
     "CVEStorageManager",
     "get_cve_storage",
+    "AIAnalysisManager",
+    "get_ai_storage",
 ]

@@ -295,6 +295,253 @@ threat-radar cve scan-sbom sbom.json --severity HIGH -o vulns.json
 threat-radar cve scan-image alpine:3.18 --severity HIGH -o vulns.json
 ```
 
+## AI Commands Reference
+
+### Overview
+
+The AI integration provides intelligent analysis of vulnerability scan results using Large Language Models (LLMs). It supports both cloud-based models (OpenAI GPT) and local models (Ollama, LM Studio).
+
+**Key Features:**
+- **Vulnerability Analysis**: Assess exploitability, attack vectors, and business impact
+- **Prioritization**: Generate ranked lists based on risk and context
+- **Remediation**: Create actionable fix recommendations and upgrade paths
+- **Flexible Backend**: Support for OpenAI API and local models
+
+### Installation & Setup
+
+```bash
+# Install with AI dependencies
+pip install -e .
+
+# For optional AI providers (Ollama, Anthropic)
+pip install -e ".[ai]"
+
+# Configure environment variables
+cp .env.example .env
+# Edit .env and add AI configuration:
+# - OPENAI_API_KEY=your_key_here
+# - AI_PROVIDER=openai  # or 'ollama' for local
+# - AI_MODEL=gpt-4  # or 'llama2' for Ollama
+# - LOCAL_MODEL_ENDPOINT=http://localhost:11434  # Ollama default
+```
+
+### AI Analysis Commands
+
+#### Analyze Vulnerabilities
+
+Analyze CVE scan results to understand exploitability and business impact:
+
+```bash
+# Basic analysis
+threat-radar ai analyze cve-results.json
+
+# Specify AI provider and model
+threat-radar ai analyze results.json --provider openai --model gpt-4
+
+# Save analysis to file
+threat-radar ai analyze scan.json -o analysis.json
+
+# Auto-save to storage/ai_analysis/
+threat-radar ai analyze results.json --auto-save
+
+# Use local model (Ollama)
+threat-radar ai analyze scan.json --provider ollama --model llama2
+```
+
+**Output includes:**
+- Exploitability assessment (HIGH/MEDIUM/LOW)
+- Attack vector identification (RCE, XSS, SQL injection, etc.)
+- Business impact evaluation
+- Contextual recommendations per vulnerability
+- Overall threat landscape summary
+
+#### Prioritize Remediation
+
+Generate AI-powered prioritized vulnerability lists:
+
+```bash
+# Generate priority list
+threat-radar ai prioritize cve-results.json
+
+# Show top 20 priorities
+threat-radar ai prioritize results.json --top 20
+
+# Save prioritization
+threat-radar ai prioritize scan.json -o priorities.json
+
+# Auto-save results
+threat-radar ai prioritize results.json --auto-save
+```
+
+**Output includes:**
+- Critical/High/Medium/Low priority grouping
+- Urgency scores (0-100) for each vulnerability
+- Rationale for priority assignments
+- Quick wins (low effort, high impact fixes)
+- Overall remediation strategy
+
+#### Generate Remediation Plan
+
+Create detailed, actionable remediation guidance:
+
+```bash
+# Generate remediation plan
+threat-radar ai remediate cve-results.json
+
+# Save plan to file
+threat-radar ai remediate scan.json -o remediation.json
+
+# Hide upgrade commands
+threat-radar ai remediate results.json --no-commands
+
+# Use local model
+threat-radar ai remediate scan.json --provider ollama
+```
+
+**Output includes:**
+- Immediate mitigation actions
+- Specific version upgrades and patches
+- Package manager upgrade commands
+- Workarounds when patches unavailable
+- Testing steps to verify fixes
+- Reference links to security advisories
+- Grouped package remediation (fix multiple CVEs with one upgrade)
+- Effort estimates (LOW/MEDIUM/HIGH)
+
+### AI Workflow Examples
+
+#### Complete Analysis Workflow
+
+```bash
+# 1. Scan Docker image for vulnerabilities
+threat-radar cve scan-image alpine:3.18 --auto-save -o cve-scan.json
+
+# 2. Analyze with AI
+threat-radar ai analyze cve-scan.json --auto-save -o ai-analysis.json
+
+# 3. Generate priorities
+threat-radar ai prioritize cve-scan.json --auto-save -o priorities.json
+
+# 4. Create remediation plan
+threat-radar ai remediate cve-scan.json --auto-save -o remediation.json
+```
+
+#### CI/CD Integration
+
+```bash
+# Scan, analyze, and prioritize in one pipeline
+threat-radar cve scan-image $IMAGE --auto-save --cleanup > scan.json
+threat-radar ai analyze scan.json --auto-save
+threat-radar ai prioritize scan.json --top 10 --auto-save
+```
+
+#### Using Local Models (Privacy-Focused)
+
+```bash
+# Start Ollama locally (one-time setup)
+# brew install ollama
+# ollama pull llama2
+
+# Use local model for all AI operations
+export AI_PROVIDER=ollama
+export AI_MODEL=llama2
+
+threat-radar ai analyze cve-scan.json
+threat-radar ai prioritize cve-scan.json
+threat-radar ai remediate cve-scan.json
+```
+
+### AI Storage Management
+
+AI analysis results are auto-saved to `./storage/ai_analysis/` with timestamped filenames:
+
+```bash
+# View all AI analyses
+ls -lh storage/ai_analysis/
+
+# Filename format examples:
+# - alpine_3_18_analysis_2025-01-09_14-30-45.json
+# - myapp_prioritization_2025-01-09_15-00-00.json
+# - scan_remediation_2025-01-09_16-30-00.json
+
+# Clean up old analyses (manual)
+find storage/ai_analysis/ -name "*.json" -mtime +30 -delete
+```
+
+### AI Architecture
+
+#### Modules (`threat_radar/ai/`)
+
+- **`llm_client.py`** - LLM client abstraction
+  - `OpenAIClient` - OpenAI GPT integration
+  - `OllamaClient` - Local Ollama model integration
+  - `get_llm_client()` - Factory function based on configuration
+
+- **`vulnerability_analyzer.py`** - Vulnerability analysis engine
+  - `VulnerabilityAnalyzer` - Analyzes CVE data with AI
+  - Generates exploitability and impact assessments
+  - Returns structured `VulnerabilityAnalysis` objects
+
+- **`prioritization.py`** - Prioritization engine
+  - `PrioritizationEngine` - Creates ranked vulnerability lists
+  - Urgency scoring (0-100 scale)
+  - Returns `PrioritizedVulnerabilityList` objects
+
+- **`remediation_generator.py`** - Remediation plan generator
+  - `RemediationGenerator` - Creates actionable fix plans
+  - Package-grouped remediation strategies
+  - Returns `RemediationReport` objects
+
+- **`prompt_templates.py`** - Prompt engineering
+  - Pre-designed prompts for analysis, prioritization, remediation
+  - Optimized for security context and accuracy
+
+#### Configuration
+
+AI behavior is controlled via environment variables:
+
+```bash
+# Provider selection
+AI_PROVIDER=openai  # or 'ollama'
+
+# Model selection
+AI_MODEL=gpt-4  # OpenAI: gpt-4, gpt-3.5-turbo
+              # Ollama: llama2, mistral, codellama, etc.
+
+# API credentials
+OPENAI_API_KEY=sk-...  # Required for OpenAI
+
+# Local model endpoint
+LOCAL_MODEL_ENDPOINT=http://localhost:11434  # Ollama default
+```
+
+### Supported AI Providers
+
+#### OpenAI (Cloud)
+- **Models**: GPT-4, GPT-3.5 Turbo
+- **Setup**: Requires API key (`OPENAI_API_KEY`)
+- **Pros**: High accuracy, no local resources needed
+- **Cons**: API costs, data sent to cloud
+
+#### Ollama (Local)
+- **Models**: Llama 2, Mistral, CodeLlama, and more
+- **Setup**: Install Ollama, pull models locally
+- **Pros**: Privacy, no API costs, works offline
+- **Cons**: Requires GPU/CPU resources, lower accuracy
+
+```bash
+# Install Ollama (macOS)
+brew install ollama
+
+# Pull a model
+ollama pull llama2
+ollama pull mistral
+
+# Start using local models
+export AI_PROVIDER=ollama
+export AI_MODEL=llama2
+```
+
 ## Docker Commands Reference
 
 ```bash
