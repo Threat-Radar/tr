@@ -39,12 +39,19 @@ Demonstrates:
 
 **Prerequisites:**
 - Set `OPENAI_API_KEY` in `.env` for OpenAI
+- OR set `ANTHROPIC_API_KEY` for Claude
 - OR install Ollama and set `AI_PROVIDER=ollama`
 
 **Run:**
 ```bash
 # With OpenAI
 export OPENAI_API_KEY=your_key_here
+python examples/05_reporting/02_ai_powered_reports.py
+
+# With Claude (Anthropic)
+export ANTHROPIC_API_KEY=sk-ant-your-key-here
+export AI_PROVIDER=anthropic
+export AI_MODEL=claude-3-5-sonnet-20241022
 python examples/05_reporting/02_ai_powered_reports.py
 
 # With Ollama (local)
@@ -285,8 +292,21 @@ threat-radar report generate this-week-scan.json -o progress.html -f html
 # .env
 OPENAI_API_KEY=sk-your-key-here
 AI_PROVIDER=openai
-AI_MODEL=gpt-4
+AI_MODEL=gpt-4o  # Recommended: gpt-4o, gpt-4-turbo, or gpt-3.5-turbo-1106
 ```
+
+### Anthropic Claude (Cloud)
+```bash
+# .env
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+AI_PROVIDER=anthropic
+AI_MODEL=claude-3-5-sonnet-20241022
+```
+
+**Available Claude Models:**
+- `claude-3-5-sonnet-20241022` (recommended)
+- `claude-3-opus-20240229`
+- `claude-3-sonnet-20240229`
 
 ### Ollama (Local)
 ```bash

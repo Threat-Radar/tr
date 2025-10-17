@@ -324,7 +324,7 @@ The AI integration uses the existing `RISK_ASSESSMENT_PROMPT` template from `thr
 # OpenAI (Cloud)
 export OPENAI_API_KEY=sk-your-key-here
 export AI_PROVIDER=openai
-export AI_MODEL=gpt-4
+export AI_MODEL=gpt-4o  # Recommended: gpt-4o, gpt-4-turbo, or gpt-3.5-turbo-1106
 
 # Ollama (Local)
 export AI_PROVIDER=ollama
@@ -338,7 +338,7 @@ threat-radar report generate scan.json \
   -f html \
   --level executive \
   --ai-provider openai \
-  --ai-model gpt-4
+  --ai-model gpt-4o
 ```
 
 **Fallback Behavior:**
@@ -614,7 +614,7 @@ from threat_radar.utils import (
 # Initialize generator
 generator = ComprehensiveReportGenerator(
     ai_provider="openai",  # or "ollama"
-    ai_model="gpt-4",      # or "llama2"
+    ai_model="gpt-4o",     # or "llama2" (recommended: gpt-4o, gpt-4-turbo)
 )
 
 # Generate report

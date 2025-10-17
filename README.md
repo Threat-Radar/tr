@@ -81,7 +81,7 @@ cp .env.example .env
 # - OPENAI_API_KEY=sk-your-key-here (for AI features)
 # - GITHUB_ACCESS_TOKEN=your-token (for GitHub integration)
 # - AI_PROVIDER=openai (or 'ollama' for local AI)
-# - AI_MODEL=gpt-4 (or 'llama2' for Ollama)
+# - AI_MODEL=gpt-4o (or 'gpt-4-turbo', 'llama2' for Ollama)
 ```
 
 #### 4. Verify Installation
@@ -225,8 +225,8 @@ threat-radar cve scan-image myapp:latest \
 
 ### 🤖 AI-Powered Intelligence
 
-- **OpenAI integration** - GPT-4 powered analysis
-- **Local AI support** - Ollama for privacy
+- **Multiple AI providers** - OpenAI GPT-4o, Anthropic Claude, or Ollama
+- **Cloud or local** - Choose based on privacy needs
 - **Vulnerability analysis** - Exploitability and impact assessment
 - **Smart prioritization** - Risk-based ranking
 - **Remediation planning** - Actionable fix recommendations
@@ -294,9 +294,14 @@ NVD_API_KEY=your_nvd_api_key
 # Option 1: OpenAI (cloud)
 OPENAI_API_KEY=sk-your-openai-api-key
 AI_PROVIDER=openai
-AI_MODEL=gpt-4
+AI_MODEL=gpt-4o  # Recommended: gpt-4o, gpt-4-turbo, or gpt-3.5-turbo-1106
 
-# Option 2: Ollama (local)
+# Option 2: Anthropic Claude (cloud)
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+AI_PROVIDER=anthropic
+AI_MODEL=claude-3-5-sonnet-20241022
+
+# Option 3: Ollama (local)
 AI_PROVIDER=ollama
 AI_MODEL=llama2
 LOCAL_MODEL_ENDPOINT=http://localhost:11434
@@ -311,8 +316,23 @@ LOCAL_MODEL_ENDPOINT=http://localhost:11434
    ```bash
    OPENAI_API_KEY=sk-your-key-here
    AI_PROVIDER=openai
-   AI_MODEL=gpt-4
+   AI_MODEL=gpt-4o  # Recommended: gpt-4o, gpt-4-turbo, or gpt-3.5-turbo-1106
    ```
+
+#### Anthropic Claude (Cloud)
+
+1. Get API key from https://console.anthropic.com/
+2. Add to `.env`:
+   ```bash
+   ANTHROPIC_API_KEY=sk-ant-your-key-here
+   AI_PROVIDER=anthropic
+   AI_MODEL=claude-3-5-sonnet-20241022
+   ```
+
+**Available Models:**
+- `claude-3-5-sonnet-20241022` (recommended, best balance)
+- `claude-3-opus-20240229` (highest capability)
+- `claude-3-sonnet-20240229` (faster, cost-effective)
 
 #### Ollama (Local - Free)
 
@@ -552,7 +572,8 @@ MIT License - See LICENSE file for details
 - **[Syft](https://github.com/anchore/syft)** - Anchore's SBOM generation tool
 - **[NVD](https://nvd.nist.gov/)** - NIST National Vulnerability Database
 - **[Docker SDK](https://docker-py.readthedocs.io/)** - Docker Python integration
-- **[OpenAI](https://openai.com/)** - AI-powered analysis
+- **[OpenAI](https://openai.com/)** - AI-powered analysis (GPT-4o, GPT-4 Turbo)
+- **[Anthropic](https://anthropic.com/)** - AI-powered analysis (Claude)
 - **[Ollama](https://ollama.ai/)** - Local AI models
 
 ---

@@ -240,12 +240,9 @@ class ComprehensiveReportGenerator:
                 },
             )
 
-            # Get AI response
-            response = llm_client.generate(prompt, max_tokens=1500)
-
-            # Parse response
+            # Get AI response as JSON
             import json
-            risk_assessment = json.loads(response)
+            risk_assessment = llm_client.generate_json(prompt)
 
             # Extract key findings from risk assessment
             key_findings = []

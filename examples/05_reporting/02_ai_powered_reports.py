@@ -110,7 +110,7 @@ def example_executive_summary_with_ai():
 
     # Check if AI is configured
     ai_provider = os.getenv("AI_PROVIDER", "openai")
-    ai_model = os.getenv("AI_MODEL", "gpt-4")
+    ai_model = os.getenv("AI_MODEL", "gpt-4o")
     has_api_key = os.getenv("OPENAI_API_KEY") or os.getenv("AI_PROVIDER") == "ollama"
 
     if not has_api_key:
@@ -193,7 +193,7 @@ def example_comparison_with_without_ai():
     print("🤖 Generating report WITH AI (or fallback)...")
     generator_ai = ComprehensiveReportGenerator(
         ai_provider=os.getenv("AI_PROVIDER", "openai"),
-        ai_model=os.getenv("AI_MODEL", "gpt-4"),
+        ai_model=os.getenv("AI_MODEL", "gpt-4o"),
     )
     report_ai = generator_ai.generate_report(
         scan_result=scan_result,
@@ -223,21 +223,27 @@ def example_comparison_with_without_ai():
 def example_different_ai_providers():
     """Demonstrate using different AI providers."""
     print("\n" + "=" * 70)
-    print("EXAMPLE 3: Different AI Providers")
+    print("EXAMPLE 3: Different AI Providers Comparison")
     print("=" * 70)
 
     scan_result = create_realistic_scan_result()
 
     providers = [
-        ("openai", "gpt-4", "OpenAI GPT-4 (cloud)"),
+        ("openai", "gpt-4o", "OpenAI GPT-4o (cloud)"),
+        ("anthropic", "claude-3-5-sonnet-20241022", "Anthropic Claude 3.5 Sonnet (cloud)"),
         ("ollama", "llama2", "Ollama Llama2 (local)"),
     ]
+
+    results = {}
 
     for provider, model, description in providers:
         print(f"\n🔧 Testing {description}...")
         print(f"   Provider: {provider}, Model: {model}")
 
         try:
+            import time
+            start_time = time.time()
+
             generator = ComprehensiveReportGenerator(
                 ai_provider=provider,
                 ai_model=model,
@@ -251,14 +257,70 @@ def example_different_ai_providers():
                 include_dashboard_data=False,
             )
 
+            generation_time = time.time() - start_time
+
             if report.executive_summary:
                 print(f"   ✓ Successfully generated with {description}")
                 print(f"   Risk Rating: {report.executive_summary.overall_risk_rating}")
+                print(f"   Key Findings: {len(report.executive_summary.key_findings)}")
+                print(f"   Immediate Actions: {len(report.executive_summary.immediate_actions)}")
+                print(f"   Generation Time: {generation_time:.2f}s")
+
+                # Store for comparison
+                results[provider] = {
+                    "success": True,
+                    "risk_rating": report.executive_summary.overall_risk_rating,
+                    "key_findings_count": len(report.executive_summary.key_findings),
+                    "actions_count": len(report.executive_summary.immediate_actions),
+                    "time": generation_time,
+                    "summary": report.executive_summary,
+                }
             else:
                 print(f"   ⚠️  Fallback summary used (API may not be configured)")
+                results[provider] = {"success": False}
 
         except Exception as e:
-            print(f"   ❌ Error: {str(e)[:100]}")
+            error_msg = str(e)
+            print(f"   ❌ Error: {error_msg[:150]}")
+            results[provider] = {"success": False, "error": error_msg}
+
+    # Detailed comparison
+    if len([r for r in results.values() if r.get("success")]) >= 2:
+        print("\n" + "=" * 70)
+        print("📊 DETAILED COMPARISON")
+        print("=" * 70)
+
+        # Response time comparison
+        print("\n⏱️  Response Times:")
+        for provider, result in results.items():
+            if result.get("success"):
+                print(f"   {provider.ljust(12)}: {result['time']:.2f}s")
+
+        # Risk rating comparison
+        print("\n🎯 Risk Ratings:")
+        for provider, result in results.items():
+            if result.get("success"):
+                print(f"   {provider.ljust(12)}: {result['risk_rating']}")
+
+        # Content depth comparison
+        print("\n📝 Content Depth:")
+        for provider, result in results.items():
+            if result.get("success"):
+                print(f"   {provider.ljust(12)}: {result['key_findings_count']} findings, {result['actions_count']} actions")
+
+        # Sample output comparison (first key finding from each)
+        print("\n🔍 Sample Key Finding from Each Provider:")
+        for provider, result in results.items():
+            if result.get("success") and result["key_findings_count"] > 0:
+                first_finding = result["summary"].key_findings[0]
+                print(f"\n   {provider.upper()}:")
+                print(f"   {first_finding[:150]}{'...' if len(first_finding) > 150 else ''}")
+
+        # Recommendations
+        print("\n💡 Provider Recommendations:")
+        print("   - OpenAI GPT-4: Best for accuracy and detailed analysis")
+        print("   - Anthropic Claude: Excellent reasoning and structured outputs")
+        print("   - Ollama (local): Best for privacy, no API costs, works offline")
 
 
 def example_full_workflow():
@@ -274,7 +336,7 @@ def example_full_workflow():
     print("\n🤖 Step 2: Generating AI-powered analysis...")
     generator = ComprehensiveReportGenerator(
         ai_provider=os.getenv("AI_PROVIDER", "openai"),
-        ai_model=os.getenv("AI_MODEL", "gpt-4"),
+        ai_model=os.getenv("AI_MODEL", "gpt-4o"),
     )
 
     report = generator.generate_report(

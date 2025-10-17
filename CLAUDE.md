@@ -321,9 +321,10 @@ pip install -e ".[ai]"
 # Configure environment variables
 cp .env.example .env
 # Edit .env and add AI configuration:
-# - OPENAI_API_KEY=your_key_here
-# - AI_PROVIDER=openai  # or 'ollama' for local
-# - AI_MODEL=gpt-4  # or 'llama2' for Ollama
+# - OPENAI_API_KEY=your_key_here (for OpenAI)
+# - ANTHROPIC_API_KEY=sk-ant-your-key-here (for Claude)
+# - AI_PROVIDER=openai  # or 'anthropic' or 'ollama'
+# - AI_MODEL=gpt-4o  # or 'gpt-4-turbo', 'claude-3-5-sonnet-20241022', 'llama2'
 # - LOCAL_MODEL_ENDPOINT=http://localhost:11434  # Ollama default
 ```
 
@@ -338,7 +339,8 @@ Analyze CVE scan results to understand exploitability and business impact:
 threat-radar ai analyze cve-results.json
 
 # Specify AI provider and model
-threat-radar ai analyze results.json --provider openai --model gpt-4
+threat-radar ai analyze results.json --provider openai --model gpt-4o
+threat-radar ai analyze results.json --provider anthropic --model claude-3-5-sonnet-20241022
 
 # Save analysis to file
 threat-radar ai analyze scan.json -o analysis.json
@@ -476,6 +478,7 @@ find storage/ai_analysis/ -name "*.json" -mtime +30 -delete
 
 - **`llm_client.py`** - LLM client abstraction
   - `OpenAIClient` - OpenAI GPT integration
+  - `AnthropicClient` - Anthropic Claude integration
   - `OllamaClient` - Local Ollama model integration
   - `get_llm_client()` - Factory function based on configuration
 
@@ -507,14 +510,16 @@ AI behavior is controlled via environment variables:
 
 ```bash
 # Provider selection
-AI_PROVIDER=openai  # or 'ollama'
+AI_PROVIDER=openai  # or 'anthropic' or 'ollama'
 
 # Model selection
-AI_MODEL=gpt-4  # OpenAI: gpt-4, gpt-3.5-turbo
-              # Ollama: llama2, mistral, codellama, etc.
+AI_MODEL=gpt-4o  # OpenAI: gpt-4o, gpt-4-turbo, gpt-3.5-turbo-1106 (requires JSON mode support)
+               # Anthropic: claude-3-5-sonnet-20241022, claude-3-opus-20240229
+               # Ollama: llama2, mistral, codellama, etc.
 
 # API credentials
 OPENAI_API_KEY=sk-...  # Required for OpenAI
+ANTHROPIC_API_KEY=sk-ant-...  # Required for Anthropic
 
 # Local model endpoint
 LOCAL_MODEL_ENDPOINT=http://localhost:11434  # Ollama default
@@ -523,10 +528,34 @@ LOCAL_MODEL_ENDPOINT=http://localhost:11434  # Ollama default
 ### Supported AI Providers
 
 #### OpenAI (Cloud)
-- **Models**: GPT-4, GPT-3.5 Turbo
+- **Models**: GPT-4o (recommended), GPT-4 Turbo, GPT-3.5 Turbo
 - **Setup**: Requires API key (`OPENAI_API_KEY`)
 - **Pros**: High accuracy, no local resources needed
 - **Cons**: API costs, data sent to cloud
+- **Note**: Use models with JSON mode support (gpt-4o, gpt-4-turbo, gpt-3.5-turbo-1106 or later)
+
+#### Anthropic Claude (Cloud)
+- **Models**: Claude 3.5 Sonnet, Claude 3 Opus, Claude 3 Sonnet
+- **Setup**: Requires API key (`ANTHROPIC_API_KEY`)
+- **Pros**: High accuracy, excellent reasoning, good at structured outputs
+- **Cons**: API costs, data sent to cloud
+
+```bash
+# Get API key from https://console.anthropic.com/
+export ANTHROPIC_API_KEY=sk-ant-your-key-here
+export AI_PROVIDER=anthropic
+export AI_MODEL=claude-3-5-sonnet-20241022
+
+# Use with any AI command
+threat-radar ai analyze scan.json --provider anthropic
+threat-radar ai prioritize scan.json --provider anthropic
+threat-radar ai remediate scan.json --provider anthropic
+```
+
+**Available Claude Models:**
+- `claude-3-5-sonnet-20241022` (recommended, best balance)
+- `claude-3-opus-20240229` (highest capability)
+- `claude-3-sonnet-20240229` (faster, cost-effective)
 
 #### Ollama (Local)
 - **Models**: Llama 2, Mistral, CodeLlama, and more
@@ -1148,15 +1177,26 @@ GITHUB_ACCESS_TOKEN=your_github_personal_access_token_here
 NVD_API_KEY=your_nvd_api_key_here
 
 # AI Configuration
+# Option 1: OpenAI
 OPENAI_API_KEY=your_openai_api_key_here
 AI_PROVIDER=openai
-AI_MODEL=gpt-4
+AI_MODEL=gpt-4o  # Recommended: gpt-4o, gpt-4-turbo, or gpt-3.5-turbo-1106 (JSON mode support required)
+
+# Option 2: Anthropic Claude
+# ANTHROPIC_API_KEY=sk-ant-your-key-here
+# AI_PROVIDER=anthropic
+# AI_MODEL=claude-3-5-sonnet-20241022
+
+# Option 3: Ollama (local)
+# AI_PROVIDER=ollama
+# AI_MODEL=llama2
 LOCAL_MODEL_ENDPOINT=http://localhost:11434
 ```
 
 - `GITHUB_ACCESS_TOKEN` - Required for GitHub integration features
 - `NVD_API_KEY` - Optional, for higher rate limits with NVD API
 - `OPENAI_API_KEY` - Required for AI features with OpenAI
-- `AI_PROVIDER` - Set to `openai` or `ollama` for AI provider selection
-- `AI_MODEL` - Model name (e.g., `gpt-4`, `llama2`)
+- `ANTHROPIC_API_KEY` - Required for AI features with Anthropic Claude
+- `AI_PROVIDER` - Set to `openai`, `anthropic`, or `ollama` for AI provider selection
+- `AI_MODEL` - Model name (e.g., `gpt-4o`, `gpt-4-turbo`, `claude-3-5-sonnet-20241022`, `llama2`)
 - `LOCAL_MODEL_ENDPOINT` - Ollama endpoint (default: `http://localhost:11434`)
