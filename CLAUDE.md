@@ -63,9 +63,10 @@ flake8 threat_radar/
 ### CLI Structure
 The CLI is built with Typer and uses a modular command structure in `threat_radar/cli/`:
 - `app.py` - Main CLI app that registers all sub-commands
-- `cve.py` - CVE operations with SBOM integration (includes CVSS scoring data)
+- `cve.py` - CVE vulnerability scanning with Grype (scan-image, scan-sbom, scan-directory, db-update, db-status)
 - `docker.py` - Docker container analysis commands
-- `sbom.py` - SBOM operations
+- `sbom.py` - SBOM generation and operations (generate, docker, read, compare, stats, export, search, list, components)
+- `ai.py` - AI-powered vulnerability analysis (analyze, prioritize, remediate)
 - `hash.py` - File hashing utilities
 - `config.py` - Configuration management
 - `enrich.py` - Data enrichment operations
@@ -481,16 +482,19 @@ find storage/ai_analysis/ -name "*.json" -mtime +30 -delete
   - `VulnerabilityAnalyzer` - Analyzes CVE data with AI
   - Generates exploitability and impact assessments
   - Returns structured `VulnerabilityAnalysis` objects
+  - Data model: `VulnerabilityAnalysis` with per-CVE assessments
 
 - **`prioritization.py`** - Prioritization engine
   - `PrioritizationEngine` - Creates ranked vulnerability lists
   - Urgency scoring (0-100 scale)
   - Returns `PrioritizedVulnerabilityList` objects
+  - Data model: `PrioritizedVulnerability` with urgency scores and rationale
 
 - **`remediation_generator.py`** - Remediation plan generator
   - `RemediationGenerator` - Creates actionable fix plans
   - Package-grouped remediation strategies
   - Returns `RemediationReport` objects
+  - Data models: `RemediationPlan`, `PackageRemediationGroup`
 
 - **`prompt_templates.py`** - Prompt engineering
   - Pre-designed prompts for analysis, prioritization, remediation
@@ -542,6 +546,69 @@ export AI_PROVIDER=ollama
 export AI_MODEL=llama2
 ```
 
+## SBOM Commands Reference
+
+### Generation
+```bash
+# Generate SBOM from local directory
+threat-radar sbom generate ./path/to/project -f cyclonedx-json
+
+# Generate SBOM from Docker image
+threat-radar sbom docker alpine:3.18 -o sbom.json
+
+# Auto-save to sbom_storage/
+threat-radar sbom generate . --auto-save
+threat-radar sbom docker python:3.11 --auto-save
+```
+
+### Analysis
+```bash
+# Read and display SBOM
+threat-radar sbom read sbom.json
+threat-radar sbom read sbom.json --format json
+
+# Get statistics
+threat-radar sbom stats sbom.json
+
+# Search for packages
+threat-radar sbom search sbom.json openssl
+
+# List components with filtering
+threat-radar sbom components sbom.json --type library
+threat-radar sbom components sbom.json --language python
+threat-radar sbom components sbom.json --group-by type
+```
+
+### Comparison
+```bash
+# Compare two SBOMs (useful for tracking changes)
+threat-radar sbom compare alpine-3.17-sbom.json alpine-3.18-sbom.json
+threat-radar sbom compare old.json new.json --versions
+```
+
+### Export
+```bash
+# Export to CSV
+threat-radar sbom export sbom.json -o packages.csv -f csv
+
+# Export as requirements.txt (Python packages)
+threat-radar sbom export sbom.json -o requirements.txt -f requirements
+```
+
+### Storage Management
+```bash
+# List all stored SBOMs
+threat-radar sbom list
+
+# List by category
+threat-radar sbom list --category docker
+threat-radar sbom list --category local
+threat-radar sbom list --category comparisons
+
+# Limit results
+threat-radar sbom list --limit 10
+```
+
 ## Docker Commands Reference
 
 ```bash
@@ -564,13 +631,33 @@ threat-radar docker python-sbom python:3.11 -o sbom.json --format cyclonedx
 ## Development Notes
 
 ### Module Structure
-- `threat_radar/ai/` - Placeholder for AI/LLM features
-- `threat_radar/ontology/` - Placeholder for ontology/schema definitions
-- `threat_radar/remediation/` - Placeholder for remediation strategies
-- `threat_radar/risk/` - Placeholder for risk assessment
-- `threat_radar/scenarios/` - Placeholder for threat scenarios
+- `threat_radar/ai/` - **IMPLEMENTED**: AI-powered vulnerability analysis, prioritization, and remediation
+  - Supports OpenAI GPT and Ollama (local models)
+  - See AI Commands Reference section above for full capabilities
+- `threat_radar/ontology/` - Reserved for ontology/schema definitions
+- `threat_radar/remediation/` - Reserved for remediation strategies
+- `threat_radar/risk/` - Reserved for risk assessment
+- `threat_radar/scenarios/` - Reserved for threat scenarios
 
-These modules are currently empty but reserved for future functionality.
+### Storage Organization
+
+The project uses organized storage directories (git-ignored):
+
+- **`./storage/cve_storage/`** - CVE scan results with timestamped filenames
+  - Created automatically with `--auto-save` or `--as` flag
+  - Format: `<target>_<type>_YYYY-MM-DD_HH-MM-SS.json`
+  - Useful for tracking vulnerability trends over time
+
+- **`./storage/ai_analysis/`** - AI analysis results
+  - Analysis, prioritization, and remediation reports
+  - Auto-saved with `--auto-save` flag in AI commands
+  - Format: `<target>_<analysis_type>_YYYY-MM-DD_HH-MM-SS.json`
+
+- **`./sbom_storage/`** - SBOM files organized by category
+  - `docker/` - SBOMs from Docker images
+  - `local/` - SBOMs from local directories
+  - `comparisons/` - SBOM comparison results
+  - `archives/` - Historical SBOMs
 
 ### Testing Patterns
 - Tests use fixtures in `tests/fixtures/` directory
@@ -598,6 +685,18 @@ Dev dependencies include pytest, black, flake8, mypy for testing and code qualit
 Create `.env` file from `.env.example`:
 ```
 GITHUB_ACCESS_TOKEN=your_github_personal_access_token_here
+NVD_API_KEY=your_nvd_api_key_here
+
+# AI Configuration
+OPENAI_API_KEY=your_openai_api_key_here
+AI_PROVIDER=openai
+AI_MODEL=gpt-4
+LOCAL_MODEL_ENDPOINT=http://localhost:11434
 ```
 
-This token is required for GitHub integration features.
+- `GITHUB_ACCESS_TOKEN` - Required for GitHub integration features
+- `NVD_API_KEY` - Optional, for higher rate limits with NVD API
+- `OPENAI_API_KEY` - Required for AI features with OpenAI
+- `AI_PROVIDER` - Set to `openai` or `ollama` for AI provider selection
+- `AI_MODEL` - Model name (e.g., `gpt-4`, `llama2`)
+- `LOCAL_MODEL_ENDPOINT` - Ollama endpoint (default: `http://localhost:11434`)
