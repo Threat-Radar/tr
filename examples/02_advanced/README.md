@@ -1,68 +1,30 @@
 # Advanced Examples
 
-These examples demonstrate advanced features and deeper integration capabilities.
+Advanced features for Docker analysis and SBOM generation. These examples demonstrate deeper integration capabilities.
 
-## Examples
+## Examples Overview
 
-### 1. Advanced Docker Analysis
-**File:** `docker_advanced.py`
+| Example | What It Does | Time | Best For |
+|---------|--------------|------|----------|
+| `docker_advanced.py` | Batch analysis, image comparison | ~5 min | Production workflows |
+| `syft_sbom_example.py` | Comprehensive SBOM with Syft | ~4 min | Compliance, SBOM standards |
+| `python_sbom_example.py` | Python-specific SBOM | ~2 min | Python projects |
+| `docker_cli_examples.sh` | CLI workflow automation | ~3 min | CI/CD integration |
 
-Advanced Docker image analysis techniques.
+## Quick Start
 
 ```bash
+# Generate SBOM with Syft (recommended)
+python syft_sbom_example.py
+
+# Advanced Docker analysis
 python docker_advanced.py
 ```
 
-**Features:**
-- Batch image analysis
-- Image comparison
-- Package filtering and search
-- Security-focused analysis
+## Example Details
 
-**Time:** ~5 minutes
+### 1. Syft SBOM Integration ⭐ RECOMMENDED
 
----
-
-### 2. Python SBOM Generation
-**File:** `python_sbom_example.py`
-
-Generate Software Bill of Materials (SBOM) for Python applications.
-
-```bash
-python python_sbom_example.py
-```
-
-**Features:**
-- Extract Python packages from containers
-- Generate CycloneDX SBOM format
-- Multiple output formats (JSON, CSV, TXT)
-- Dependency analysis
-
-**Time:** ~2 minutes
-
----
-
-### 3. CVE Matching Algorithms
-**File:** `cve_matching_example.py`
-
-Understand how package-to-CVE matching works.
-
-```bash
-python cve_matching_example.py
-```
-
-**Features:**
-- Version comparison algorithms
-- Semantic versioning
-- Fuzzy package name matching
-- Confidence scoring
-- Bulk matching
-
-**Time:** ~1 minute (runs offline)
-
----
-
-### 4. Syft SBOM Integration
 **File:** `syft_sbom_example.py`
 
 Comprehensive SBOM generation using Syft (industry-standard tool).
@@ -77,16 +39,61 @@ python syft_sbom_example.py
 - Directory and file scanning
 - License analysis
 - Package comparison
-- Ecosystem support (Python, npm, Go, Java, etc.)
+- 13+ ecosystem support (Python, npm, Go, Java, etc.)
 
-**Prerequisites:**
-- Install Syft: https://github.com/anchore/syft#installation
+**Prerequisites:** Syft installed (`brew install syft`)
 
-**Time:** ~4 minutes
+**Alternative (CLI):**
+```bash
+threat-radar sbom docker alpine:3.18 -o sbom.json
+threat-radar sbom generate ./my-project -f cyclonedx-json
+```
 
----
+### 2. Advanced Docker Analysis
 
-### 5. CLI Examples
+**File:** `docker_advanced.py`
+
+Advanced Docker image analysis techniques.
+
+```bash
+python docker_advanced.py
+```
+
+**Features:**
+- Batch image analysis
+- Image comparison
+- Package filtering and search
+- Security-focused analysis
+
+**Alternative (CLI):**
+```bash
+threat-radar docker import-image ubuntu:22.04
+threat-radar docker packages alpine:3.18 --limit 20
+```
+
+### 3. Python SBOM Generation
+
+**File:** `python_sbom_example.py`
+
+Generate Software Bill of Materials for Python applications.
+
+```bash
+python python_sbom_example.py
+```
+
+**Features:**
+- Extract Python packages from containers
+- Generate CycloneDX SBOM format
+- Multiple output formats (JSON, CSV, TXT)
+- Dependency analysis
+
+**Alternative (CLI):**
+```bash
+threat-radar docker python-sbom python:3.11 -o sbom.json
+```
+
+### 4. CLI Examples
+
 **File:** `docker_cli_examples.sh`
 
 Shell script demonstrating CLI workflows.
@@ -99,104 +106,72 @@ bash docker_cli_examples.sh
 - Automated scanning workflows
 - Batch processing
 - Report generation
-- CI/CD integration examples
+- CI/CD integration patterns
 
-**Time:** ~3 minutes
+## Recommended Workflows
 
----
+### Compare Two Docker Images
 
-## Example Workflows
-
-### Compare Two Images
-
+**Python API:**
 ```python
-from threat_radar.core.container_analyzer import ContainerAnalyzer
 from threat_radar.utils import docker_analyzer
 
 images = ["alpine:3.17", "alpine:3.18"]
-results = {}
-
 for image in images:
     with docker_analyzer() as analyzer:
-        name, tag = image.split(':')
-        analysis = analyzer.import_container(name, tag)
-        results[image] = analysis
-
-# Compare package counts, versions, etc.
+        analysis = analyzer.import_container(*image.split(':'))
+        # Compare results...
 ```
 
-### Generate SBOM for Production Image
-
+**CLI (Recommended):**
 ```bash
-# Using CLI
-threat-radar docker python-sbom python:3.11 \
-  -o production-sbom.json \
-  --format cyclonedx
-
-# Validate SBOM
-cat production-sbom.json | jq '.components | length'
+threat-radar sbom docker alpine:3.17 -o sbom-3.17.json
+threat-radar sbom docker alpine:3.18 -o sbom-3.18.json
+threat-radar sbom compare sbom-3.17.json sbom-3.18.json
 ```
 
-### Understand Match Confidence
+### Generate SBOM for Production
 
-```python
-from threat_radar.core.cve_matcher import CVEMatcher, Package
+**CLI (Recommended):**
+```bash
+# Generate SBOM
+threat-radar sbom docker myapp:latest -o production-sbom.json --auto-save
 
-package = Package(name="openssl", version="1.1.1", architecture="amd64")
-matcher = CVEMatcher(min_confidence=0.7)
+# Scan for vulnerabilities
+threat-radar cve scan-sbom production-sbom.json -o scan.json
 
-# This will explain why matches succeed or fail
-matches = matcher.match_package(package, cves)
-for match in matches:
-    print(f"Confidence: {match.confidence:.0%}")
-    print(f"Reason: {match.match_reason}")
+# Generate report
+threat-radar report generate scan.json -o report.html -f html
 ```
 
 ## Prerequisites
 
-- Completion of [01_basic](../01_basic/) examples recommended
-- Understanding of Docker concepts
-- Familiarity with SBOM standards (helpful but not required)
-
-## Advanced Topics
-
-### Custom Package Mappings
-
-If you find legitimate packages not matching, add custom mappings:
-
-```python
-# In your code or fork
-from threat_radar.core.cve_matcher import PackageNameMatcher
-
-PackageNameMatcher.NAME_MAPPINGS["your-package"] = [
-    "variant1", "variant2", "lib-yourpackage"
-]
-```
-
-### Batch Processing
-
-Process multiple images efficiently:
-
-```python
-from concurrent.futures import ThreadPoolExecutor
-
-def scan_image(image):
-    # Your scanning logic
-    return results
-
-images = ["ubuntu:20.04", "debian:11", "alpine:3.18"]
-
-with ThreadPoolExecutor(max_workers=3) as executor:
-    results = list(executor.map(scan_image, images))
-```
+- Python 3.8+
+- Docker daemon running
+- **Syft** installed (`brew install syft`) - for `syft_sbom_example.py`
+- Completion of [01_basic/](../01_basic/) examples recommended
 
 ## Next Steps
 
 After mastering these examples:
-- **[03_vulnerability_scanning](../03_vulnerability_scanning/)** - Complete vulnerability workflows
-- **[04_testing](../04_testing/)** - Test and validate matching accuracy
 
-## See Also
+**For Vulnerability Scanning:**
+- → Use `threat-radar cve scan-image` (Grype-powered)
+- → See [../README.md](../README.md) for full CLI reference
 
-- [CLI_EXAMPLES.md](../CLI_EXAMPLES.md) - Complete CLI command reference
-- [CVE Matching Documentation](../../MATCHING_IMPROVEMENTS.md) - Algorithm details
+**For Python Examples:**
+- → **[05_reporting/](../05_reporting/)** - Comprehensive reporting
+- → **[04_testing/](../04_testing/)** - Testing and validation
+
+**For Legacy Workflows:**
+- → **[03_vulnerability_scanning/](../03_vulnerability_scanning/)** - Historical NVD-based scanning
+
+## Documentation
+
+- **[Main Examples Guide](../README.md)** - Complete examples overview
+- **[SBOM Documentation](../../docs/SBOM_SYFT.md)** - SBOM capabilities
+- **[CLI Reference](../../CLAUDE.md)** - Full command documentation
+
+---
+
+**Quick command:** `python syft_sbom_example.py`

@@ -1,13 +1,31 @@
 # Basic Examples
 
-Start here if you're new to Threat Radar. These examples cover fundamental operations.
+Fundamental operations to get started with Threat Radar. Start here if you're new to the platform.
 
-## Examples
+## Examples Overview
 
-### 1. Docker Container Analysis
+| Example | What It Does | Time | Prerequisites |
+|---------|--------------|------|---------------|
+| `docker_usage.py` | Analyze Docker images, extract packages | ~2 min | Docker running |
+| `hash_usage.py` | Generate file hashes (SHA-256, MD5, SHA-1) | <1 min | None |
+| `nvd_basic_usage.py` | Fetch CVEs from NVD *(historical)* | ~3 min | Internet |
+| `cve_database_usage.py` | Local CVE database *(historical)* | ~5 min | Internet |
+
+## Quick Start
+
+```bash
+# Run all basic examples
+python docker_usage.py
+python hash_usage.py
+```
+
+## Example Details
+
+### 1. Docker Container Analysis ⭐ RECOMMENDED
+
 **File:** `docker_usage.py`
 
-Learn how to analyze Docker images and extract package information.
+Learn Docker image analysis and package extraction.
 
 ```bash
 python docker_usage.py
@@ -15,53 +33,12 @@ python docker_usage.py
 
 **What you'll learn:**
 - Pull and analyze Docker images
-- Extract installed packages
+- Extract installed packages (APK, APT, YUM)
 - Detect Linux distributions
 - Export analysis to JSON
 
-**Time:** ~2 minutes
+### 2. File Hashing
 
----
-
-### 2. NVD API Basics
-**File:** `nvd_basic_usage.py`
-
-Fetch CVE data from the National Vulnerability Database.
-
-```bash
-python nvd_basic_usage.py
-```
-
-**What you'll learn:**
-- Fetch specific CVEs by ID
-- Search by keyword, severity, CPE
-- Understand rate limiting
-- Use API keys for higher limits
-
-**Time:** ~3 minutes
-
----
-
-### 3. CVE Database Operations
-**File:** `cve_database_usage.py`
-
-Work with the local CVE database for fast offline queries.
-
-```bash
-python cve_database_usage.py
-```
-
-**What you'll learn:**
-- Initialize SQLite database
-- Incremental updates from NVD
-- Search local database (fast!)
-- Get statistics and reports
-
-**Time:** ~5 minutes (first run slower due to database creation)
-
----
-
-### 4. File Hashing
 **File:** `hash_usage.py`
 
 Generate cryptographic hashes for file integrity verification.
@@ -75,40 +52,44 @@ python hash_usage.py
 - Binary vs text file handling
 - Integrity verification
 
-**Time:** <1 minute
+### 3. NVD API Basics *(Historical)*
 
----
+**File:** `nvd_basic_usage.py`
 
-## Quick Start
+Fetch CVE data from the National Vulnerability Database.
 
-Run all basic examples in sequence:
-
+**Note:** This example demonstrates the legacy NVD-based approach. For new projects, use Grype-based scanning via CLI:
 ```bash
-# 1. Docker analysis
-python docker_usage.py
-
-# 2. Fetch a famous CVE (Shellshock)
-python nvd_basic_usage.py
-
-# 3. Build local database
-python cve_database_usage.py
-
-# 4. Generate file hashes
-python hash_usage.py
+threat-radar cve scan-image alpine:3.18
 ```
 
-## Prerequisites
+### 4. CVE Database Operations *(Historical)*
 
-- Docker daemon running (for `docker_usage.py`)
-- Internet connection (for NVD API examples)
-- Optional: NVD API key in `.env` file
+**File:** `cve_database_usage.py`
+
+Work with local CVE database for offline queries.
+
+**Note:** This is legacy functionality. Modern workflow uses Grype's local database automatically.
 
 ## Next Steps
 
-After completing these examples, move on to:
-- **[02_advanced](../02_advanced/)** - Advanced Docker features and SBOM generation
-- **[03_vulnerability_scanning](../03_vulnerability_scanning/)** - Complete vulnerability scanning workflows
+After completing these examples:
 
-## Troubleshooting
+**For Modern Workflows:**
+- ✅ Use `threat-radar cve scan-image` for vulnerability scanning (Grype-powered)
+- ✅ Use `threat-radar sbom docker` for SBOM generation (Syft-powered)
+- ✅ See [../README.md](../README.md) for complete CLI reference
 
-If you encounter issues, see [TROUBLESHOOTING.md](../TROUBLESHOOTING.md)
+**For Python API Examples:**
+- → **[02_advanced/](../02_advanced/)** - Advanced Docker features and SBOM generation
+- → **[05_reporting/](../05_reporting/)** - Comprehensive reporting with AI
+
+## Documentation
+
+- **[Main Examples Guide](../README.md)** - Complete examples overview
+- **[CLI Reference](../../CLAUDE.md)** - Full command documentation
+- **[Troubleshooting](../TROUBLESHOOTING.md)** - Common issues
+
+---
+
+**Quick command:** `python docker_usage.py && python hash_usage.py`

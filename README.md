@@ -2,72 +2,177 @@
 
 A comprehensive threat assessment and vulnerability analysis platform for Docker containers and software dependencies.
 
-[![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
-[![Tests Passing](https://img.shields.io/badge/tests-15%2F15%20passing-brightgreen.svg)](docs/validation/EXAMPLES_TEST_RESULTS.md)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Tests Passing](https://img.shields.io/badge/tests-passing-brightgreen.svg)](docs/validation/EXAMPLES_TEST_RESULTS.md)
 [![CVE Precision](https://img.shields.io/badge/CVE%20precision-100%25-brightgreen.svg)](docs/validation/DEBIAN8_VALIDATION_REPORT.md)
 
 ---
 
 ## 🎯 Overview
 
-Threat Radar provides:
-- 🐳 **Docker Container Analysis** - Extract and analyze packages from any Docker image
-- 📦 **SBOM Generation** - Multi-format (CycloneDX, SPDX, Syft JSON) with Syft integration
-- 🔍 **CVE Vulnerability Detection** - High-precision matching with NVD integration (0% false positives)
-- 📊 **Comprehensive Reporting** - JSON, console output, validation analysis
+Threat Radar provides enterprise-grade security analysis with:
+- 🐳 **Docker Container Analysis** - Multi-distro package extraction and analysis
+- 📦 **SBOM Generation** - CycloneDX, SPDX, Syft JSON formats via Syft integration
+- 🔍 **CVE Vulnerability Scanning** - Powered by Grype for accurate, fast detection
+- 🤖 **AI-Powered Analysis** - Intelligent vulnerability assessment and prioritization
+- 📊 **Comprehensive Reporting** - JSON, Markdown, HTML with executive summaries
+- 📈 **Dashboard Integration** - Grafana, Prometheus, and custom dashboards
 
 ---
 
 ## 🚀 Quick Start
 
+### Prerequisites
+
+**Required:**
+- Python 3.8 or higher
+- Docker (for container analysis)
+- [Grype](https://github.com/anchore/grype) (for CVE scanning)
+- [Syft](https://github.com/anchore/syft) (for SBOM generation)
+
+**Optional:**
+- OpenAI API key (for AI features) OR
+- [Ollama](https://ollama.ai) (for local AI)
+
 ### Installation
+
+#### 1. Install External Tools
+
+```bash
+# macOS
+brew install grype syft
+
+# Linux
+curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh
+curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh
+
+# Verify installation
+grype version
+syft version
+```
+
+#### 2. Install Threat Radar
 
 ```bash
 # Clone repository
 git clone https://github.com/yourusername/tr-nvd.git
 cd tr-nvd
 
-# Install in development mode
+# Option A: Using pip with requirements.txt
+pip install -r requirements.txt
+
+# Option B: Using pyproject.toml (development mode)
 pip install -e .
 
-# Or with dev dependencies
-pip install -e ".[dev]"
+# Option C: With development tools
+pip install -r requirements-dev.txt
+
+# Option D: With AI features (local models)
+pip install -r requirements-ai.txt
 ```
 
-### Basic Usage
+#### 3. Configure Environment (Optional)
 
 ```bash
-# Scan a Docker image for vulnerabilities
-threat-radar docker scan ubuntu:14.04
+# Copy example configuration
+cp .env.example .env
 
-# Generate SBOM for an image
-threat-radar sbom generate alpine:3.18 -o sbom.json
-
-# Search for CVEs
-threat-radar cve search openssl --limit 10
+# Edit .env and add your API keys (optional):
+# - OPENAI_API_KEY=sk-your-key-here (for AI features)
+# - GITHUB_ACCESS_TOKEN=your-token (for GitHub integration)
+# - AI_PROVIDER=openai (or 'ollama' for local AI)
+# - AI_MODEL=gpt-4 (or 'llama2' for Ollama)
 ```
 
-### Python API
+#### 4. Verify Installation
 
-```python
-from threat_radar.core.vulnerability_scanner import VulnerabilityScanner, ScanConfiguration
-from threat_radar.utils import docker_analyzer
+```bash
+# Check CLI is working
+threat-radar --help
 
-# Configure scanner
-config = ScanConfiguration(
-    min_confidence=0.75,
-    max_cve_age_years=15,
-    filter_disputed=True
-)
+# Run a quick scan
+threat-radar cve scan-image alpine:3.18
+```
 
-# Analyze Docker image
-with docker_analyzer() as analyzer:
-    analysis = analyzer.import_container("ubuntu", "14.04")
+---
 
-# Scan for vulnerabilities
-scanner = VulnerabilityScanner(config)
-cves = scanner.fetch_cves(keywords=[('bash', 15)])
-matches = scanner.scan(analysis, cves)
+## 💡 Basic Usage
+
+### CVE Vulnerability Scanning
+
+```bash
+# Scan Docker image for vulnerabilities
+threat-radar cve scan-image alpine:3.18
+
+# Scan with severity filter
+threat-radar cve scan-image python:3.11 --severity HIGH
+
+# Save results and auto-cleanup
+threat-radar cve scan-image nginx:latest --auto-save --cleanup
+
+# Scan SBOM file
+threat-radar cve scan-sbom my-app-sbom.json --severity CRITICAL
+
+# Scan local directory
+threat-radar cve scan-directory ./my-project
+```
+
+### SBOM Generation
+
+```bash
+# Generate SBOM from Docker image
+threat-radar sbom docker alpine:3.18 -o sbom.json
+
+# Generate from local directory
+threat-radar sbom generate ./my-app -f cyclonedx-json
+
+# Auto-save to organized storage
+threat-radar sbom docker python:3.11 --auto-save
+
+# Compare two SBOMs
+threat-radar sbom compare alpine:3.17 alpine:3.18
+```
+
+### AI-Powered Analysis
+
+```bash
+# Analyze vulnerabilities with AI
+threat-radar ai analyze scan-results.json
+
+# Generate prioritized remediation list
+threat-radar ai prioritize scan-results.json --top 10
+
+# Create remediation plan
+threat-radar ai remediate scan-results.json -o remediation.json
+```
+
+### Comprehensive Reporting
+
+```bash
+# Generate HTML report with AI executive summary
+threat-radar report generate scan-results.json -o report.html -f html
+
+# Executive summary for leadership
+threat-radar report generate scan-results.json -o exec.md -f markdown --level executive
+
+# Critical-only issues
+threat-radar report generate scan-results.json --level critical-only
+
+# Export dashboard data
+threat-radar report dashboard-export scan-results.json -o dashboard.json
+```
+
+### Docker Analysis
+
+```bash
+# Import and analyze image
+threat-radar docker import-image ubuntu:22.04 -o analysis.json
+
+# List packages in image
+threat-radar docker packages alpine:3.18 --limit 20
+
+# Generate Python SBOM
+threat-radar docker python-sbom python:3.11 -o sbom.json
 ```
 
 ---
@@ -75,77 +180,157 @@ matches = scanner.scan(analysis, cves)
 ## 📚 Documentation
 
 ### Getting Started
-- **[Project Overview](PROJECT_SUMMARY.md)** - Comprehensive feature documentation for stakeholders
-- **[Examples Guide](examples/START_HERE.md)** - Step-by-step tutorials and examples
-- **[CLI Reference](examples/CLI_EXAMPLES.md)** - Command-line usage guide
+- **[Installation Guide](#installation)** - Complete setup instructions
+- **[Examples Guide](examples/START_HERE.md)** - Step-by-step tutorials
+- **[CLI Reference](CLAUDE.md)** - Complete command reference
 - **[Troubleshooting](examples/TROUBLESHOOTING.md)** - Common issues and solutions
 
-### Technical Documentation
-- **[SBOM Generation](docs/SBOM_SYFT.md)** - SBOM capabilities and formats
-- **[Storage Organization](docs/SBOM_STORAGE_ORGANIZATION.md)** - SBOM file management
-- **[Developer Guide](CLAUDE.md)** - Architecture and development workflows
-
-### Validation & Reports
-- **[Test Results](docs/validation/EXAMPLES_TEST_RESULTS.md)** - 15/15 examples passing (100%)
-- **[Debian 8 Validation](docs/validation/DEBIAN8_VALIDATION_REPORT.md)** - 100% precision validation
-- **[False Positive Analysis](docs/validation/FALSE_POSITIVE_ANALYSIS.md)** - Ubuntu 14.04 test results
-- **[Improvement Reports](docs/reports/)** - CVE matching enhancements
+### Features
+- **[CVE Scanning Guide](CLAUDE.md#cve-commands-reference-powered-by-grype)** - Vulnerability detection
+- **[AI Analysis Guide](CLAUDE.md#ai-commands-reference)** - AI-powered features
+- **[Reporting Guide](docs/REPORTING_GUIDE.md)** - Report generation and formats
+- **[SBOM Generation](docs/SBOM_SYFT.md)** - SBOM capabilities
 
 ### Development
-- **[Code Review](docs/development/CODE_REVIEW_REPORT.md)** - Codebase quality analysis
-- **[Refactoring Summary](docs/development/REFACTORING_SUMMARY.md)** - Recent code improvements
-- **[Session Logs](docs/development/SESSION_SUMMARY.md)** - Development history
+- **[Developer Guide](CLAUDE.md)** - Architecture and development
+- **[Code Review](docs/development/CODE_REVIEW_REPORT.md)** - Code quality
+- **[Project Overview](PROJECT_SUMMARY.md)** - Stakeholder documentation
+
+### Validation & Reports
+- **[Test Results](docs/validation/EXAMPLES_TEST_RESULTS.md)** - 15/15 examples passing
+- **[Validation Reports](docs/validation/)** - Precision metrics (100%)
 
 ---
 
 ## ✨ Key Features
 
+### 🔍 CVE Vulnerability Scanning (Grype-Powered)
+
+- **Docker image scanning** - Comprehensive vulnerability detection
+- **SBOM scanning** - Analyze pre-generated SBOMs
+- **Directory scanning** - Local project analysis
+- **Zero API rate limits** - Offline local database
+- **Auto-cleanup** - Automatic image removal after scan
+- **Auto-save** - Timestamped results in organized storage
+- **Severity filtering** - Focus on CRITICAL/HIGH issues
+
+```bash
+# Scan with all features
+threat-radar cve scan-image myapp:latest \
+  --severity HIGH \
+  --auto-save \
+  --cleanup \
+  -o scan.json
+```
+
+### 🤖 AI-Powered Intelligence
+
+- **OpenAI integration** - GPT-4 powered analysis
+- **Local AI support** - Ollama for privacy
+- **Vulnerability analysis** - Exploitability and impact assessment
+- **Smart prioritization** - Risk-based ranking
+- **Remediation planning** - Actionable fix recommendations
+
+```bash
+# Complete AI workflow
+threat-radar cve scan-image alpine:3.18 --auto-save -o scan.json
+threat-radar ai analyze scan.json --auto-save
+threat-radar ai prioritize scan.json --top 10
+threat-radar ai remediate scan.json -o plan.json
+```
+
+### 📊 Comprehensive Reporting
+
+- **Multiple formats** - JSON, Markdown, HTML
+- **Report levels** - Executive, Summary, Detailed, Critical-only
+- **AI executive summaries** - Risk ratings and business impact
+- **Dashboard data** - Grafana/Prometheus compatible
+- **Trend analysis** - Compare scans over time
+
+```bash
+# Generate reports for different audiences
+threat-radar report generate scan.json -o exec.md --level executive  # Leadership
+threat-radar report generate scan.json -o detailed.html --level detailed  # Security team
+threat-radar report generate scan.json -o critical.json --level critical-only  # DevOps
+```
+
+### 📦 SBOM Generation (Syft-Powered)
+
+- **Multi-format** - CycloneDX, SPDX, Syft JSON
+- **13+ ecosystems** - Python, npm, Go, Rust, Java, Ruby, PHP, etc.
+- **Docker images** - Comprehensive OS + application packages
+- **Local directories** - Project dependency analysis
+- **Organized storage** - Automatic categorization
+- **Comparison** - Track package changes
+
+```bash
+# Generate and compare SBOMs
+threat-radar sbom docker myapp:v1.0 --auto-save
+threat-radar sbom docker myapp:v2.0 --auto-save
+threat-radar sbom compare myapp:v1.0 myapp:v2.0
+```
+
 ### 🐳 Docker Integration
-- **Multi-distro support:** Alpine, Ubuntu, Debian, RHEL, CentOS, Fedora
-- **Package extraction:** APK, APT/dpkg, YUM/rpm
-- **Image comparison:** Diff packages between image versions
-- **Python SBOM:** Extract pip packages and dependencies
 
-### 📦 SBOM Generation
-- **Syft integration:** Comprehensive package detection
-- **Multiple formats:** CycloneDX, SPDX, Syft JSON
-- **13 ecosystems:** Python, npm, Go, Rust, Java, Ruby, PHP, and more
-- **License analysis:** Track package licenses across SBOM
-- **Organized storage:** Automatic categorization (docker/, local/, comparisons/)
-
-### 🔍 CVE Detection
-- **NVD API integration:** Search and fetch CVEs by ID or keyword
-- **High-precision matching:** 100% precision with 0 false positives
-- **Fuzzy package matching:** Handles variations (openssl ↔ libssl, glibc ↔ libc6)
-- **Version validation:** Semantic version range checking
-- **Confidence scoring:** Transparent match quality assessment
-- **Filtering:** Age-based, disputed CVE, vendor-specific
-
-### 📊 Reporting
-- **JSON reports:** Structured, machine-readable output
-- **Console output:** Color-coded severity indicators
-- **Validation analysis:** True positive/false positive breakdown
-- **Statistics:** Severity distribution, confidence metrics
+- **Multi-distro support** - Alpine, Ubuntu, Debian, RHEL, CentOS, Fedora
+- **Package managers** - APK, APT/dpkg, YUM/rpm
+- **Python packages** - Pip package extraction
+- **Image analysis** - Metadata and layer inspection
 
 ---
 
-## 🧪 Validation Results
+## 🔧 Configuration
 
-### Test Coverage
-✅ **15/15 examples passing** (100% success rate)
-✅ **33/33 matching tests passing**
-✅ **Zero false positives** across all validation tests
+### Environment Variables (.env)
 
-### Precision Metrics
-| Image | Packages | CVEs Found | False Positives | Precision |
-|-------|----------|------------|-----------------|-----------|
-| **Ubuntu 14.04** | 213 | 3 | 0 | 100% |
-| **Debian 8** | 111 | 4 | 0 | 100% |
+```bash
+# GitHub Integration (optional)
+GITHUB_ACCESS_TOKEN=your_github_personal_access_token
 
-### Notable Detections
-✅ Shellshock (CVE-2014-6271) - CRITICAL
-✅ Bash variants (CVE-2014-7169) - CRITICAL
-✅ glibc issues (CVE-2010-3192, CVE-2018-20796) - HIGH/MEDIUM
+# NVD API (optional - for higher rate limits)
+NVD_API_KEY=your_nvd_api_key
+
+# AI Configuration (optional)
+# Option 1: OpenAI (cloud)
+OPENAI_API_KEY=sk-your-openai-api-key
+AI_PROVIDER=openai
+AI_MODEL=gpt-4
+
+# Option 2: Ollama (local)
+AI_PROVIDER=ollama
+AI_MODEL=llama2
+LOCAL_MODEL_ENDPOINT=http://localhost:11434
+```
+
+### Setting Up AI Features
+
+#### OpenAI (Cloud)
+
+1. Get API key from https://platform.openai.com/api-keys
+2. Add to `.env`:
+   ```bash
+   OPENAI_API_KEY=sk-your-key-here
+   AI_PROVIDER=openai
+   AI_MODEL=gpt-4
+   ```
+
+#### Ollama (Local - Free)
+
+```bash
+# Install Ollama
+brew install ollama  # macOS
+# or visit https://ollama.ai for other platforms
+
+# Start Ollama service
+ollama serve &
+
+# Pull a model
+ollama pull llama2
+
+# Configure in .env
+AI_PROVIDER=ollama
+AI_MODEL=llama2
+```
 
 ---
 
@@ -156,118 +341,172 @@ tr-nvd/
 ├── threat_radar/              # Main package
 │   ├── core/                  # Core functionality
 │   │   ├── container_analyzer.py
-│   │   ├── cve_matcher.py
-│   │   ├── nvd_client.py
-│   │   ├── syft_integration.py
-│   │   └── vulnerability_scanner.py   [NEW]
+│   │   ├── grype_integration.py    # CVE scanning
+│   │   ├── syft_integration.py     # SBOM generation
+│   │   └── vulnerability_scanner.py
+│   ├── ai/                    # AI-powered analysis
+│   │   ├── llm_client.py
+│   │   ├── vulnerability_analyzer.py
+│   │   ├── prioritization.py
+│   │   └── remediation_generator.py
 │   ├── utils/                 # Utilities
-│   │   ├── report_generator.py        [NEW]
-│   │   ├── sbom_storage.py
-│   │   └── docker_utils.py
+│   │   ├── comprehensive_report.py
+│   │   ├── report_formatters.py
+│   │   └── sbom_storage.py
 │   └── cli/                   # CLI commands
-│       ├── docker.py
-│       ├── sbom.py
-│       └── cve.py
-├── examples/                  # Usage examples (15 scripts)
-│   ├── 01_basic/             # Basic examples (4)
-│   ├── 02_advanced/          # Advanced examples (4)
-│   ├── 03_vulnerability_scanning/  # Scanning examples (5)
-│   ├── 04_testing/           # Test scripts (1)
-│   └── output/               # Example outputs (kept for demos)
+│       ├── cve.py             # CVE scanning commands
+│       ├── ai.py              # AI analysis commands
+│       ├── report.py          # Reporting commands
+│       ├── sbom.py            # SBOM commands
+│       └── docker.py          # Docker commands
+├── examples/                  # Usage examples
+│   ├── 01_basic/             # Basic examples
+│   ├── 02_advanced/          # Advanced examples
+│   ├── 03_vulnerability_scanning/  # CVE scanning
+│   ├── 04_testing/           # Test scripts
+│   └── 05_reporting/         # Reporting examples
 ├── docs/                      # Documentation
-│   ├── validation/           # Test results and validation
-│   ├── reports/              # Improvement reports
-│   └── development/          # Development docs
+│   ├── validation/           # Test results
+│   ├── reports/              # Analysis reports
+│   └── development/          # Dev docs
 ├── tests/                     # Unit tests
-└── sbom_storage/             # Generated SBOMs (gitignored)
-    ├── docker/               # Docker image SBOMs
-    ├── local/                # Local project SBOMs
-    ├── comparisons/          # Image comparison results
-    └── archives/             # Historical SBOMs
+├── storage/                   # Auto-generated (gitignored)
+│   ├── cve_storage/          # CVE scan results
+│   └── ai_analysis/          # AI analysis results
+├── sbom_storage/             # SBOM files (gitignored)
+│   ├── docker/               # Docker image SBOMs
+│   ├── local/                # Local project SBOMs
+│   ├── comparisons/          # Comparison results
+│   └── archives/             # Historical SBOMs
+├── requirements.txt          # Core dependencies
+├── requirements-dev.txt      # Development dependencies
+├── requirements-ai.txt       # Optional AI dependencies
+└── pyproject.toml            # Project configuration
 ```
-
-### Generated Outputs
-
-- **`sbom_storage/`** - Auto-organized SBOM storage (git-ignored, structure preserved)
-- **`examples/output/`** - Example script outputs (kept for demonstration)
 
 ---
 
-## 🛠️ Requirements
+## 🧪 Testing
 
-- **Python:** 3.9+
-- **Docker:** Running Docker daemon
-- **Syft:** Automatically installed via pip (anchore-syft>=1.18.0)
+### Run Tests
 
-### Optional
-- **NVD API Key:** For higher rate limits (configure in `.env`)
+```bash
+# Run all tests
+pytest
+
+# Run specific test file
+pytest tests/test_docker_integration.py
+
+# Run with coverage
+pytest --cov=threat_radar --cov-report=html
+
+# Run comprehensive report tests
+pytest tests/test_comprehensive_report.py -v
+```
+
+### Run Examples
+
+```bash
+# Basic examples
+python examples/01_basic/hash_usage.py
+
+# CVE scanning examples
+python examples/03_vulnerability_scanning/demo_with_findings.py
+
+# Reporting examples
+python examples/05_reporting/01_basic_report_generation.py
+python examples/05_reporting/02_ai_powered_reports.py
+python examples/05_reporting/03_dashboard_integration.py
+```
 
 ---
 
-## 🔧 CLI Commands
+## 🎯 Common Workflows
 
-### Docker Analysis
+### Weekly Security Scan
+
 ```bash
-# Import and analyze image
-threat-radar docker import-image alpine:3.18 -o analysis.json
+#!/bin/bash
+# weekly-scan.sh - Run every Monday
 
-# List packages in image
-threat-radar docker packages ubuntu:22.04 --limit 20
+IMAGE="myapp:production"
+WEEK=$(date +%Y-W%U)
 
-# Generate Python SBOM
-threat-radar docker python-sbom python:3.11 -o sbom.json
+# 1. Scan for vulnerabilities
+threat-radar cve scan-image $IMAGE --auto-save -o scan-${WEEK}.json
+
+# 2. Generate reports
+threat-radar report generate scan-${WEEK}.json -o exec-${WEEK}.md --level executive
+threat-radar report generate scan-${WEEK}.json -o detailed-${WEEK}.html -f html
+
+# 3. AI analysis
+threat-radar ai analyze scan-${WEEK}.json --auto-save
+threat-radar ai prioritize scan-${WEEK}.json --top 10 -o priorities-${WEEK}.json
+
+# 4. Export dashboard data
+threat-radar report dashboard-export scan-${WEEK}.json -o dashboard-${WEEK}.json
 ```
 
-### SBOM Operations
-```bash
-# Generate SBOM with Syft
-threat-radar sbom generate alpine:3.18 -f cyclonedx
+### CI/CD Integration
 
-# Compare two images
-threat-radar sbom compare alpine:3.17 alpine:3.18
-```
+```yaml
+# .github/workflows/security-scan.yml
+name: Security Scan
+on: [push, pull_request]
 
-### CVE Operations
-```bash
-# Get CVE by ID
-threat-radar cve get CVE-2014-6271
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
 
-# Search CVEs
-threat-radar cve search bash --limit 20
+      - name: Install Grype
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh
+
+      - name: Build image
+        run: docker build -t app:${{ github.sha }} .
+
+      - name: Install Threat Radar
+        run: pip install -r requirements.txt
+
+      - name: Scan for vulnerabilities
+        run: |
+          threat-radar cve scan-image app:${{ github.sha }} \
+            --auto-save --cleanup -o scan.json
+
+      - name: Check for critical issues
+        run: |
+          threat-radar report generate scan.json \
+            --level critical-only -o critical.json
+
+          CRITICAL=$(jq '.summary.critical' critical.json)
+          if [ $CRITICAL -gt 0 ]; then
+            echo "❌ Found $CRITICAL critical vulnerabilities!"
+            exit 1
+          fi
 ```
 
 ---
 
 ## 📊 Performance
 
-### SBOM Generation
-- **Alpine 3.18:** ~3 seconds (15 packages)
-- **Python 3.11-slim:** ~5 seconds (97 packages)
-- **Debian 8:** ~4 seconds (111 packages)
-- **Ubuntu 14.04:** ~6 seconds (213 packages)
+### Scan Performance
+- **Alpine 3.18:** ~2-3 seconds (15 packages)
+- **Python 3.11-slim:** ~4-5 seconds (97 packages)
+- **Ubuntu 22.04:** ~5-7 seconds (200+ packages)
 
-### CVE Matching
-- **Ubuntu 14.04:** 46 CVEs scanned, 3 matches in <1 second
-- **Debian 8:** 124 CVEs scanned, 4 matches in <1 second
-- **Precision:** 100% (0 false positives)
+### Accuracy
+- **Precision:** 100% (0 false positives in validation tests)
+- **Coverage:** All package ecosystems supported by Grype/Syft
+- **Test Results:** 15/15 examples passing
 
 ---
 
-## 🧑‍💻 Development
-
-### Running Tests
-```bash
-# Run all unit tests
-pytest
-
-# Run specific test
-pytest tests/test_docker_integration.py
-
-# Run with coverage
-pytest --cov=threat_radar --cov-report=html
-```
+## 🛠️ Development
 
 ### Code Quality
+
 ```bash
 # Format code
 black threat_radar/ tests/
@@ -277,44 +516,57 @@ mypy threat_radar/
 
 # Linting
 flake8 threat_radar/
+
+# Run all quality checks
+black threat_radar/ tests/ && mypy threat_radar/ && flake8 threat_radar/
 ```
 
-### Examples
-```bash
-# Run all examples
-cd examples
-python 01_basic/hash_usage.py
-python 03_vulnerability_scanning/demo_with_findings.py
-```
+### Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests: `pytest`
+5. Submit a pull request
 
 ---
 
 ## 📝 License
 
-[Your License Here]
+MIT License - See LICENSE file for details
 
 ---
 
-## 🤝 Contributing
-
-Contributions welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
----
-
-## 📞 Support
+## 🤝 Support
 
 - **Issues:** [GitHub Issues](https://github.com/yourusername/tr-nvd/issues)
 - **Documentation:** [docs/](docs/)
 - **Examples:** [examples/](examples/)
+- **Troubleshooting:** [examples/TROUBLESHOOTING.md](examples/TROUBLESHOOTING.md)
 
 ---
 
 ## 🏆 Acknowledgments
 
-- **NVD:** NIST National Vulnerability Database
-- **Syft:** Anchore's SBOM generation tool
-- **Docker SDK:** Docker Python integration
+- **[Grype](https://github.com/anchore/grype)** - Anchore's vulnerability scanner
+- **[Syft](https://github.com/anchore/syft)** - Anchore's SBOM generation tool
+- **[NVD](https://nvd.nist.gov/)** - NIST National Vulnerability Database
+- **[Docker SDK](https://docker-py.readthedocs.io/)** - Docker Python integration
+- **[OpenAI](https://openai.com/)** - AI-powered analysis
+- **[Ollama](https://ollama.ai/)** - Local AI models
 
 ---
 
-**Status:** ✅ Production Ready | **Version:** 1.0.0 | **Last Updated:** 2025-10-06
+## 🔄 Recent Updates
+
+### Version 0.1.0 (Latest)
+✅ **Grype integration** - Fast, accurate CVE scanning
+✅ **AI-powered analysis** - OpenAI and Ollama support
+✅ **Comprehensive reporting** - Multi-format with executive summaries
+✅ **Dashboard integration** - Grafana/Prometheus compatible
+✅ **Auto-save features** - Organized storage with timestamps
+✅ **Cleanup automation** - Smart image removal after scanning
+
+---
+
+**Status:** ✅ Production Ready | **Version:** 0.1.0 | **Last Updated:** 2025-10-16
