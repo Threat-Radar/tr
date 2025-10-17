@@ -33,9 +33,15 @@ class ContainerAnalysis:
 class ContainerAnalyzer:
     """Analyzes Docker containers and extracts package information."""
 
-    def __init__(self):
-        """Initialize container analyzer."""
+    def __init__(self, syft_client=None):
+        """
+        Initialize container analyzer.
+
+        Args:
+            syft_client: Optional SyftClient instance for SBOM-based analysis
+        """
         self.docker_client = DockerClient()
+        self._syft_client = syft_client
 
     def import_container(self, image_name: str, tag: str = "latest") -> ContainerAnalysis:
         """
@@ -101,6 +107,105 @@ class ContainerAnalyzer:
         )
 
         return analysis
+
+    def analyze_container_with_sbom(
+        self,
+        image_name: str,
+        fallback_to_native: bool = True,
+        include_types: Optional[List[str]] = None
+    ) -> ContainerAnalysis:
+        """
+        Analyze container using SBOM (Syft) for comprehensive package detection.
+
+        This method uses Syft to generate an SBOM and extract packages, which
+        provides better coverage than native package managers as it can detect
+        application-level dependencies (npm, pip, go, etc.) in addition to OS packages.
+
+        Args:
+            image_name: Name or ID of the image
+            fallback_to_native: If True, fall back to native analysis if SBOM fails
+            include_types: Optional list of package types to include (e.g., ["deb", "rpm", "npm"])
+
+        Returns:
+            ContainerAnalysis object with packages from SBOM
+
+        Raises:
+            RuntimeError: If SBOM analysis fails and fallback_to_native is False
+        """
+        logger.info(f"Analyzing container using SBOM: {image_name}")
+
+        # Ensure we have a Syft client
+        if self._syft_client is None:
+            try:
+                from .syft_integration import SyftClient
+                self._syft_client = SyftClient()
+            except Exception as e:
+                error_msg = f"Failed to initialize Syft client: {e}"
+                logger.error(error_msg)
+                if fallback_to_native:
+                    logger.info("Falling back to native package manager analysis")
+                    return self.analyze_container(image_name)
+                raise RuntimeError(error_msg)
+
+        try:
+            # Generate SBOM using Syft
+            from .syft_integration import SBOMFormat
+            logger.info(f"Generating SBOM for {image_name} using Syft...")
+
+            sbom_data = self._syft_client.scan_docker_image(
+                image_name,
+                output_format=SBOMFormat.SYFT_JSON,
+                scope="squashed"
+            )
+
+            # Convert SBOM packages to Package objects
+            from .sbom_package_converter import convert_sbom_to_packages, get_package_statistics
+            packages = convert_sbom_to_packages(
+                sbom_data,
+                format="syft",
+                include_types=include_types
+            )
+
+            # Get package type statistics
+            stats = get_package_statistics(packages)
+            logger.info(f"Package types found: {stats}")
+
+            # Get basic image metadata
+            image_info = self.docker_client.inspect_image(image_name)
+
+            # Try to detect distro (for metadata, not package extraction)
+            distro, version = self._detect_distro(image_name)
+
+            # Build ContainerAnalysis result
+            analysis = ContainerAnalysis(
+                image_name=image_name,
+                image_id=image_info['Id'],
+                size=image_info.get('Size'),
+                created=image_info.get('Created'),
+                architecture=image_info.get('Architecture'),
+                os=image_info.get('Os'),
+                distro=distro,
+                distro_version=version,
+                base_image=self._get_base_image(image_info),
+                packages=packages
+            )
+
+            logger.info(
+                f"SBOM analysis complete: {len(packages)} packages extracted "
+                f"(Types: {', '.join(f'{k}={v}' for k, v in stats.items())})"
+            )
+
+            return analysis
+
+        except Exception as e:
+            error_msg = f"SBOM-based analysis failed: {e}"
+            logger.error(error_msg)
+
+            if fallback_to_native:
+                logger.info("Falling back to native package manager analysis")
+                return self.analyze_container(image_name)
+
+            raise RuntimeError(error_msg)
 
     def _detect_distro(self, image_name: str) -> Tuple[Optional[str], Optional[str]]:
         """

@@ -11,17 +11,17 @@ def get_sbom_storage_root() -> Path:
     Get the root SBOM storage directory.
 
     Returns:
-        Path to sbom_storage directory
+        Path to storage/sbom_storage directory
     """
     # Try to find project root by looking for pyproject.toml
     current = Path.cwd()
     while current != current.parent:
         if (current / "pyproject.toml").exists():
-            return current / "sbom_storage"
+            return current / "storage" / "sbom_storage"
         current = current.parent
 
     # Fallback to current directory
-    return Path.cwd() / "sbom_storage"
+    return Path.cwd() / "storage" / "sbom_storage"
 
 
 def ensure_storage_directories() -> None:

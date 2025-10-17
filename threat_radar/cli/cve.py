@@ -1,123 +1,408 @@
-"""CVE operations CLI commands."""
+"""CVE vulnerability scanning operations using Grype."""
 import typer
-from typing import List, Optional
+from typing import Optional
+from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from dataclasses import asdict
 
-from ..core.nvd_client import NVDClient
-from ..core.cve_database import CVEDatabase
-from ..core.cve_matcher import CVEMatcher
-from ..core.container_analyzer import ContainerAnalyzer
-from ..utils import docker_analyzer, save_json, handle_cli_error
+from ..core.grype_integration import GrypeClient, GrypeSeverity, GrypeOutputFormat
+from ..utils import save_json, handle_cli_error, ScanCleanupContext, get_cve_storage
 
-app = typer.Typer(help="CVE vulnerability operations")
+app = typer.Typer(help="CVE vulnerability scanning operations")
 console = Console()
 
 
-@app.command("get")
-def get_cve(
-    cve_ids: List[str] = typer.Argument(..., help="CVE IDs to retrieve (e.g., CVE-2021-44228)"),
+@app.command("scan-image")
+def scan_docker_image(
+    image: str = typer.Argument(..., help="Docker image to scan (e.g., alpine:3.18, python:3.11)"),
+    severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Filter by minimum severity (LOW, MEDIUM, HIGH, CRITICAL)"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
-    no_cache: bool = typer.Option(False, "--no-cache", help="Bypass cache and fetch from NVD"),
+    only_fixed: bool = typer.Option(False, "--only-fixed", help="Only show vulnerabilities with fixes available"),
+    fail_on: Optional[str] = typer.Option(None, "--fail-on", help="Exit with error if vulnerabilities of this severity or higher are found"),
+    scope: str = typer.Option("squashed", "--scope", help="Scope for Docker images (squashed, all-layers)"),
+    cleanup: bool = typer.Option(False, "--cleanup", help="Remove Docker image after scan (only if pulled during this scan)"),
+    auto_save: bool = typer.Option(False, "--auto-save", "--as", help="Automatically save results to storage/cve_storage/ directory"),
 ):
     """
-    Retrieve specific CVEs by ID.
+    Scan Docker image for CVE vulnerabilities using Grype.
 
-    Fetches CVE details from NVD API or local cache.
+    Grype analyzes Docker images and identifies known vulnerabilities in packages.
+    It uses an automatically updated vulnerability database that includes CVE data
+    from NVD, Linux distribution security databases, and more.
+
+    The --cleanup flag automatically removes the Docker image after scanning, but only
+    if the image was pulled during this scan. Pre-existing images are never deleted.
+
+    The --auto-save flag automatically saves results to ./storage/cve_storage/ directory with
+    timestamped filenames. This is useful for keeping a history of scan results.
+
+    Examples:
+        threat-radar cve scan-image alpine:3.18
+        threat-radar cve scan-image python:3.11 --severity HIGH
+        threat-radar cve scan-image ubuntu:22.04 --only-fixed -o results.json
+        threat-radar cve scan-image nginx:latest --cleanup  # Remove after scan
+        threat-radar cve scan-image myapp:latest --auto-save  # Auto-save to storage/cve_storage/
+        threat-radar cve scan-image myapp:latest --as --cleanup  # Both features
     """
-    with handle_cli_error("retrieving CVEs", console):
-        client = NVDClient()
+    with handle_cli_error("scanning image", console):
+        # Use cleanup context to manage Docker image lifecycle
+        with ScanCleanupContext(image, cleanup=cleanup):
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=console,
+            ) as progress:
+                task = progress.add_task(f"Scanning {image} with Grype...", total=None)
 
-        results = []
-        for cve_id in cve_ids:
-            console.print(f"\n[cyan]Fetching {cve_id}...[/cyan]")
+                # Initialize Grype client
+                grype = GrypeClient()
 
-            cve = client.get_cve_by_id(cve_id, use_cache=not no_cache)
+                # Parse fail-on severity if provided
+                fail_on_severity = None
+                if fail_on:
+                    try:
+                        fail_on_severity = GrypeSeverity(fail_on.lower())
+                    except ValueError:
+                        console.print(f"[red]Invalid severity: {fail_on}. Use: NEGLIGIBLE, LOW, MEDIUM, HIGH, CRITICAL[/red]")
+                        return
 
-            if cve:
-                _display_cve(cve)
-                results.append(asdict(cve))
-            else:
-                console.print(f"[yellow]CVE {cve_id} not found[/yellow]")
+                # Run scan
+                result = grype.scan_docker_image(
+                    image,
+                    output_format=GrypeOutputFormat.JSON,
+                    scope=scope,
+                    fail_on_severity=fail_on_severity
+                )
 
-        client.close()
+                progress.update(task, completed=True, description="Scan complete!")
 
-        # Save to file if requested
-        if output and results:
-            save_json({"cves": results, "count": len(results)}, output, console)
+            if cleanup:
+                console.print(f"[dim]Cleanup: Image will be removed if it was pulled during scan[/dim]")
 
+        # Filter by severity if requested
+        if severity:
+            try:
+                min_severity = GrypeSeverity(severity.lower())
+                result = result.filter_by_severity(min_severity)
+            except ValueError:
+                console.print(f"[red]Invalid severity: {severity}. Use: NEGLIGIBLE, LOW, MEDIUM, HIGH, CRITICAL[/red]")
+                return
 
-@app.command("search")
-def search_cves(
-    keyword: Optional[str] = typer.Option(None, "--keyword", "-k", help="Search keyword"),
-    cpe: Optional[str] = typer.Option(None, "--cpe", help="CPE name to search"),
-    severity: Optional[str] = typer.Option(None, "--severity", "-s", help="CVSS severity (LOW, MEDIUM, HIGH, CRITICAL)"),
-    days: Optional[int] = typer.Option(None, "--days", "-d", help="CVEs modified in last N days"),
-    limit: int = typer.Option(20, "--limit", "-n", help="Maximum results to return"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
-):
-    """
-    Search for CVEs using various filters.
+        # Filter by only-fixed if requested
+        if only_fixed:
+            result.vulnerabilities = [v for v in result.vulnerabilities if v.fixed_in_version]
+            result.total_count = len(result.vulnerabilities)
+            result.__post_init__()  # Recalculate counts
 
-    Search the NVD database by keyword, CPE, severity, or modification date.
-    """
-    with handle_cli_error("searching CVEs", console):
-        client = NVDClient()
+        # Prepare output data (used for both --output and --auto-save)
+        output_data = {
+            "target": result.target,
+            "total_vulnerabilities": result.total_count,
+            "severity_counts": result.severity_counts,
+            "vulnerabilities": [
+                {
+                    "id": v.id,
+                    "severity": v.severity,
+                    "package": f"{v.package_name}@{v.package_version}",
+                    "package_type": v.package_type,
+                    "fixed_in": v.fixed_in_version,
+                    "description": v.description,
+                    "cvss_score": v.cvss_score,
+                    "urls": v.urls
+                }
+                for v in result.vulnerabilities
+            ],
+            "scan_metadata": result.scan_metadata
+        }
 
-        console.print("\n[cyan]Searching NVD database...[/cyan]")
-
-        if days:
-            cves = client.get_recent_cves(days=days)
+        # Display results
+        if not result.vulnerabilities:
+            console.print(f"\n[green]✓ No vulnerabilities found in {image}![/green]")
         else:
-            from datetime import datetime, timedelta
-            cves = client.search_cves(
-                keyword=keyword,
-                cpe_name=cpe,
-                cvss_severity=severity,
-                results_per_page=limit
-            )
+            console.print(f"\n[red]⚠ Found {result.total_count} vulnerabilities in {image}:[/red]\n")
 
-        if not cves:
-            console.print("[yellow]No CVEs found matching criteria[/yellow]")
-            client.close()
-            return
+            # Display severity breakdown
+            _display_severity_summary(result.severity_counts)
 
-        # Display results in table
-        table = Table(title=f"CVE Search Results ({len(cves)} found)")
-        table.add_column("CVE ID", style="cyan", no_wrap=True)
-        table.add_column("Severity", style="red")
-        table.add_column("CVSS", style="yellow")
-        table.add_column("Description", style="white")
+            # Display detailed vulnerability table
+            _display_vulnerability_table(result.vulnerabilities, limit=20)
 
-        for cve in cves[:limit]:
-            severity_color = _get_severity_color(cve.severity)
-            table.add_row(
-                cve.cve_id,
-                f"[{severity_color}]{cve.severity or 'N/A'}[/{severity_color}]",
-                f"{cve.cvss_score or 'N/A'}",
-                cve.description[:80] + "..." if len(cve.description) > 80 else cve.description
-            )
-
-        console.print(table)
-        client.close()
-
-        # Save to file if requested
+        # Save to file if --output specified
         if output:
-            results = [asdict(cve) for cve in cves]
-            save_json({"cves": results, "count": len(results)}, output, console)
+            save_json(output_data, output, console)
+
+        # Auto-save to cve_storage if --auto-save specified
+        if auto_save:
+            storage = get_cve_storage()
+            saved_path = storage.save_report(output_data, image, scan_type="image")
+            console.print(f"\n[green]💾 Auto-saved to: {saved_path}[/green]")
 
 
-@app.command("update")
-def update_database(
-    days: int = typer.Option(7, "--days", "-d", help="Number of days to look back"),
-    force: bool = typer.Option(False, "--force", "-f", help="Force update even if recently updated"),
+@app.command("scan-sbom")
+def scan_sbom_file(
+    sbom_path: Path = typer.Argument(..., exists=True, help="Path to SBOM file (CycloneDX, SPDX, or Syft JSON)"),
+    severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Filter by minimum severity (LOW, MEDIUM, HIGH, CRITICAL)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
+    only_fixed: bool = typer.Option(False, "--only-fixed", help="Only show vulnerabilities with fixes available"),
+    fail_on: Optional[str] = typer.Option(None, "--fail-on", help="Exit with error if vulnerabilities of this severity or higher are found"),
+    cleanup: bool = typer.Option(False, "--cleanup", help="Remove source Docker image after scan (if SBOM was from Docker image)"),
+    image: Optional[str] = typer.Option(None, "--image", help="Specify source Docker image name for cleanup (e.g., alpine:3.18)"),
+    auto_save: bool = typer.Option(False, "--auto-save", "--as", help="Automatically save results to storage/cve_storage/ directory"),
 ):
     """
-    Update local CVE database from NVD.
+    Scan a pre-generated SBOM file for CVE vulnerabilities using Grype.
 
-    Downloads recent CVEs and stores them locally for faster searching.
+    Supports CycloneDX JSON, SPDX JSON, and Syft JSON formats.
+    Perfect for CI/CD pipelines where SBOMs are already generated.
+
+    The --cleanup flag removes the source Docker image after scanning, but only works
+    if you specify the --image flag or if the SBOM metadata contains image information.
+    Pre-existing images are never deleted.
+
+    The --auto-save flag automatically saves results to ./storage/cve_storage/ directory with
+    timestamped filenames.
+
+    Examples:
+        threat-radar cve scan-sbom my-app-sbom.json
+        threat-radar cve scan-sbom docker-sbom.json --severity HIGH
+        threat-radar cve scan-sbom sbom.json --only-fixed -o results.json
+        threat-radar cve scan-sbom sbom.json --cleanup --image alpine:3.18
+        threat-radar cve scan-sbom sbom.json --auto-save  # Auto-save to storage/cve_storage/
+    """
+    with handle_cli_error("scanning SBOM", console):
+        # Determine if we should cleanup and what image to cleanup
+        cleanup_image = None
+        if cleanup and image:
+            cleanup_image = image
+        elif cleanup:
+            console.print("[yellow]Warning: --cleanup specified but no --image provided. Skipping cleanup.[/yellow]")
+
+        # Use cleanup context if we have an image to cleanup
+        cleanup_ctx = ScanCleanupContext(cleanup_image, cleanup=cleanup) if cleanup_image else None
+
+        try:
+            if cleanup_ctx:
+                cleanup_ctx.__enter__()
+
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=console,
+            ) as progress:
+                task = progress.add_task(f"Scanning SBOM {sbom_path.name} with Grype...", total=None)
+
+                # Initialize Grype client
+                grype = GrypeClient()
+
+                # Parse fail-on severity if provided
+                fail_on_severity = None
+                if fail_on:
+                    try:
+                        fail_on_severity = GrypeSeverity(fail_on.lower())
+                    except ValueError:
+                        console.print(f"[red]Invalid severity: {fail_on}. Use: NEGLIGIBLE, LOW, MEDIUM, HIGH, CRITICAL[/red]")
+                        return
+
+                # Run scan
+                result = grype.scan_sbom(
+                    sbom_path,
+                    output_format=GrypeOutputFormat.JSON,
+                    fail_on_severity=fail_on_severity
+                )
+
+                progress.update(task, completed=True, description="Scan complete!")
+
+            if cleanup_image:
+                console.print(f"[dim]Cleanup: Image {cleanup_image} will be removed if it was pulled during scan[/dim]")
+
+        finally:
+            if cleanup_ctx:
+                cleanup_ctx.__exit__(None, None, None)
+
+        # Filter by severity if requested
+        if severity:
+            try:
+                min_severity = GrypeSeverity(severity.lower())
+                result = result.filter_by_severity(min_severity)
+            except ValueError:
+                console.print(f"[red]Invalid severity: {severity}. Use: NEGLIGIBLE, LOW, MEDIUM, HIGH, CRITICAL[/red]")
+                return
+
+        # Filter by only-fixed if requested
+        if only_fixed:
+            result.vulnerabilities = [v for v in result.vulnerabilities if v.fixed_in_version]
+            result.total_count = len(result.vulnerabilities)
+            result.__post_init__()  # Recalculate counts
+
+        # Prepare output data (used for both --output and --auto-save)
+        output_data = {
+            "sbom_file": str(sbom_path),
+            "total_vulnerabilities": result.total_count,
+            "severity_counts": result.severity_counts,
+            "vulnerabilities": [
+                {
+                    "id": v.id,
+                    "severity": v.severity,
+                    "package": f"{v.package_name}@{v.package_version}",
+                    "package_type": v.package_type,
+                    "fixed_in": v.fixed_in_version,
+                    "description": v.description,
+                    "cvss_score": v.cvss_score,
+                    "urls": v.urls
+                }
+                for v in result.vulnerabilities
+            ],
+            "scan_metadata": result.scan_metadata
+        }
+
+        # Display results
+        if not result.vulnerabilities:
+            console.print(f"\n[green]✓ No vulnerabilities found in {sbom_path.name}![/green]")
+        else:
+            console.print(f"\n[red]⚠ Found {result.total_count} vulnerabilities in SBOM:[/red]\n")
+
+            # Display severity breakdown
+            _display_severity_summary(result.severity_counts)
+
+            # Display detailed vulnerability table
+            _display_vulnerability_table(result.vulnerabilities, limit=20)
+
+        # Save to file if --output specified
+        if output:
+            save_json(output_data, output, console)
+
+        # Auto-save to cve_storage if --auto-save specified
+        if auto_save:
+            storage = get_cve_storage()
+            target_name = sbom_path.stem  # Use filename without extension
+            saved_path = storage.save_report(output_data, target_name, scan_type="sbom")
+            console.print(f"\n[green]💾 Auto-saved to: {saved_path}[/green]")
+
+
+@app.command("scan-directory")
+def scan_directory(
+    directory: Path = typer.Argument(..., exists=True, help="Path to directory to scan"),
+    severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Filter by minimum severity (LOW, MEDIUM, HIGH, CRITICAL)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
+    only_fixed: bool = typer.Option(False, "--only-fixed", help="Only show vulnerabilities with fixes available"),
+    fail_on: Optional[str] = typer.Option(None, "--fail-on", help="Exit with error if vulnerabilities of this severity or higher are found"),
+    auto_save: bool = typer.Option(False, "--auto-save", "--as", help="Automatically save results to storage/cve_storage/ directory"),
+):
+    """
+    Scan a local directory for CVE vulnerabilities using Grype.
+
+    Grype will analyze files in the directory and identify vulnerabilities in
+    detected packages (e.g., package-lock.json, requirements.txt, go.mod, etc.).
+
+    The --auto-save flag automatically saves results to ./storage/cve_storage/ directory with
+    timestamped filenames.
+
+    Examples:
+        threat-radar cve scan-directory ./my-app
+        threat-radar cve scan-directory /path/to/project --severity MEDIUM
+        threat-radar cve scan-directory . --only-fixed -o results.json
+        threat-radar cve scan-directory ./src --auto-save  # Auto-save to storage/cve_storage/
+    """
+    with handle_cli_error("scanning directory", console):
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task(f"Scanning directory with Grype...", total=None)
+
+            # Initialize Grype client
+            grype = GrypeClient()
+
+            # Parse fail-on severity if provided
+            fail_on_severity = None
+            if fail_on:
+                try:
+                    fail_on_severity = GrypeSeverity(fail_on.lower())
+                except ValueError:
+                    console.print(f"[red]Invalid severity: {fail_on}. Use: NEGLIGIBLE, LOW, MEDIUM, HIGH, CRITICAL[/red]")
+                    return
+
+            # Run scan
+            result = grype.scan_directory(
+                directory,
+                output_format=GrypeOutputFormat.JSON,
+                fail_on_severity=fail_on_severity
+            )
+
+            progress.update(task, completed=True, description="Scan complete!")
+
+        # Filter by severity if requested
+        if severity:
+            try:
+                min_severity = GrypeSeverity(severity.lower())
+                result = result.filter_by_severity(min_severity)
+            except ValueError:
+                console.print(f"[red]Invalid severity: {severity}. Use: NEGLIGIBLE, LOW, MEDIUM, HIGH, CRITICAL[/red]")
+                return
+
+        # Filter by only-fixed if requested
+        if only_fixed:
+            result.vulnerabilities = [v for v in result.vulnerabilities if v.fixed_in_version]
+            result.total_count = len(result.vulnerabilities)
+            result.__post_init__()  # Recalculate counts
+
+        # Prepare output data (used for both --output and --auto-save)
+        output_data = {
+            "directory": str(directory),
+            "total_vulnerabilities": result.total_count,
+            "severity_counts": result.severity_counts,
+            "vulnerabilities": [
+                {
+                    "id": v.id,
+                    "severity": v.severity,
+                    "package": f"{v.package_name}@{v.package_version}",
+                    "package_type": v.package_type,
+                    "fixed_in": v.fixed_in_version,
+                    "description": v.description,
+                    "cvss_score": v.cvss_score,
+                    "urls": v.urls
+                }
+                for v in result.vulnerabilities
+            ],
+            "scan_metadata": result.scan_metadata
+        }
+
+        # Display results
+        if not result.vulnerabilities:
+            console.print(f"\n[green]✓ No vulnerabilities found in {directory}![/green]")
+        else:
+            console.print(f"\n[red]⚠ Found {result.total_count} vulnerabilities:[/red]\n")
+
+            # Display severity breakdown
+            _display_severity_summary(result.severity_counts)
+
+            # Display detailed vulnerability table
+            _display_vulnerability_table(result.vulnerabilities, limit=20)
+
+        # Save to file if --output specified
+        if output:
+            save_json(output_data, output, console)
+
+        # Auto-save to cve_storage if --auto-save specified
+        if auto_save:
+            storage = get_cve_storage()
+            target_name = directory.name if directory.name != "." else "current_dir"
+            saved_path = storage.save_report(output_data, target_name, scan_type="directory")
+            console.print(f"\n[green]💾 Auto-saved to: {saved_path}[/green]")
+
+
+@app.command("db-update")
+def update_database():
+    """
+    Update Grype vulnerability database.
+
+    Downloads the latest vulnerability data from Grype's sources.
+    This is typically done automatically, but can be forced manually.
+
+    Example:
+        threat-radar cve db-update
     """
     with handle_cli_error("updating database", console):
         with Progress(
@@ -125,303 +410,119 @@ def update_database(
             TextColumn("[progress.description]{task.description}"),
             console=console,
         ) as progress:
-            task = progress.add_task(f"Updating CVE database (last {days} days)...", total=None)
+            task = progress.add_task("Updating Grype vulnerability database...", total=None)
 
-            db = CVEDatabase()
-            count = db.update_from_nvd(days=days, force=force)
+            grype = GrypeClient()
+            grype.update_database()
 
-            progress.update(task, completed=True, description="Update complete!")
+            progress.update(task, completed=True, description="Database updated!")
 
-            console.print(f"\n[green]✓ Updated {count} CVEs in local database[/green]")
-
-            # Show database stats
-            stats = db.get_stats()
-            console.print(f"\n[bold]Database Statistics:[/bold]")
-            console.print(f"  Total CVEs: {stats['total_cves']}")
-            console.print(f"  Last Update: {stats.get('last_update', 'Never')}")
-
-            if stats.get('by_severity'):
-                console.print(f"\n[bold]By Severity:[/bold]")
-                for severity, count in sorted(stats['by_severity'].items()):
-                    color = _get_severity_color(severity)
-                    console.print(f"  [{color}]{severity}[/{color}]: {count}")
-
-            db.close()
+        console.print("[green]✓ Grype vulnerability database updated successfully[/green]")
 
 
-@app.command("db-search")
-def search_local(
-    keyword: Optional[str] = typer.Option(None, "--keyword", "-k", help="Search keyword in description"),
-    severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Filter by severity"),
-    min_cvss: Optional[float] = typer.Option(None, "--min-cvss", help="Minimum CVSS score"),
-    limit: int = typer.Option(20, "--limit", "-n", help="Maximum results"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
-):
+@app.command("db-status")
+def database_status():
     """
-    Search local CVE database (faster than NVD API).
+    Show Grype vulnerability database status.
 
-    Queries the local database built with 'cve update' command.
+    Displays information about the current Grype database.
+
+    Example:
+        threat-radar cve db-status
     """
-    with handle_cli_error("searching local database", console):
-        db = CVEDatabase()
+    with handle_cli_error("fetching database status", console):
+        grype = GrypeClient()
+        status = grype.get_db_status()
 
-        console.print("\n[cyan]Searching local database...[/cyan]")
+        console.print("\n[bold cyan]Grype Vulnerability Database Status[/bold cyan]\n")
 
-        cves = db.search_cves(
-            severity=severity,
-            min_cvss_score=min_cvss,
-            keyword=keyword,
-            limit=limit
-        )
-
-        if not cves:
-            console.print("[yellow]No CVEs found in local database[/yellow]")
-            console.print("[dim]Tip: Run 'threat-radar cve update' to populate the database[/dim]")
-            db.close()
-            return
-
-        # Display results
-        table = Table(title=f"Local Database Results ({len(cves)} found)")
-        table.add_column("CVE ID", style="cyan", no_wrap=True)
-        table.add_column("Severity", style="red")
-        table.add_column("CVSS", style="yellow")
-        table.add_column("Published", style="blue")
-        table.add_column("Description", style="white")
-
-        for cve in cves:
-            severity_color = _get_severity_color(cve.severity)
-            published = cve.published_date[:10] if cve.published_date else "N/A"
-            table.add_row(
-                cve.cve_id,
-                f"[{severity_color}]{cve.severity or 'N/A'}[/{severity_color}]",
-                f"{cve.cvss_score or 'N/A'}",
-                published,
-                cve.description[:60] + "..." if len(cve.description) > 60 else cve.description
-            )
-
-        console.print(table)
-        db.close()
-
-        # Save to file if requested
-        if output:
-            results = [asdict(cve) for cve in cves]
-            save_json({"cves": results, "count": len(results)}, output, console)
-
-
-@app.command("scan-image")
-def scan_docker_image(
-    image: str = typer.Argument(..., help="Docker image to scan"),
-    severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Filter by minimum severity"),
-    confidence: float = typer.Option(0.7, "--confidence", "-c", help="Minimum confidence threshold (0.0-1.0)"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
-):
-    """
-    Scan Docker image for CVE vulnerabilities.
-
-    Analyzes packages in a Docker image and matches them against CVE database.
-    """
-    with handle_cli_error("scanning image", console):
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console,
-        ) as progress:
-            # Analyze container
-            task1 = progress.add_task(f"Analyzing {image}...", total=None)
-
-            with docker_analyzer() as analyzer:
-                analysis = analyzer.analyze_container(image)
-                progress.update(task1, completed=True, description="Analysis complete!")
-
-                if not analysis.packages:
-                    console.print(f"[yellow]No packages found in {image}[/yellow]")
-                    return
-
-                console.print(f"\n[bold]Found {len(analysis.packages)} packages[/bold]")
-
-            # Update CVE database
-            task2 = progress.add_task("Updating CVE database...", total=None)
-            db = CVEDatabase()
-            db.update_from_nvd(days=30, force=False)
-            progress.update(task2, completed=True, description="Database ready!")
-
-            # Get recent CVEs
-            task3 = progress.add_task("Fetching CVEs...", total=None)
-            cves = db.search_cves(severity=severity, limit=5000)
-            progress.update(task3, completed=True, description=f"Loaded {len(cves)} CVEs!")
-
-            # Match packages against CVEs
-            task4 = progress.add_task("Matching vulnerabilities...", total=None)
-            matcher = CVEMatcher(min_confidence=confidence)
-            matches = matcher.bulk_match_packages(analysis.packages, cves)
-            progress.update(task4, completed=True, description="Matching complete!")
-
-        # Display results
-        if not matches:
-            console.print("\n[green]✓ No vulnerabilities found![/green]")
-            db.close()
-            return
-
-        console.print(f"\n[red]⚠ Found vulnerabilities in {len(matches)} packages:[/red]\n")
-
-        for package_name, package_matches in matches.items():
-            console.print(f"\n[bold yellow]{package_name}[/bold yellow]")
-
-            for match in package_matches[:3]:  # Show top 3 matches per package
-                severity_color = _get_severity_color(match.cve.severity)
-                console.print(f"  [{severity_color}]● {match.cve.cve_id}[/{severity_color}] "
-                             f"(Confidence: {match.confidence:.0%})")
-                console.print(f"    Severity: [{severity_color}]{match.cve.severity or 'N/A'}[/{severity_color}] "
-                             f"| CVSS: {match.cve.cvss_score or 'N/A'}")
-                console.print(f"    {match.match_reason}")
-
-        # Summary
-        total_vulns = sum(len(m) for m in matches.values())
-        console.print(f"\n[bold]Summary:[/bold]")
-        console.print(f"  Vulnerable packages: {len(matches)}")
-        console.print(f"  Total vulnerabilities: {total_vulns}")
-
-        db.close()
-
-        # Save to file if requested
-        if output:
-            results = {
-                "image": image,
-                "total_packages": len(analysis.packages),
-                "vulnerable_packages": len(matches),
-                "matches": {
-                    pkg: [{"cve_id": m.cve.cve_id, "confidence": m.confidence,
-                          "severity": m.cve.severity, "cvss_score": m.cve.cvss_score}
-                         for m in match_list]
-                    for pkg, match_list in matches.items()
-                }
-            }
-            save_json(results, output, console)
-
-
-@app.command("stats")
-def database_stats():
-    """
-    Show local CVE database statistics.
-
-    Displays information about the local CVE database.
-    """
-    with handle_cli_error("fetching stats", console):
-        db = CVEDatabase()
-        stats = db.get_stats()
-
-        console.print("\n[bold cyan]CVE Database Statistics[/bold cyan]\n")
-
-        # Basic stats
+        # Display status information
         info_table = Table(show_header=False, box=None)
         info_table.add_column("Property", style="yellow")
         info_table.add_column("Value", style="white")
 
-        info_table.add_row("Total CVEs", str(stats['total_cves']))
-        info_table.add_row("Last Update", str(stats.get('last_update', 'Never')))
-
-        if stats.get('date_range'):
-            info_table.add_row("Earliest CVE", stats['date_range']['earliest'] or 'N/A')
-            info_table.add_row("Latest CVE", stats['date_range']['latest'] or 'N/A')
+        for key, value in status.items():
+            # Format key to be more readable
+            readable_key = key.replace('_', ' ').title()
+            info_table.add_row(readable_key, str(value))
 
         console.print(info_table)
 
-        # Severity breakdown
-        if stats.get('by_severity'):
-            console.print("\n[bold]CVEs by Severity:[/bold]")
-            severity_table = Table()
-            severity_table.add_column("Severity", style="cyan")
-            severity_table.add_column("Count", style="green", justify="right")
-            severity_table.add_column("Percentage", style="magenta", justify="right")
 
-            total = stats['total_cves']
-            for severity in ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']:
-                count = stats['by_severity'].get(severity, 0)
-                percentage = (count / total * 100) if total > 0 else 0
-                color = _get_severity_color(severity)
+def _display_severity_summary(severity_counts: dict) -> None:
+    """Display severity breakdown summary."""
+    console.print("[bold]Severity Breakdown:[/bold]")
 
-                severity_table.add_row(
-                    f"[{color}]{severity}[/{color}]",
-                    f"{count:,}",
-                    f"{percentage:.1f}%"
-                )
+    summary_table = Table(show_header=False, box=None)
+    summary_table.add_column("Severity", style="cyan")
+    summary_table.add_column("Count", style="white", justify="right")
 
-            console.print(severity_table)
+    # Display in order: Critical -> High -> Medium -> Low -> Negligible
+    severity_order = ["critical", "high", "medium", "low", "negligible"]
 
-        db.close()
+    for severity in severity_order:
+        count = severity_counts.get(severity, 0)
+        if count > 0:
+            color = _get_severity_color(severity)
+            summary_table.add_row(
+                f"[{color}]{severity.upper()}[/{color}]",
+                f"{count}"
+            )
 
-
-@app.command("clear-cache")
-def clear_cache(
-    days: Optional[int] = typer.Option(None, "--older-than", help="Clear cache older than N days"),
-    confirm: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation"),
-):
-    """
-    Clear CVE cache.
-
-    Removes cached CVE data to free up space or force fresh downloads.
-    """
-    with handle_cli_error("clearing cache", console):
-        if not confirm:
-            if days:
-                message = f"Clear cache entries older than {days} days?"
-            else:
-                message = "Clear ALL cache entries?"
-
-            if not typer.confirm(message):
-                console.print("[yellow]Cancelled[/yellow]")
-                return
-
-        client = NVDClient()
-        removed = client.clear_cache(older_than_days=days)
-        client.close()
-
-        console.print(f"[green]✓ Removed {removed} cached files[/green]")
+    console.print(summary_table)
+    console.print()
 
 
-def _display_cve(cve) -> None:
-    """Display detailed CVE information."""
-    console.print(f"\n[bold cyan]{cve.cve_id}[/bold cyan]")
+def _display_vulnerability_table(vulnerabilities: list, limit: int = 20) -> None:
+    """Display detailed vulnerability table."""
+    console.print(f"[bold]Vulnerabilities (showing top {min(len(vulnerabilities), limit)}):[/bold]\n")
 
-    # Basic info
-    info_table = Table(show_header=False, box=None)
-    info_table.add_column("Property", style="yellow")
-    info_table.add_column("Value", style="white")
+    table = Table()
+    table.add_column("CVE ID", style="cyan", no_wrap=True)
+    table.add_column("Severity", style="red")
+    table.add_column("Package", style="yellow")
+    table.add_column("Installed", style="white")
+    table.add_column("Fixed In", style="green")
+    table.add_column("CVSS", style="magenta", justify="right")
 
-    severity_color = _get_severity_color(cve.severity)
-    info_table.add_row("Severity", f"[{severity_color}]{cve.severity or 'N/A'}[/{severity_color}]")
-    info_table.add_row("CVSS Score", str(cve.cvss_score or 'N/A'))
-    info_table.add_row("Published", cve.published_date[:10] if cve.published_date else 'N/A')
-    info_table.add_row("Modified", cve.last_modified_date[:10] if cve.last_modified_date else 'N/A')
+    # Sort by severity (critical first) then by CVSS score
+    severity_priority = {"critical": 0, "high": 1, "medium": 2, "low": 3, "negligible": 4}
 
-    if cve.cwe_ids:
-        info_table.add_row("CWE IDs", ", ".join(cve.cwe_ids))
+    sorted_vulns = sorted(
+        vulnerabilities,
+        key=lambda v: (
+            severity_priority.get(v.severity.lower(), 5),
+            -(v.cvss_score or 0)
+        )
+    )
 
-    console.print(info_table)
+    for vuln in sorted_vulns[:limit]:
+        severity_color = _get_severity_color(vuln.severity)
+        fixed_version = vuln.fixed_in_version or "No fix"
 
-    # Description
-    console.print(f"\n[bold]Description:[/bold]")
-    console.print(cve.description)
+        table.add_row(
+            vuln.id,
+            f"[{severity_color}]{vuln.severity.upper()}[/{severity_color}]",
+            vuln.package_name,
+            vuln.package_version,
+            fixed_version,
+            f"{vuln.cvss_score:.1f}" if vuln.cvss_score else "N/A"
+        )
 
-    # Affected products
-    if cve.affected_products:
-        console.print(f"\n[bold]Affected Products:[/bold] ({len(cve.affected_products)} entries)")
-        for product in cve.affected_products[:5]:
-            console.print(f"  • {product.get('cpe23Uri', 'N/A')}")
-        if len(cve.affected_products) > 5:
-            console.print(f"  ... and {len(cve.affected_products) - 5} more")
+    console.print(table)
+
+    if len(vulnerabilities) > limit:
+        console.print(f"\n[dim]... and {len(vulnerabilities) - limit} more vulnerabilities[/dim]")
 
 
-def _get_severity_color(severity: Optional[str]) -> str:
+def _get_severity_color(severity: str) -> str:
     """Get color for severity level."""
-    if not severity:
-        return "white"
-
-    severity = severity.upper()
+    severity = severity.lower()
     colors = {
-        "CRITICAL": "red bold",
-        "HIGH": "red",
-        "MEDIUM": "yellow",
-        "LOW": "green",
+        "critical": "red bold",
+        "high": "red",
+        "medium": "yellow",
+        "low": "blue",
+        "negligible": "green",
     }
     return colors.get(severity, "white")
