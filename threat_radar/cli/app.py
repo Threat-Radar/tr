@@ -1,5 +1,5 @@
 import typer
-from . import cve as cve_cmd, sbom, enrich, config, hash, docker, ai
+from . import cve as cve_cmd, sbom, enrich, config, hash, docker, ai, report
 
 app = typer.Typer(help="threat: mock CLI (commands only)")
 
@@ -11,6 +11,7 @@ app.add_typer(config.app, name="config")
 app.add_typer(hash.app, name="hash")
 app.add_typer(docker.app, name="docker")
 app.add_typer(ai.app, name="ai")
+app.add_typer(report.app, name="report")
 
 def main() -> None:
     app()

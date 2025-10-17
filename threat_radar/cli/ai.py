@@ -83,7 +83,7 @@ def load_cve_results(file_path: str) -> GrypeScanResult:
 def analyze_vulnerabilities(
     cve_results: str = typer.Argument(..., help="Path to CVE scan results JSON file"),
     provider: Optional[str] = typer.Option(None, "--provider", "-p", help="AI provider (openai, ollama)"),
-    model: Optional[str] = typer.Option(None, "--model", "-m", help="Model name (e.g., gpt-4, llama2)"),
+    model: Optional[str] = typer.Option(None, "--model", "-m", help="Model name (e.g., gpt-4o, llama2)"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Save analysis to JSON file"),
     auto_save: bool = typer.Option(False, "--auto-save", "--as", help="Auto-save to storage/ai_analysis/"),
 ):
@@ -180,7 +180,7 @@ def analyze_vulnerabilities(
 def prioritize_vulnerabilities(
     cve_results: str = typer.Argument(..., help="Path to CVE scan results JSON file"),
     provider: Optional[str] = typer.Option(None, "--provider", "-p", help="AI provider (openai, ollama)"),
-    model: Optional[str] = typer.Option(None, "--model", "-m", help="Model name (e.g., gpt-4, llama2)"),
+    model: Optional[str] = typer.Option(None, "--model", "-m", help="Model name (e.g., gpt-4o, llama2)"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Save prioritized list to JSON file"),
     auto_save: bool = typer.Option(False, "--auto-save", "--as", help="Auto-save to storage/ai_analysis/"),
     top_n: int = typer.Option(10, "--top", "-n", help="Show top N priorities"),
@@ -286,7 +286,7 @@ def prioritize_vulnerabilities(
 def generate_remediation(
     cve_results: str = typer.Argument(..., help="Path to CVE scan results JSON file"),
     provider: Optional[str] = typer.Option(None, "--provider", "-p", help="AI provider (openai, ollama)"),
-    model: Optional[str] = typer.Option(None, "--model", "-m", help="Model name (e.g., gpt-4, llama2)"),
+    model: Optional[str] = typer.Option(None, "--model", "-m", help="Model name (e.g., gpt-4o, llama2)"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Save remediation plan to JSON file"),
     auto_save: bool = typer.Option(False, "--auto-save", "--as", help="Auto-save to storage/ai_analysis/"),
     show_commands: bool = typer.Option(True, "--show-commands/--no-commands", help="Display upgrade commands"),

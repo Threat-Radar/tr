@@ -13,6 +13,19 @@ from .docker_cleanup import DockerImageCleanup, ScanCleanupContext
 from .cve_storage import CVEStorageManager, get_cve_storage
 from .ai_storage import AIAnalysisManager, get_ai_storage
 
+from .comprehensive_report import ComprehensiveReportGenerator
+from .report_templates import (
+    ComprehensiveReport,
+    VulnerabilitySummary,
+    VulnerabilityFinding,
+    PackageVulnerabilities,
+    ExecutiveSummary,
+    DashboardData,
+    ReportLevel,
+    ReportFormat,
+)
+from .report_formatters import get_formatter, JSONFormatter, MarkdownFormatter, HTMLFormatter
+
 __all__ = [
     "Hasher",
     "docker_analyzer",
@@ -29,4 +42,17 @@ __all__ = [
     "get_cve_storage",
     "AIAnalysisManager",
     "get_ai_storage",
+    "ComprehensiveReportGenerator",
+    "ComprehensiveReport",
+    "VulnerabilitySummary",
+    "VulnerabilityFinding",
+    "PackageVulnerabilities",
+    "ExecutiveSummary",
+    "DashboardData",
+    "ReportLevel",
+    "ReportFormat",
+    "get_formatter",
+    "JSONFormatter",
+    "MarkdownFormatter",
+    "HTMLFormatter",
 ]

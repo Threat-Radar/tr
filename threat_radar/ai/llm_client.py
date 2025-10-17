@@ -1,10 +1,31 @@
 """LLM client abstraction for AI integration"""
 
 import os
+import re
+import json
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any
 from tenacity import retry, stop_after_attempt, wait_exponential
 import requests
+
+
+def repair_json(content: str) -> str:
+    """
+    Repair common JSON syntax errors produced by LLMs.
+
+    Fixes:
+    - Trailing commas in arrays: ["a", "b",] -> ["a", "b"]
+    - Trailing commas in objects: {"a": 1,} -> {"a": 1}
+    - Multiple trailing commas: [1, 2,,] -> [1, 2]
+    """
+    # Remove trailing commas before closing brackets/braces
+    # Pattern: comma followed by optional whitespace and closing bracket/brace
+    content = re.sub(r',(\s*[}\]])', r'\1', content)
+
+    # Remove multiple consecutive commas
+    content = re.sub(r',(\s*,)+', ',', content)
+
+    return content
 
 
 class LLMClient(ABC):
@@ -43,13 +64,13 @@ class LLMClient(ABC):
 class OpenAIClient(LLMClient):
     """OpenAI GPT client implementation"""
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4"):
+    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4o"):
         """
         Initialize OpenAI client.
 
         Args:
             api_key: OpenAI API key (defaults to OPENAI_API_KEY env var)
-            model: Model name (gpt-4, gpt-3.5-turbo, etc.)
+            model: Model name (gpt-4o, gpt-4-turbo, gpt-3.5-turbo, etc.)
         """
         try:
             from openai import OpenAI
@@ -92,8 +113,7 @@ class OpenAIClient(LLMClient):
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     def generate_json(self, prompt: str, temperature: float = 0.7) -> Dict[str, Any]:
         """Generate JSON response using OpenAI API"""
-        import json
-
+        original_content = ""  # Save for error messages
         try:
             params = {
                 "model": self.model,
@@ -107,10 +127,206 @@ class OpenAIClient(LLMClient):
                 params["temperature"] = temperature
 
             response = self.client.chat.completions.create(**params)
-            content = response.choices[0].message.content.strip()
+            content = response.choices[0].message.content
+
+            # Handle None response
+            if content is None:
+                raise RuntimeError("OpenAI returned None content")
+
+            content = content.strip()
+            original_content = content  # Save original for error messages
+
+            # Handle empty responses
+            if not content:
+                raise RuntimeError("Empty response from OpenAI")
+
+            # Apply same robust extraction strategies as other providers
+
+            # Strategy 1: Extract from markdown code blocks
+            if "```" in content:
+                code_blocks = re.findall(r'```(?:json)?\s*\n?(.*?)\n?```', content, re.DOTALL)
+                if code_blocks:
+                    content = code_blocks[0].strip()
+
+            # Strategy 2: Find JSON object in the text
+            json_match = re.search(r'\{.*\}', content, re.DOTALL)
+            if json_match:
+                content = json_match.group(0)
+
+            # Strategy 3: If content doesn't start with {, find first {
+            if not content.startswith('{'):
+                start_idx = content.find('{')
+                if start_idx != -1:
+                    content = content[start_idx:]
+
+            # Strategy 4: Balance braces if extra data after }
+            if content.count('}') > content.count('{'):
+                brace_count = 0
+                for i, char in enumerate(content):
+                    if char == '{':
+                        brace_count += 1
+                    elif char == '}':
+                        brace_count -= 1
+                        if brace_count == 0:
+                            content = content[:i+1]
+                            break
+
+            # Strategy 5: Repair common JSON syntax errors
+            content = repair_json(content)
+
+            # Final validation before parsing
+            if not content or not content.strip():
+                raise RuntimeError(f"No valid JSON found in response. Original: {original_content[:200]}")
+
+            if not content.startswith('{'):
+                raise RuntimeError(f"Response doesn't contain JSON object. Content: {content[:200]}")
+
             return json.loads(content)
+        except json.JSONDecodeError as e:
+            preview = original_content[:300] if len(original_content) > 300 else original_content
+            raise RuntimeError(f"Invalid JSON from OpenAI: {str(e)}\nOriginal response: {preview}")
         except Exception as e:
+            # Import BadRequestError for specific error handling
+            try:
+                from openai import BadRequestError
+            except ImportError:
+                BadRequestError = type(None)  # Fallback if import fails
+
+            # Catch and enhance BadRequestError with better message
+            if isinstance(e, BadRequestError):
+                error_msg = str(e)
+                # Add helpful context for common JSON mode errors
+                if "does not support" in error_msg.lower() or "json" in error_msg.lower():
+                    raise RuntimeError(
+                        f"OpenAI API error: {error_msg}\n\n"
+                        f"💡 The model '{self.model}' may not support JSON mode.\n"
+                        f"   Recommended models: 'gpt-4o', 'gpt-4-turbo', or 'gpt-3.5-turbo-1106'"
+                    )
+                else:
+                    raise RuntimeError(f"OpenAI API error: {error_msg}")
+
+            if "OpenAI" in str(e) or "response" in str(e).lower():
+                raise  # Re-raise our custom errors
             raise RuntimeError(f"OpenAI API error: {str(e)}")
+
+
+class AnthropicClient(LLMClient):
+    """Anthropic Claude client implementation"""
+
+    def __init__(self, api_key: Optional[str] = None, model: str = "claude-3-5-sonnet-20241022"):
+        """
+        Initialize Anthropic client.
+
+        Args:
+            api_key: Anthropic API key (defaults to ANTHROPIC_API_KEY env var)
+            model: Model name (claude-3-5-sonnet-20241022, claude-3-opus-20240229, etc.)
+        """
+        try:
+            from anthropic import Anthropic
+        except ImportError:
+            raise ImportError(
+                "Anthropic package not installed. Install with: pip install anthropic"
+            )
+
+        self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
+        if not self.api_key:
+            raise ValueError(
+                "Anthropic API key not provided. Set ANTHROPIC_API_KEY environment variable "
+                "or pass api_key parameter."
+            )
+
+        self.model = model
+        self.client = Anthropic(api_key=self.api_key)
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+    def generate(self, prompt: str, temperature: float = 0.7, max_tokens: int = 2000) -> str:
+        """Generate response using Anthropic API"""
+        try:
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return response.content[0].text.strip()
+        except Exception as e:
+            raise RuntimeError(f"Anthropic API error: {str(e)}")
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+    def generate_json(self, prompt: str, temperature: float = 0.7) -> Dict[str, Any]:
+        """Generate JSON response using Anthropic API"""
+        json_prompt = f"{prompt}\n\nRespond with valid JSON only, no other text."
+        original_content = ""
+
+        try:
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=2000,
+                temperature=temperature,
+                messages=[{"role": "user", "content": json_prompt}],
+            )
+            content = response.content[0].text
+
+            # Handle None response
+            if content is None:
+                raise RuntimeError("Claude returned None content")
+
+            content = content.strip()
+            original_content = content
+
+            # Handle empty responses
+            if not content:
+                raise RuntimeError("Empty response from Claude")
+
+            # Try multiple extraction strategies
+
+            # Strategy 1: Extract from markdown code blocks
+            if "```" in content:
+                code_blocks = re.findall(r'```(?:json)?\s*\n?(.*?)\n?```', content, re.DOTALL)
+                if code_blocks:
+                    content = code_blocks[0].strip()
+
+            # Strategy 2: Find JSON object in the text
+            json_match = re.search(r'\{.*\}', content, re.DOTALL)
+            if json_match:
+                content = json_match.group(0)
+
+            # Strategy 3: If content doesn't start with {, find first {
+            if not content.startswith('{'):
+                start_idx = content.find('{')
+                if start_idx != -1:
+                    content = content[start_idx:]
+
+            # Strategy 4: Balance braces if extra data after }
+            if content.count('}') > content.count('{'):
+                brace_count = 0
+                for i, char in enumerate(content):
+                    if char == '{':
+                        brace_count += 1
+                    elif char == '}':
+                        brace_count -= 1
+                        if brace_count == 0:
+                            content = content[:i+1]
+                            break
+
+            # Strategy 5: Repair common JSON syntax errors
+            content = repair_json(content)
+
+            # Final validation before parsing
+            if not content or not content.strip():
+                raise RuntimeError(f"No valid JSON found in response. Original: {original_content[:200]}")
+
+            if not content.startswith('{'):
+                raise RuntimeError(f"Response doesn't contain JSON object. Content: {content[:200]}")
+
+            return json.loads(content)
+        except json.JSONDecodeError as e:
+            preview = original_content[:300] if len(original_content) > 300 else original_content
+            raise RuntimeError(f"Invalid JSON from Claude: {str(e)}\nOriginal response: {preview}")
+        except Exception as e:
+            if "Claude" in str(e) or "response" in str(e).lower():
+                raise
+            raise RuntimeError(f"Anthropic API error: {str(e)}")
 
 
 class OllamaClient(LLMClient):
@@ -152,9 +368,8 @@ class OllamaClient(LLMClient):
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     def generate_json(self, prompt: str, temperature: float = 0.7) -> Dict[str, Any]:
         """Generate JSON response using Ollama API"""
-        import json
-
         json_prompt = f"{prompt}\n\nRespond with valid JSON only."
+        original_content = ""
 
         try:
             response = requests.post(
@@ -169,12 +384,70 @@ class OllamaClient(LLMClient):
                 timeout=120,
             )
             response.raise_for_status()
-            content = response.json()["response"].strip()
+            content = response.json()["response"]
+
+            # Handle None response
+            if content is None:
+                raise RuntimeError("Ollama returned None content")
+
+            content = content.strip()
+            original_content = content
+
+            # Handle empty responses
+            if not content:
+                raise RuntimeError("Empty response from Ollama")
+
+            # Try multiple extraction strategies
+
+            # Strategy 1: Extract from markdown code blocks
+            if "```" in content:
+                code_blocks = re.findall(r'```(?:json)?\s*\n?(.*?)\n?```', content, re.DOTALL)
+                if code_blocks:
+                    content = code_blocks[0].strip()
+
+            # Strategy 2: Find JSON object in the text
+            json_match = re.search(r'\{.*\}', content, re.DOTALL)
+            if json_match:
+                content = json_match.group(0)
+
+            # Strategy 3: If content doesn't start with {, find first {
+            if not content.startswith('{'):
+                start_idx = content.find('{')
+                if start_idx != -1:
+                    content = content[start_idx:]
+
+            # Strategy 4: Balance braces if extra data after }
+            if content.count('}') > content.count('{'):
+                brace_count = 0
+                for i, char in enumerate(content):
+                    if char == '{':
+                        brace_count += 1
+                    elif char == '}':
+                        brace_count -= 1
+                        if brace_count == 0:
+                            content = content[:i+1]
+                            break
+
+            # Strategy 5: Repair common JSON syntax errors
+            content = repair_json(content)
+
+            # Final validation before parsing
+            if not content or not content.strip():
+                raise RuntimeError(f"No valid JSON found in response. Original: {original_content[:200]}")
+
+            if not content.startswith('{'):
+                raise RuntimeError(f"Response doesn't contain JSON object. Content: {content[:200]}")
+
             return json.loads(content)
         except requests.exceptions.RequestException as e:
             raise RuntimeError(f"Ollama API error: {str(e)}")
         except json.JSONDecodeError as e:
-            raise RuntimeError(f"Invalid JSON response from Ollama: {str(e)}")
+            preview = original_content[:300] if len(original_content) > 300 else original_content
+            raise RuntimeError(f"Invalid JSON from Ollama: {str(e)}\nOriginal response: {preview}")
+        except Exception as e:
+            if "Ollama" in str(e) or "response" in str(e).lower():
+                raise
+            raise RuntimeError(f"Ollama error: {str(e)}")
 
 
 def get_llm_client(
@@ -187,9 +460,9 @@ def get_llm_client(
     Factory function to get an LLM client based on configuration.
 
     Args:
-        provider: AI provider ('openai' or 'ollama'). Defaults to AI_PROVIDER env var.
+        provider: AI provider ('openai', 'anthropic', or 'ollama'). Defaults to AI_PROVIDER env var.
         model: Model name. Defaults to AI_MODEL env var.
-        api_key: API key for cloud providers. Defaults to OPENAI_API_KEY env var.
+        api_key: API key for cloud providers. Defaults to OPENAI_API_KEY or ANTHROPIC_API_KEY env var.
         endpoint: Endpoint URL for local models. Defaults to LOCAL_MODEL_ENDPOINT env var.
 
     Returns:
@@ -202,13 +475,16 @@ def get_llm_client(
     model = model or os.getenv("AI_MODEL")
 
     if provider == "openai":
-        default_model = model or "gpt-4"
+        default_model = model or "gpt-4o"  # Use gpt-4o by default (supports JSON mode)
         return OpenAIClient(api_key=api_key, model=default_model)
+    elif provider == "anthropic":
+        default_model = model or "claude-3-5-sonnet-20241022"
+        return AnthropicClient(api_key=api_key, model=default_model)
     elif provider == "ollama":
         default_model = model or "llama2"
         default_endpoint = endpoint or os.getenv("LOCAL_MODEL_ENDPOINT", "http://localhost:11434")
         return OllamaClient(base_url=default_endpoint, model=default_model)
     else:
         raise ValueError(
-            f"Invalid AI provider: {provider}. Supported providers: 'openai', 'ollama'"
+            f"Invalid AI provider: {provider}. Supported providers: 'openai', 'anthropic', 'ollama'"
         )
