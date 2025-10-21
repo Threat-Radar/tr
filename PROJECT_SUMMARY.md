@@ -33,13 +33,13 @@ Threat Radar is a comprehensive security analysis platform that combines Softwar
 **Example:**
 ```bash
 # Scan Docker image
-threat-radar sbom docker christophetd/log4shell-vulnerable-app --auto-save
+threat-radar sbom docker ghcr.io/christophetd/log4shell-vulnerable-app --auto-save
 
 # Scan local project
 threat-radar sbom generate . --auto-save
 
 # Generate multiple formats
-threat-radar sbom docker christophetd/log4shell-vulnerable-app --format spdx-json -o sbom.json
+threat-radar sbom docker ghcr.io/christophetd/log4shell-vulnerable-app --format spdx-json -o sbom.json
 ```
 
 ### 2. Multiple SBOM Format Support
@@ -53,9 +53,9 @@ threat-radar sbom docker christophetd/log4shell-vulnerable-app --format spdx-jso
 **Format Conversion:**
 ```bash
 # Generate in different formats
-threat-radar sbom docker christophetd/log4shell-vulnerable-app --format cyclonedx-json
-threat-radar sbom docker christophetd/log4shell-vulnerable-app --format spdx-json
-threat-radar sbom docker christophetd/log4shell-vulnerable-app --format syft-json
+threat-radar sbom docker ghcr.io/christophetd/log4shell-vulnerable-app --format cyclonedx-json
+threat-radar sbom docker ghcr.io/christophetd/log4shell-vulnerable-app --format spdx-json
+threat-radar sbom docker ghcr.io/christophetd/log4shell-vulnerable-app --format syft-json
 ```
 
 ### 3. Organized Storage System
@@ -64,9 +64,9 @@ threat-radar sbom docker christophetd/log4shell-vulnerable-app --format syft-jso
 ```
 sbom_storage/
 ├── docker/         # Container SBOMs
-│   ├── docker_christophetd_log4shell-vulnerable-app_latest_20251020_220920.json
-│   ├── docker_christophetd_log4shell-vulnerable-app_latest_20251020_220920.spdx.json
-│   └── docker_christophetd_log4shell-vulnerable-app_latest_20251020_220920.syft.json
+│   ├── docker_ghcr.io_christophetd_log4shell-vulnerable-app_latest_20251020_220920.json
+│   ├── docker_ghcr.io_christophetd_log4shell-vulnerable-app_latest_20251020_220920.spdx.json
+│   └── docker_ghcr.io_christophetd_log4shell-vulnerable-app_latest_20251020_220920.syft.json
 ├── local/          # Project SBOMs
 │   └── local_threat-radar_20251020_220519.json
 ├── comparisons/    # Comparison results
@@ -134,7 +134,7 @@ threat-radar sbom export my-sbom.json -o requirements.txt --format requirements
 
 ### 6. Real-World Test Results
 
-**Test Case: Log4Shell Vulnerable App (christophetd/log4shell-vulnerable-app)**
+**Test Case: Log4Shell Vulnerable App (ghcr.io/christophetd/log4shell-vulnerable-app)**
 ```
 Packages Detected: 85
 Package Types:
@@ -447,10 +447,10 @@ confidence = name_similarity * weight + version_boost - penalties
 
 ```bash
 # Generate SBOM for a known vulnerable container
-threat-radar sbom docker christophetd/log4shell-vulnerable-app --auto-save
+threat-radar sbom docker ghcr.io/christophetd/log4shell-vulnerable-app --auto-save
 
 # Scan for vulnerabilities
-python examples/03_vulnerability_scanning/docker_vulnerability_scan.py christophetd/log4shell-vulnerable-app
+python examples/03_vulnerability_scanning/docker_vulnerability_scan.py ghcr.io/christophetd/log4shell-vulnerable-app
 
 # Review findings
 cat examples/output/log4shell_vulnerable_app_report.json
@@ -480,8 +480,8 @@ threat-radar sbom compare \
 
 ```bash
 # Scan known vulnerable application (Log4Shell)
-threat-radar sbom docker christophetd/log4shell-vulnerable-app --auto-save
-threat-radar cve check storage/sbom_storage/docker/docker_christophetd_log4shell-vulnerable-app_latest_*.json
+threat-radar sbom docker ghcr.io/christophetd/log4shell-vulnerable-app --auto-save
+threat-radar cve check storage/sbom_storage/docker/docker_ghcr.io_christophetd_log4shell-vulnerable-app_latest_*.json
 
 # Alternative: Scan legacy EOL distribution
 python examples/03_vulnerability_scanning/comprehensive_debian8_test.py
