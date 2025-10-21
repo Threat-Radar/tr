@@ -171,7 +171,68 @@ Format: CycloneDX JSON (499.5 KB)
 
 ## B) CVE Lookup & Vulnerability Detection
 
-### 1. High-Precision CVE Matching
+### 1. Grype-Powered Vulnerability Scanning
+
+Threat Radar leverages **Grype** (from Anchore) for fast, accurate vulnerability detection with comprehensive coverage across all package ecosystems.
+
+**Why Grype?**
+- **Industry-Leading Accuracy** - Proven vulnerability scanner trusted by enterprises
+- **Comprehensive Database** - Pulls from multiple sources including NVD, GitHub Security Advisories, OS-specific databases
+- **Multi-Ecosystem Support** - Covers all package types (OS packages, language libraries, JARs, etc.)
+- **Fast Performance** - Optimized scanning engine with local caching
+- **Regular Updates** - Daily vulnerability database updates
+- **Open Source** - Transparent, community-driven development from Anchore
+- **SBOM Native** - Works seamlessly with CycloneDX, SPDX, and Syft SBOMs
+
+**What Threat Radar Adds:**
+- **Unified CLI Interface** - Single command for SBOM generation + vulnerability scanning
+- **Automated Workflows** - Seamless integration between Syft (SBOM) and Grype (scanning)
+- **Storage Organization** - Auto-save SBOMs with timestamps and categorization
+- **Export Capabilities** - Convert scan results to CSV, reports, and dashboards
+- **CI/CD Ready** - Easy integration into build pipelines
+- **Multi-Format Support** - Generate SBOMs in any format, scan with Grype
+- **Historical Tracking** - Store and compare vulnerability reports over time
+
+**Complete Workflow:**
+```bash
+# 1. Generate SBOM (using Syft)
+threat-radar sbom docker ghcr.io/christophetd/log4shell-vulnerable-app --auto-save
+
+# 2. Scan for vulnerabilities (using Grype)
+threat-radar cve scan-image ghcr.io/christophetd/log4shell-vulnerable-app
+
+# 3. Export package list for analysis
+threat-radar sbom export sbom.json -o packages.csv --format csv
+
+# 4. Track vulnerabilities over time
+threat-radar cve scan-sbom sbom.json > scan_$(date +%Y%m%d).txt
+```
+
+**Real-World Results:**
+```
+Image: ghcr.io/christophetd/log4shell-vulnerable-app
+Scan Time: ~5 seconds
+Vulnerabilities Found: 432
+├─ CRITICAL: 28 (including Log4Shell CVSS 10.0)
+├─ HIGH: 95
+├─ MEDIUM: 183
+└─ LOW: 126
+
+Key Detection:
+✓ GHSA-jfh8-c2jp-5v3q (Log4Shell) in log4j-core 2.14.1
+✓ Multiple Spring Framework CVEs in version 5.3.13
+✓ Tomcat Embed vulnerabilities in version 9.0.55
+✓ Outdated Alpine base packages with known CVEs
+```
+
+**Database Coverage:**
+- **NVD (National Vulnerability Database)** - 200,000+ CVEs
+- **GitHub Security Advisories** - Language-specific vulnerabilities
+- **OS Vendor Databases** - Alpine, Debian, Ubuntu, RedHat, etc.
+- **Daily Updates** - Fresh vulnerability data every day
+- **Historical Data** - CVEs from 1999 to present
+
+### 2. High-Precision CVE Matching
 
 **Advanced Matching Algorithm:**
 - **Package Name Matching** - Fuzzy matching with explicit exclusion lists
@@ -186,15 +247,9 @@ Format: CycloneDX JSON (499.5 KB)
 - **Version Match Rate:** 100% for all findings
 - **Average Confidence:** 97%
 
-### 2. NVD API Integration
+### 2. Vulnerability Scanning Commands
 
-**CVE Data Sources:**
-- **NIST NVD (National Vulnerability Database)** - Primary source
-- **Real-time API access** - Latest CVE data
-- **Rate limit handling** - 5 requests/30s (public) or 50/30s (with API key)
-- **Comprehensive coverage** - 200,000+ CVEs
-
-**Vulnerability Scanning:**
+**Quick Start:**
 ```bash
 # Scan Docker image directly
 threat-radar cve scan-image ghcr.io/christophetd/log4shell-vulnerable-app
@@ -387,15 +442,21 @@ matcher = CVEMatcher(
 - `threat_radar/core/docker_integration.py` - Docker SDK wrapper
 - `threat_radar/core/package_extractors.py` - Package manager parsers
 
-**3. CVE Matching**
+**3. Vulnerability Scanning (Grype Integration)**
+- `threat_radar/cli/cve.py` - Grype wrapper commands
+- External: Grype scanner - Fast, accurate CVE detection
+- External: Grype DB - Multi-source vulnerability database
+- Integration: Seamless SBOM-to-scan workflow
+
+**4. CVE Matching (Legacy/Custom)**
 - `threat_radar/core/cve_matcher.py` - Advanced matching algorithm
 - `threat_radar/core/nvd_client.py` - NVD API client
 - `threat_radar/core/cve_database.py` - Local CVE caching
 
-**4. CLI Interface**
+**5. CLI Interface**
 - `threat_radar/cli/sbom.py` - SBOM commands
 - `threat_radar/cli/docker.py` - Docker analysis commands
-- `threat_radar/cli/cve.py` - CVE lookup commands
+- `threat_radar/cli/cve.py` - Vulnerability scanning commands
 
 ### Key Algorithms
 
@@ -551,12 +612,14 @@ fi
 4. **Fast performance** - 3-6 seconds for typical containers
 5. **Integration ready** - CLI and Python API
 
-### ✅ Vulnerability Detection
-1. **Zero false positives** - 100% precision on validation tests
-2. **High confidence** - Average 97% confidence scores
-3. **Version-aware** - Accurate version range matching
-4. **Production-ready** - Validated against real-world EOL distributions
-5. **Actionable reports** - Clear severity, confidence, and remediation info
+### ✅ Vulnerability Detection (Grype-Powered)
+1. **Industry-Standard Scanner** - Leverages Grype from Anchore
+2. **Comprehensive Coverage** - Multi-source database (NVD, GitHub, OS vendors)
+3. **Fast Scanning** - Typical scans complete in 5-10 seconds
+4. **Accurate Detection** - 432 vulnerabilities found in Log4Shell test (including CVSS 10.0)
+5. **Multi-Ecosystem** - Supports all package types (Python, Java, Go, Alpine, Debian, etc.)
+6. **Regular Updates** - Daily vulnerability database updates
+7. **SBOM Native** - Seamless integration with Syft-generated SBOMs
 
 ### ✅ Quality Metrics
 1. **Code quality:** 8.5/10 (per code review)
@@ -590,10 +653,11 @@ Threat Radar provides a complete solution for container security analysis:
 - ✅ Fast and reliable
 
 **Vulnerability Detection:**
-- ✅ 100% precision (zero false positives)
-- ✅ Version-aware CVE matching
-- ✅ Configurable thresholds
-- ✅ Production-validated
+- ✅ Grype-powered scanning (industry standard)
+- ✅ Multi-source vulnerability database
+- ✅ Fast and accurate detection
+- ✅ Daily database updates
+- ✅ Comprehensive ecosystem coverage
 
 **Overall:**
 - ✅ Production-ready platform
@@ -606,6 +670,11 @@ The platform successfully combines automated SBOM generation with high-precision
 ---
 
 **Project Repository:** https://github.com/Threat-Radar/tr-nvd
-**Technologies:** Python, Docker SDK, Syft, NVD API, Typer CLI, Rich Console
+**Technologies:** Python, Docker SDK, Syft (SBOM), Grype (CVE Scanning), Typer CLI, Rich Console
 **Total Code:** 33 Python files, ~10,000 lines of code
 **Test Coverage:** 82 tests, comprehensive validation
+
+**Core Tools:**
+- **Syft** - Fast SBOM generation from Anchore
+- **Grype** - Accurate vulnerability scanning from Anchore
+- **Integration** - Seamless workflow combining both tools

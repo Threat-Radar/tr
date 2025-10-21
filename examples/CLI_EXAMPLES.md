@@ -2,9 +2,17 @@
 
 Complete command-line interface examples for vulnerability management.
 
+**Powered by Anchore's Syft (SBOM) and Grype (Vulnerability Scanning)**
+
+Threat Radar provides a unified CLI that combines:
+- **Syft** - Fast, comprehensive SBOM generation
+- **Grype** - Industry-standard vulnerability scanning
+- **Integrated Workflow** - Seamless SBOM → Scan → Report pipeline
+
 ## Table of Contents
 
 - [Setup](#setup)
+- [Why Grype?](#why-grype)
 - [CVE Operations](#cve-operations)
 - [Docker Analysis](#docker-analysis)
 - [Vulnerability Scanning](#vulnerability-scanning)
@@ -44,6 +52,79 @@ threat-radar cve db-update
 # Verify installation
 threat-radar cve db-status
 ```
+
+## Why Grype?
+
+Threat Radar uses **Grype** from Anchore for vulnerability detection, providing enterprise-grade security scanning with zero configuration.
+
+### Key Benefits
+
+**1. Comprehensive Vulnerability Coverage**
+- **Multiple Data Sources** - NVD, GitHub Security Advisories, OS-specific databases
+- **200,000+ CVEs** - Complete coverage from 1999 to present
+- **Daily Updates** - Fresh vulnerability data every day
+- **Cross-Ecosystem** - Python, Java, Go, Node.js, Ruby, .NET, OS packages, and more
+
+**2. High Accuracy & Performance**
+```
+Test: ghcr.io/christophetd/log4shell-vulnerable-app
+Scan Time: 5 seconds
+Vulnerabilities: 432 found
+├─ CRITICAL: 28 (including Log4Shell CVSS 10.0)
+├─ HIGH: 95
+├─ MEDIUM: 183
+└─ LOW: 126
+
+✓ Log4Shell (GHSA-jfh8-c2jp-5v3q) detected in log4j-core 2.14.1
+✓ Spring Framework CVEs in version 5.3.13
+✓ All package types scanned (JARs, Alpine packages, etc.)
+```
+
+**3. Industry Standard Tool**
+- **Trusted by Enterprises** - Used by Fortune 500 companies
+- **Open Source** - Transparent, community-driven (Apache 2.0)
+- **Active Development** - Regular updates from Anchore
+- **SBOM Native** - Built to work with CycloneDX, SPDX, Syft formats
+
+**4. What Threat Radar Adds**
+- **Unified CLI** - Single interface for SBOM + CVE scanning
+- **Automated Workflows** - Generate SBOM, scan, export results
+- **Storage Management** - Organized SBOM storage with timestamps
+- **Export Options** - CSV, requirements.txt, JSON reports
+- **CI/CD Integration** - Easy pipeline integration
+
+### Complete Workflow Example
+
+```bash
+# Step 1: Generate SBOM (Syft)
+threat-radar sbom docker myapp:latest --auto-save
+
+# Step 2: Scan for vulnerabilities (Grype)
+threat-radar cve scan-image myapp:latest
+
+# Step 3: Export results
+threat-radar sbom export sbom.json -o packages.csv --format csv
+
+# Step 4: Track over time
+threat-radar cve scan-sbom sbom.json > scan_$(date +%Y%m%d).txt
+```
+
+### Why Not Write Our Own Scanner?
+
+**Grype Advantages:**
+- ✅ **Proven Accuracy** - Battle-tested by thousands of organizations
+- ✅ **Database Maintenance** - Anchore maintains fresh CVE data daily
+- ✅ **Performance Optimized** - Years of optimization for speed
+- ✅ **Broad Coverage** - Supports 13+ package ecosystems
+- ✅ **Active Community** - Bug fixes and updates from large community
+- ✅ **Professional Support** - Enterprise support available from Anchore
+
+**Custom Scanner Drawbacks:**
+- ❌ **Maintenance Burden** - Daily CVE database updates required
+- ❌ **Accuracy Issues** - False positives/negatives take years to tune
+- ❌ **Limited Resources** - Can't match Anchore's dedicated team
+- ❌ **Ecosystem Coverage** - Supporting all package types is complex
+- ❌ **Reinventing the Wheel** - Why rebuild what works?
 
 ## CVE Operations
 
@@ -523,7 +604,48 @@ threat-radar cve scan-image alpine:latest
 
 ## See Also
 
+### Threat Radar Resources
 - **Examples:** `/examples/` directory for Python examples
 - **Documentation:** `threat-radar --help` for all commands
-- **NVD API:** https://nvd.nist.gov/developers
-- **CPE Search:** https://nvd.nist.gov/products/cpe/search
+- **Project Repository:** https://github.com/Threat-Radar/tr-nvd
+
+### Core Tools Documentation
+- **Syft (SBOM Generation):** https://github.com/anchore/syft
+  - Used by Threat Radar for SBOM generation
+  - Supports 13+ package ecosystems
+  - Multiple output formats (CycloneDX, SPDX, Syft-JSON)
+
+- **Grype (Vulnerability Scanning):** https://github.com/anchore/grype
+  - Used by Threat Radar for CVE detection
+  - Multi-source vulnerability database
+  - Fast, accurate, enterprise-ready
+
+### Additional Resources
+- **NVD (Vulnerability Database):** https://nvd.nist.gov/
+- **CycloneDX Specification:** https://cyclonedx.org/
+- **SPDX Specification:** https://spdx.dev/
+
+---
+
+## Architecture Overview
+
+```
+Threat Radar = Unified CLI + Workflow Automation
+    │
+    ├─ SBOM Generation ────► Syft (Anchore)
+    │                         └─ Scans containers/directories
+    │                         └─ Outputs CycloneDX/SPDX/Syft-JSON
+    │
+    ├─ Vulnerability Scan ──► Grype (Anchore)
+    │                         └─ Scans images/SBOMs/directories
+    │                         └─ Multi-source CVE database
+    │
+    └─ Value-Add Features
+        ├─ Automated SBOM storage with timestamps
+        ├─ Export to CSV/requirements.txt
+        ├─ SBOM comparison and analysis
+        ├─ CI/CD integration helpers
+        └─ Unified command interface
+```
+
+**Philosophy:** Leverage best-in-class open source tools (Syft, Grype) and add value through automation, storage, and workflow integration.
