@@ -194,16 +194,22 @@ Format: CycloneDX JSON (499.5 KB)
 - **Rate limit handling** - 5 requests/30s (public) or 50/30s (with API key)
 - **Comprehensive coverage** - 200,000+ CVEs
 
-**Search Capabilities:**
+**Vulnerability Scanning:**
 ```bash
-# Search by CVE ID (Log4Shell)
-threat-radar cve get CVE-2021-44228
+# Scan Docker image directly
+threat-radar cve scan-image ghcr.io/christophetd/log4shell-vulnerable-app
 
-# Search by keyword
-threat-radar cve search log4j --limit 20
+# Scan from pre-generated SBOM
+threat-radar cve scan-sbom storage/sbom_storage/docker/docker_ghcr.io_christophetd_log4shell-vulnerable-app_latest_*.json
 
-# Search by date range
-threat-radar cve search --keyword log4j --last-modified-days 365
+# Scan local directory
+threat-radar cve scan-directory /path/to/project
+
+# Update vulnerability database
+threat-radar cve db-update
+
+# Check database status
+threat-radar cve db-status
 ```
 
 ### 3. Container Vulnerability Scanning
@@ -216,6 +222,22 @@ threat-radar cve search --keyword log4j --last-modified-days 365
 
 **Example Scan Results:**
 
+**Log4Shell Vulnerable App (ghcr.io/christophetd/log4shell-vulnerable-app):**
+```
+Total Vulnerabilities: 432
+Severity Breakdown:
+  CRITICAL: 28  (including Log4Shell CVE-2021-44228)
+  HIGH: 95
+  MEDIUM: 183
+  LOW: 126
+
+Key Findings:
+  - GHSA-jfh8-c2jp-5v3q (Log4Shell) - CVSS 10.0
+  - Multiple Spring Framework vulnerabilities
+  - Tomcat Embed vulnerabilities
+  - Outdated Alpine base packages
+```
+
 **Ubuntu 14.04 (Known Vulnerable):**
 ```
 Total Packages: 213
@@ -224,17 +246,6 @@ Total Vulnerabilities: 3
 Severity Breakdown:
   CRITICAL: 1  (Shellshock)
   HIGH: 2      (glibc issues)
-False Positives: 0
-```
-
-**Debian 8 (EOL Distribution):**
-```
-Total Packages: 111
-Vulnerable Packages: 3
-Total Vulnerabilities: 4
-Severity Breakdown:
-  CRITICAL: 2  (Shellshock variants)
-  MEDIUM: 2    (glibc info disclosure)
 False Positives: 0
 ```
 
@@ -446,16 +457,19 @@ confidence = name_similarity * weight + version_boost - penalties
 ### Scenario 1: Audit Docker Image Before Deployment
 
 ```bash
-# Generate SBOM for a known vulnerable container
+# Generate SBOM for the container
 threat-radar sbom docker ghcr.io/christophetd/log4shell-vulnerable-app --auto-save
 
 # Scan for vulnerabilities
-python examples/03_vulnerability_scanning/docker_vulnerability_scan.py ghcr.io/christophetd/log4shell-vulnerable-app
+threat-radar cve scan-image ghcr.io/christophetd/log4shell-vulnerable-app
 
-# Review findings
-cat examples/output/log4shell_vulnerable_app_report.json
+# Result: 432 vulnerabilities found
+# - CRITICAL: 28 (including Log4Shell CVSS 10.0)
+# - HIGH: 95
+# - MEDIUM: 183
+# - LOW: 126
 
-# Decision: CRITICAL vulnerability (CVE-2021-44228 Log4Shell) found - DO NOT DEPLOY
+# Decision: CRITICAL vulnerabilities found - DO NOT DEPLOY
 ```
 
 ### Scenario 2: Track Dependency Changes
@@ -479,25 +493,30 @@ threat-radar sbom compare \
 ### Scenario 3: Security Audit of Vulnerable Application
 
 ```bash
-# Scan known vulnerable application (Log4Shell)
+# Option 1: Scan Docker image directly
+threat-radar cve scan-image ghcr.io/christophetd/log4shell-vulnerable-app
+
+# Option 2: Generate SBOM first, then scan
 threat-radar sbom docker ghcr.io/christophetd/log4shell-vulnerable-app --auto-save
-threat-radar cve check storage/sbom_storage/docker/docker_ghcr.io_christophetd_log4shell-vulnerable-app_latest_*.json
+threat-radar cve scan-sbom storage/sbom_storage/docker/docker_ghcr.io_christophetd_log4shell-vulnerable-app_latest_*.json
 
-# Alternative: Scan legacy EOL distribution
-python examples/03_vulnerability_scanning/comprehensive_debian8_test.py
-
-# Result: Detailed vulnerability report with severity, CVSS scores, and remediation guidance
+# Result: Found 432 vulnerabilities including CRITICAL Log4Shell (CVSS 10.0)
 ```
 
 ### Scenario 4: CI/CD Integration
 
 ```bash
 # In CI pipeline
-threat-radar sbom docker ${IMAGE_NAME}:${TAG} -o sbom.json
-threat-radar sbom stats sbom.json
+threat-radar sbom docker ${IMAGE_NAME}:${TAG} --auto-save
 
-# Fail build if CRITICAL CVEs found
-python scripts/check_vulnerabilities.py sbom.json --fail-on critical
+# Scan for vulnerabilities
+threat-radar cve scan-image ${IMAGE_NAME}:${TAG} > scan_results.txt
+
+# Check if CRITICAL vulnerabilities found (fail build if any)
+if grep -q "CRITICAL" scan_results.txt; then
+  echo "CRITICAL vulnerabilities found - failing build"
+  exit 1
+fi
 ```
 
 ---
