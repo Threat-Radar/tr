@@ -33,13 +33,13 @@ Threat Radar is a comprehensive security analysis platform that combines Softwar
 **Example:**
 ```bash
 # Scan Docker image
-threat-radar sbom docker alpine:3.18 --auto-save
+threat-radar sbom docker christophetd/log4shell-vulnerable-app --auto-save
 
 # Scan local project
 threat-radar sbom generate . --auto-save
 
 # Generate multiple formats
-threat-radar sbom docker python:3.11 --format spdx-json -o sbom.json
+threat-radar sbom docker christophetd/log4shell-vulnerable-app --format spdx-json -o sbom.json
 ```
 
 ### 2. Multiple SBOM Format Support
@@ -53,9 +53,9 @@ threat-radar sbom docker python:3.11 --format spdx-json -o sbom.json
 **Format Conversion:**
 ```bash
 # Generate in different formats
-threat-radar sbom docker nginx:latest --format cyclonedx-json
-threat-radar sbom docker nginx:latest --format spdx-json
-threat-radar sbom docker nginx:latest --format syft-json
+threat-radar sbom docker christophetd/log4shell-vulnerable-app --format cyclonedx-json
+threat-radar sbom docker christophetd/log4shell-vulnerable-app --format spdx-json
+threat-radar sbom docker christophetd/log4shell-vulnerable-app --format syft-json
 ```
 
 ### 3. Organized Storage System
@@ -64,13 +64,13 @@ threat-radar sbom docker nginx:latest --format syft-json
 ```
 sbom_storage/
 ├── docker/         # Container SBOMs
-│   ├── docker_alpine_3.18_20251006_174554.json
-│   ├── docker_alpine_3.18_20251006_174553.spdx.json
-│   └── docker_alpine_3.18_20251006_174554.syft.json
+│   ├── docker_christophetd_log4shell-vulnerable-app_latest_20251020_220920.json
+│   ├── docker_christophetd_log4shell-vulnerable-app_latest_20251020_220920.spdx.json
+│   └── docker_christophetd_log4shell-vulnerable-app_latest_20251020_220920.syft.json
 ├── local/          # Project SBOMs
-│   └── local_threat-radar_20251006_174549.json
+│   └── local_threat-radar_20251020_220519.json
 ├── comparisons/    # Comparison results
-│   └── compare_alpine-3.17_vs_alpine-3.18_20251006_174552.json
+│   └── compare_log4shell-v1_vs_log4shell-v2_20251020_220920.json
 └── archives/       # Historical SBOMs (auto-archived after 30 days)
 ```
 
@@ -134,13 +134,16 @@ threat-radar sbom export my-sbom.json -o requirements.txt --format requirements
 
 ### 6. Real-World Test Results
 
-**Test Case: Alpine Linux 3.18**
+**Test Case: Log4Shell Vulnerable App (christophetd/log4shell-vulnerable-app)**
 ```
-Packages Detected: 15
+Packages Detected: 85
 Package Types:
-  - apk: 15 (Alpine packages)
-Format: CycloneDX JSON (160.2 KB)
-Time: ~3 seconds
+  - java-archive: 68 (JAR files)
+  - apk: 14 (Alpine packages)
+  - binary: 3
+Format: CycloneDX JSON
+Time: ~4 seconds
+Notable: Contains vulnerable log4j-core 2.14.1 (CVE-2021-44228)
 ```
 
 **Test Case: Python 3.11-slim**
@@ -193,14 +196,14 @@ Format: CycloneDX JSON (499.5 KB)
 
 **Search Capabilities:**
 ```bash
-# Search by CVE ID
-threat-radar cve get CVE-2014-6271
+# Search by CVE ID (Log4Shell)
+threat-radar cve get CVE-2021-44228
 
 # Search by keyword
-threat-radar cve search openssl --limit 20
+threat-radar cve search log4j --limit 20
 
 # Search by date range
-threat-radar cve search --keyword bash --last-modified-days 365
+threat-radar cve search --keyword log4j --last-modified-days 365
 ```
 
 ### 3. Container Vulnerability Scanning
@@ -279,19 +282,30 @@ False Positives: 0
 
 **Example Output:**
 ```
-📦 Package: bash 4.3-7ubuntu1.7
+📦 Package: log4j-core 2.14.1
    Vulnerabilities: 1
 
-   🔴 [1] CVE-2014-6271
+   🔴 [1] CVE-2021-44228 (Log4Shell)
        Severity: CRITICAL
-       CVSS Score: 9.8
+       CVSS Score: 10.0
        Confidence: 100%
-       Match: exact name match with gnu/bash (version affected)
+       Match: exact name match with apache/log4j (version affected)
        ✓ Version is in vulnerable range
-       GNU Bash through 4.3 processes trailing strings...
+       Apache Log4j2 2.0-beta9 through 2.15.0 (excluding 2.12.2, 2.12.3, and 2.3.1)
+       JNDI features used in configuration, log messages, and parameters do not
+       protect against attacker controlled LDAP and other JNDI related endpoints...
 ```
 
 ### 6. Real-World Validation Examples
+
+**CVE-2021-44228 (Log4Shell) - Log4Shell Vulnerable App**
+- **Package:** log4j-core 2.14.1
+- **Finding:** ✅ TRUE POSITIVE
+- **Validation:** Version 2.14.1 is in vulnerable range (2.0-beta9 through 2.15.0)
+- **Confidence:** 100%
+- **Exploitability:** CRITICAL - Widely exploited in the wild
+- **Status:** One of the most critical vulnerabilities ever discovered
+- **Impact:** Remote Code Execution via JNDI injection
 
 **CVE-2014-6271 (Shellshock) - Ubuntu 14.04**
 - **Package:** bash 4.3-7ubuntu1.7
@@ -402,7 +416,7 @@ confidence = name_similarity * weight + version_boost - penalties
 
 | Target | Packages | Time | Format |
 |--------|----------|------|--------|
-| Alpine 3.18 | 15 | ~3s | CycloneDX JSON |
+| Log4Shell Vulnerable App | 85 | ~4s | CycloneDX JSON |
 | Python 3.11-slim | 97 | ~5s | Syft JSON |
 | Debian 8 | 111 | ~4s | CycloneDX JSON |
 | Ubuntu 14.04 | 213 | ~6s | CycloneDX JSON |
@@ -432,16 +446,16 @@ confidence = name_similarity * weight + version_boost - penalties
 ### Scenario 1: Audit Docker Image Before Deployment
 
 ```bash
-# Generate SBOM
-threat-radar sbom docker myapp:latest --auto-save
+# Generate SBOM for a known vulnerable container
+threat-radar sbom docker christophetd/log4shell-vulnerable-app --auto-save
 
 # Scan for vulnerabilities
-python examples/03_vulnerability_scanning/docker_vulnerability_scan.py myapp:latest
+python examples/03_vulnerability_scanning/docker_vulnerability_scan.py christophetd/log4shell-vulnerable-app
 
 # Review findings
-cat examples/output/myapp_latest_report.json
+cat examples/output/log4shell_vulnerable_app_report.json
 
-# Decision: Deploy if no CRITICAL vulnerabilities
+# Decision: CRITICAL vulnerability (CVE-2021-44228 Log4Shell) found - DO NOT DEPLOY
 ```
 
 ### Scenario 2: Track Dependency Changes
@@ -462,16 +476,17 @@ threat-radar sbom compare \
 # Result: See added/removed packages and version upgrades
 ```
 
-### Scenario 3: Security Audit of Legacy System
+### Scenario 3: Security Audit of Vulnerable Application
 
 ```bash
-# Scan old EOL distribution
+# Scan known vulnerable application (Log4Shell)
+threat-radar sbom docker christophetd/log4shell-vulnerable-app --auto-save
+threat-radar cve check storage/sbom_storage/docker/docker_christophetd_log4shell-vulnerable-app_latest_*.json
+
+# Alternative: Scan legacy EOL distribution
 python examples/03_vulnerability_scanning/comprehensive_debian8_test.py
 
-# Get detailed validation report
-cat DEBIAN8_VALIDATION_REPORT.md
-
-# Result: Prioritized list of vulnerabilities with remediation guidance
+# Result: Detailed vulnerability report with severity, CVSS scores, and remediation guidance
 ```
 
 ### Scenario 4: CI/CD Integration

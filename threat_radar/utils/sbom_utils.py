@@ -237,7 +237,18 @@ def convert_to_csv(sbom_data: Dict, output_path: Path) -> None:
             version = pkg.get("version", "")
             pkg_type = pkg.get("type", "")
             purl = pkg.get("purl", "")
-            licenses = ";".join(pkg.get("licenses", []))
+
+            # Extract license IDs from the CycloneDX structure
+            license_list = pkg.get("licenses", [])
+            license_ids = []
+            for lic in license_list:
+                if isinstance(lic, dict) and "license" in lic:
+                    # CycloneDX format: {"license": {"id": "MIT"}}
+                    license_ids.append(lic["license"].get("id") or lic["license"].get("name", ""))
+                elif isinstance(lic, str):
+                    # Simple string format
+                    license_ids.append(lic)
+            licenses = ";".join(license_ids)
 
             f.write(f'"{name}","{version}","{pkg_type}","{purl}","{licenses}"\n')
 
@@ -250,7 +261,7 @@ def convert_to_requirements(sbom_data: Dict, output_path: Path) -> None:
         sbom_data: SBOM dictionary
         output_path: Output requirements.txt file path
     """
-    packages = filter_packages_by_type(sbom_data, "python")
+    packages = filter_components_by_language(sbom_data, "python")
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
