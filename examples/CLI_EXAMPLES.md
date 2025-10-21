@@ -17,6 +17,7 @@ Threat Radar provides a unified CLI that combines:
 - [Docker Analysis](#docker-analysis)
 - [Vulnerability Scanning](#vulnerability-scanning)
 - [Database Management](#database-management)
+- [AI-Powered Analysis](#ai-powered-analysis)
 - [Workflows](#complete-workflows)
 
 ## Setup
@@ -299,6 +300,280 @@ Grype Database Status:
 Location: ~/.cache/grype/db/5
 Built: 2024-01-15 10:30:00
 Schema Version: 5
+```
+
+## AI-Powered Analysis
+
+Transform raw vulnerability scan results into actionable intelligence using AI-powered analysis. Threat Radar supports multiple AI providers for exploitability assessment, smart prioritization, and automated remediation planning.
+
+### Supported AI Providers
+
+**1. OpenAI (GPT-4o, GPT-4-Turbo, GPT-3.5-Turbo)**
+- Best for: Production analysis, highest accuracy
+- Requires: OpenAI API key
+- Cost: Pay-per-use (varies by model)
+
+**2. Anthropic (Claude 3.5 Sonnet, Claude 3 Opus)**
+- Best for: Detailed vulnerability analysis
+- Requires: Anthropic API key
+- Cost: Pay-per-use
+
+**3. Ollama (Mistral, Llama2, CodeLlama)**
+- Best for: Privacy-focused, offline analysis
+- Requires: Local Ollama installation
+- Cost: Free (runs locally)
+
+### Setup
+
+```bash
+# Option 1: OpenAI (Recommended for production)
+export OPENAI_API_KEY="sk-..."
+export AI_PROVIDER="openai"
+export AI_MODEL="gpt-4o"
+
+# Option 2: Anthropic
+export ANTHROPIC_API_KEY="sk-ant-..."
+export AI_PROVIDER="anthropic"
+export AI_MODEL="claude-3-5-sonnet-20241022"
+
+# Option 3: Ollama (Local, free)
+# First install Ollama: https://ollama.ai
+brew install ollama  # macOS
+ollama pull mistral  # Download model
+export AI_PROVIDER="ollama"
+export AI_MODEL="mistral"
+```
+
+### Three AI Workflows
+
+**1. Vulnerability Analysis** - Assess exploitability and business impact
+**2. Prioritization** - Rank vulnerabilities by urgency
+**3. Remediation** - Generate actionable fix steps
+
+### 1. Vulnerability Analysis (`ai analyze`)
+
+Analyzes each vulnerability for real-world exploitability and business impact.
+
+```bash
+# Basic analysis
+threat-radar ai analyze scan.json
+
+# With specific AI provider (GPT-4o)
+threat-radar ai analyze scan.json --provider openai --model gpt-4o
+
+# Save and auto-store results
+threat-radar ai analyze scan.json --provider openai --model gpt-4o --auto-save
+
+# Using local Ollama model
+threat-radar ai analyze scan.json --provider ollama --model mistral --auto-save
+```
+
+**Example Output:**
+```
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ AI Vulnerability Analysis                                                    │
+│                                                                              │
+│ Target: ghcr.io/christophetd/log4shell-vulnerable-app                        │
+│ Total Vulnerabilities: 432                                                   │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Summary:
+The vulnerability landscape is dominated by critical remote code execution
+vulnerabilities, particularly in widely used libraries like Log4j and Spring
+Framework. These vulnerabilities pose significant risks of system compromise,
+data breaches, and service disruptions. Immediate patching and mitigation
+strategies are essential to protect against potential exploitation.
+
+High Priority Vulnerabilities (6):
+┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
+┃ CVE ID              ┃ Package           ┃ Exploitability ┃ Business Impact ┃
+┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩
+│ GHSA-jfh8-c2jp-5v3q │ log4j-core        │ HIGH           │ HIGH            │
+│ GHSA-7rjr-3q55-vv33 │ log4j-core        │ HIGH           │ HIGH            │
+│ GHSA-36p3-wjmg-h94x │ spring-beans      │ HIGH           │ HIGH            │
+│ GHSA-36p3-wjmg-h94x │ spring-webmvc     │ HIGH           │ HIGH            │
+│ GHSA-83qj-6fr2-vhqg │ tomcat-embed-core │ HIGH           │ HIGH            │
+│ GHSA-mjmj-j48q-9wg2 │ snakeyaml         │ HIGH           │ HIGH            │
+└─────────────────────┴───────────────────┴────────────────┴─────────────────┘
+
+Analysis auto-saved to storage/ai_analysis/...
+```
+
+### 2. Vulnerability Prioritization (`ai prioritize`)
+
+Generate intelligent priority rankings based on severity, exploitability, and business impact.
+
+```bash
+# Generate priority list
+threat-radar ai prioritize scan.json --provider openai --model gpt-4o
+
+# Show top 20 priorities
+threat-radar ai prioritize scan.json --provider openai --model gpt-4o --top 20 --auto-save
+
+# Using local model
+threat-radar ai prioritize scan.json --provider ollama --model mistral --top 10
+```
+
+**Example Output:**
+```
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Prioritized Vulnerability List                                               │
+│                                                                              │
+│ Target: ghcr.io/christophetd/log4shell-vulnerable-app                        │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Overall Strategy:
+Prioritize patching critical and high-severity vulnerabilities with available
+fixes, focusing on those with high exploitability and business impact. Implement
+network-level security controls and conduct thorough security assessments to
+mitigate risks. Regularly monitor for updates and educate users on safe practices.
+
+Quick Wins:
+1. Upgrade log4j-core to version 2.15.0 or later to address GHSA-jfh8-c2jp-5v3q
+2. Upgrade log4j-core to version 2.16.0 or later to address GHSA-7rjr-3q55-vv33
+3. Upgrade spring-beans to version 5.3.18 or later to address GHSA-36p3-wjmg-h94x
+4. Upgrade spring-webmvc to version 5.3.18 or later to address GHSA-36p3-wjmg-h94x
+5. Upgrade tomcat-embed-core to version 9.0.99 or later to address GHSA-83qj-6fr2-vhqg
+6. Upgrade snakeyaml to version 2.0 or later to address GHSA-mjmj-j48q-9wg2
+
+Top 20 Priorities:
+┏━━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
+┃ #  ┃ CVE ID              ┃ Package           ┃ Urgency ┃ Reason           ┃
+┡━━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
+│ 1  │ GHSA-jfh8-c2jp-5v3q │ log4j-core        │ 100     │ Remote code ex...│
+│ 2  │ GHSA-7rjr-3q55-vv33 │ log4j-core        │ 95      │ Incomplete fix...│
+│ 3  │ GHSA-36p3-wjmg-h94x │ spring-beans      │ 90      │ Highly exploit...│
+│ 4  │ GHSA-36p3-wjmg-h94x │ spring-webmvc     │ 90      │ Similar to spr...│
+│ 5  │ GHSA-83qj-6fr2-vhqg │ tomcat-embed-core │ 90      │ Highly exploit...│
+...
+└────┴─────────────────────┴───────────────────┴─────────┴──────────────────┘
+
+Priority Distribution:
+  Critical: 2
+  High: 5
+  Medium: 13
+  Low: 0
+```
+
+### 3. Remediation Planning (`ai remediate`)
+
+Generate detailed, actionable remediation steps for each vulnerability.
+
+```bash
+# Generate remediation plan
+threat-radar ai remediate scan.json --provider openai --model gpt-4o --auto-save
+
+# Show commands
+threat-radar ai remediate scan.json --provider openai --model gpt-4o --show-commands
+
+# Save to file
+threat-radar ai remediate scan.json --provider openai --model gpt-4o -o remediation.json
+```
+
+**Example Output:**
+```
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Remediation Plan                                                             │
+│                                                                              │
+│ Target: ghcr.io/christophetd/log4shell-vulnerable-app                        │
+│ Vulnerabilities: 432                                                         │
+│ Packages Affected: 5                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Packages Requiring Updates:
+  • log4j-core: 3 vulnerabilities → 2.17.0 [✓ Upgrade fixes all]
+  • spring-beans: 1 vulnerabilities → 5.3.18 [✓ Upgrade fixes all]
+  • tomcat-embed-core: 4 vulnerabilities → 9.0.99 [✓ Upgrade fixes all]
+  • freetype: 2 vulnerabilities → No fix available [⚠ Partial fix]
+  • zlib: 1 vulnerabilities → No fix available [⚠ Partial fix]
+
+Upgrade Commands:
+
+MAVEN:
+  mvn dependency:purge-local-repository -DreResolve=false && mvn clean install -Dlog4j2.version=2.15.0
+  mvn dependency:purge-local-repository -DreResolve=false && mvn clean install -Dlog4j2.version=2.16.0
+  mvn dependency:purge-local-repository -DreResolve=false && mvn clean install -Dspring.version=5.3.18
+  mvn dependency:purge-local-repository -DreResolve=false && mvn clean install -Dtomcat.version=9.0.99
+
+Quick Fixes (1 low-effort remediations):
+  • CVE-2020-15999 (freetype): N/A
+
+Remediation plan auto-saved to storage/ai_analysis/...
+```
+
+### Complete AI Workflow
+
+**Step-by-step: Scan → Analyze → Prioritize → Remediate**
+
+```bash
+#!/bin/bash
+# ai_security_analysis.sh
+
+# Set your AI provider (choose one)
+export OPENAI_API_KEY="sk-..."  # For GPT-4o
+# OR
+# export ANTHROPIC_API_KEY="sk-ant-..."  # For Claude
+# OR
+# ollama pull mistral  # For local Ollama
+
+IMAGE="ghcr.io/christophetd/log4shell-vulnerable-app"
+
+echo "Step 1: Scanning image for vulnerabilities..."
+threat-radar cve scan-image $IMAGE --output scan.json
+
+echo "Step 2: AI Analysis - Assessing exploitability and business impact..."
+threat-radar ai analyze scan.json --provider openai --model gpt-4o --auto-save
+
+echo "Step 3: AI Prioritization - Ranking vulnerabilities by urgency..."
+threat-radar ai prioritize scan.json --provider openai --model gpt-4o --auto-save --top 20
+
+echo "Step 4: AI Remediation - Generating actionable fix steps..."
+threat-radar ai remediate scan.json --provider openai --model gpt-4o --auto-save
+
+echo "✓ Complete! All AI analysis results saved to storage/ai_analysis/"
+ls -lh storage/ai_analysis/
+```
+
+### AI Storage Organization
+
+Results are automatically organized when using `--auto-save`:
+
+```
+storage/ai_analysis/
+└── ghcr_io_christophetd_log4shell-vulnerable-app/
+    ├── analysis_2025-10-21_00-15-50.json
+    ├── prioritization_2025-10-21_00-19-28.json
+    └── remediation_2025-10-21_00-19-56.json
+```
+
+### Comparison: Ollama vs OpenAI
+
+| Feature | Ollama (Local) | OpenAI (GPT-4o) |
+|---------|----------------|-----------------|
+| **Cost** | Free | ~$0.01-0.10 per scan |
+| **Privacy** | Complete (offline) | Data sent to OpenAI |
+| **Speed** | Slower (depends on hardware) | Fast (cloud optimized) |
+| **Quality** | Good | Excellent |
+| **Setup** | Requires local install | API key only |
+| **Best For** | Privacy, testing | Production, accuracy |
+
+### Example: Comparing AI Providers
+
+```bash
+# Scan once, analyze with different providers
+threat-radar cve scan-image ghcr.io/christophetd/log4shell-vulnerable-app --output scan.json
+
+# Analyze with GPT-4o
+threat-radar ai analyze scan.json --provider openai --model gpt-4o -o analysis_gpt4o.json
+
+# Analyze with Claude
+threat-radar ai analyze scan.json --provider anthropic --model claude-3-5-sonnet-20241022 -o analysis_claude.json
+
+# Analyze with local Mistral
+threat-radar ai analyze scan.json --provider ollama --model mistral -o analysis_mistral.json
+
+# Compare results
+diff analysis_gpt4o.json analysis_claude.json
 ```
 
 ## Complete Workflows
