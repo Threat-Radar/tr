@@ -428,6 +428,369 @@ matcher = CVEMatcher(
 
 ---
 
+## C) AI-Powered Vulnerability Analysis
+
+### 1. Overview
+
+Threat Radar includes AI-powered analysis capabilities that transform raw vulnerability scan results into actionable intelligence. Using Large Language Models (LLMs), the platform provides:
+
+- **Exploitability Assessment** - Understanding how easily vulnerabilities can be exploited
+- **Business Impact Analysis** - Evaluating potential damage to operations
+- **Smart Prioritization** - Ranking vulnerabilities by urgency and impact
+- **Remediation Planning** - Generating step-by-step fix instructions
+- **Risk Assessment** - Comprehensive security posture evaluation
+
+**Supported AI Providers:**
+- **OpenAI** (GPT-4o, GPT-4-Turbo, GPT-3.5-Turbo) - Cloud-based, most capable
+- **Anthropic** (Claude 3.5 Sonnet, Claude 3 Opus) - Cloud-based, excellent analysis
+- **Ollama** (Llama2, Mistral, CodeLlama, etc.) - Local models, privacy-focused
+
+### 2. AI Commands
+
+**Three main AI-powered workflows:**
+
+```bash
+# 1. Analyze vulnerabilities for exploitability and impact
+threat-radar ai analyze scan-results.json
+
+# 2. Generate prioritized remediation list
+threat-radar ai prioritize scan-results.json
+
+# 3. Create detailed remediation plan with steps
+threat-radar ai remediate scan-results.json
+```
+
+### 3. Vulnerability Analysis (`ai analyze`)
+
+**Purpose:** Assess each vulnerability for real-world exploitability and business impact.
+
+**What it provides:**
+- Exploitability rating (HIGH/MEDIUM/LOW)
+- Attack vector analysis
+- Business impact evaluation
+- Contextual recommendations
+- High-priority vulnerability identification
+
+**Example Command:**
+```bash
+# Basic analysis
+threat-radar ai analyze scan-results.json
+
+# With specific AI provider
+threat-radar ai analyze results.json --provider openai --model gpt-4o
+
+# Save results
+threat-radar ai analyze scan.json -o analysis.json --auto-save
+```
+
+**Sample Output:**
+```
+AI Vulnerability Analysis
+
+Target: ghcr.io/christophetd/log4shell-vulnerable-app
+Total Vulnerabilities: 432
+
+Summary:
+The scan reveals critical security issues including the infamous Log4Shell
+vulnerability (CVE-2021-44228) with CVSS 10.0, multiple Spring Framework RCE
+vulnerabilities, and outdated Alpine packages. Immediate action required on
+CRITICAL findings.
+
+High Priority Vulnerabilities (28):
+┏━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
+┃ CVE ID             ┃ Package    ┃ Exploitability┃ Business Impact ┃
+┡━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩
+│ CVE-2021-44228     │ log4j-core │ HIGH          │ HIGH            │
+│ CVE-2022-22965     │ spring-web │ HIGH          │ HIGH            │
+│ ...                │            │               │                 │
+└────────────────────┴────────────┴───────────────┴─────────────────┘
+```
+
+**AI Prompt Used:**
+```
+You are a cybersecurity expert analyzing vulnerability scan results.
+
+Analyze the following vulnerabilities and provide insights about their
+exploitability, attack vectors, and business impact.
+
+For each vulnerability, analyze:
+1. Exploitability: How easily can this vulnerability be exploited?
+2. Attack Vectors: What are the possible attack vectors?
+3. Business Impact: What is the potential business impact if exploited?
+4. Context: Consider the package name, version, and severity
+
+Provide your analysis in JSON format with exploitability ratings,
+attack vectors, business impact assessments, and recommendations.
+```
+
+### 4. Vulnerability Prioritization (`ai prioritize`)
+
+**Purpose:** Generate intelligent priority rankings based on multiple factors.
+
+**What it provides:**
+- Urgency scores (0-100) for each vulnerability
+- Priority levels (Critical, High, Medium, Low)
+- Overall remediation strategy
+- Quick win identification
+- Rationale for each priority
+
+**Example Commands:**
+```bash
+# Generate priority list
+threat-radar ai prioritize scan-results.json
+
+# Show top 20 priorities
+threat-radar ai prioritize results.json --top 20
+
+# Save prioritized list
+threat-radar ai prioritize scan.json -o priorities.json --auto-save
+```
+
+**Sample Output:**
+```
+Prioritized Vulnerability List
+
+Target: ghcr.io/christophetd/log4shell-vulnerable-app
+
+Overall Strategy:
+Focus on patching Log4Shell and Spring Framework vulnerabilities first as they
+present the highest risk of remote code execution. Follow with Alpine package
+updates to address the remaining medium-severity issues.
+
+Quick Wins:
+1. Upgrade log4j-core to 2.17.1+ (fixes CVE-2021-44228 and related CVEs)
+2. Update spring-beans and spring-web to 5.3.18+ (addresses multiple RCEs)
+3. Upgrade tomcat-embed-core to 9.0.62+ (fixes authentication bypass)
+
+Top 10 Priorities:
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ # ┃ CVE ID         ┃ Package    ┃ Urgency┃ Reason                       ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 1 │ CVE-2021-44228 │ log4j-core │ 100    │ Log4Shell: Actively exploited│
+│ 2 │ CVE-2022-22965 │ spring-web │ 95     │ Spring4Shell: RCE in Spring  │
+│ 3 │ CVE-2022-22950 │ spring-exp │ 90     │ SpEL injection, easy exploit │
+└───┴────────────────┴────────────┴────────┴──────────────────────────────┘
+
+Priority Distribution:
+  Critical: 28
+  High: 95
+  Medium: 183
+  Low: 126
+```
+
+**AI Prompt Used:**
+```
+You are a cybersecurity expert helping prioritize vulnerability remediation efforts.
+
+Given the following vulnerability analysis, create a prioritized list based on:
+1. CVSS severity score
+2. Exploitability
+3. Business impact
+4. Availability of patches/fixes
+
+Create a prioritized remediation plan with urgency scores (0-100), overall
+strategy, and quick wins identification.
+```
+
+### 5. Remediation Planning (`ai remediate`)
+
+**Purpose:** Generate detailed, actionable remediation steps for each vulnerability.
+
+**What it provides:**
+- Immediate mitigation actions
+- Specific version upgrades needed
+- Package manager commands (pip, npm, apk, etc.)
+- Workarounds when patches unavailable
+- Testing verification steps
+- Security advisory references
+
+**Example Commands:**
+```bash
+# Generate remediation plan
+threat-radar ai remediate scan-results.json
+
+# Save plan and show commands
+threat-radar ai remediate results.json -o remediation.json
+
+# Use local AI model (Ollama)
+threat-radar ai remediate scan.json --provider ollama --model llama2
+```
+
+**Sample Output:**
+```
+Remediation Plan
+
+Target: ghcr.io/christophetd/log4shell-vulnerable-app
+Vulnerabilities: 432
+Packages Affected: 85
+
+Packages Requiring Updates:
+  • log4j-core: 3 vulnerabilities → 2.17.1 [✓ Upgrade fixes all]
+  • spring-beans: 5 vulnerabilities → 5.3.18 [✓ Upgrade fixes all]
+  • spring-web: 8 vulnerabilities → 5.3.18 [✓ Upgrade fixes all]
+  • tomcat-embed-core: 4 vulnerabilities → 9.0.62 [⚠ Partial fix]
+  • zlib: 2 vulnerabilities → No fix [⚠ Partial fix]
+
+Upgrade Commands:
+
+MAVEN:
+  mvn versions:use-dep-version -Dincludes=org.apache.logging.log4j:log4j-core -DdepVersion=2.17.1
+  mvn versions:use-dep-version -Dincludes=org.springframework:spring-beans -DdepVersion=5.3.18
+  mvn versions:use-dep-version -Dincludes=org.springframework:spring-web -DdepVersion=5.3.18
+  ... and 12 more commands
+
+Quick Fixes (15 low-effort remediations):
+  • CVE-2021-44228 (log4j-core): Update to version 2.17.1
+  • CVE-2022-22965 (spring-web): Update to version 5.3.18
+  • CVE-2021-45046 (log4j-core): Update to version 2.17.1
+  ... and 12 more quick fixes
+```
+
+**AI Prompt Used:**
+```
+You are a cybersecurity expert providing remediation guidance.
+
+For the following vulnerabilities, provide detailed, actionable remediation steps.
+
+For each vulnerability, provide:
+1. Immediate Actions: What should be done right now to mitigate risk?
+2. Patch/Upgrade Path: Specific version upgrades or patches needed
+3. Workarounds: If no patch available, what are the workarounds?
+4. Testing Steps: How to verify the fix works
+5. References: Links to security advisories, patches, documentation
+
+Include package-specific upgrade commands and effort estimates.
+```
+
+### 6. Comprehensive Reporting (`report generate`)
+
+**Purpose:** Generate executive-ready vulnerability reports with AI insights.
+
+**What it provides:**
+- Complete vulnerability analysis report
+- Risk assessment with scoring
+- Compliance concerns (PCI-DSS, HIPAA, GDPR)
+- Prioritized action items
+- Executive summary
+- Dashboard-compatible data export
+
+**Example Commands:**
+```bash
+# Generate comprehensive report
+threat-radar report generate scan-results.json
+
+# Export dashboard data
+threat-radar report dashboard-export scan.json -o dashboard.json
+
+# Compare two reports
+threat-radar report compare old-scan.json new-scan.json
+```
+
+**Risk Assessment AI Prompt:**
+```
+You are a cybersecurity risk analyst assessing the overall risk posture.
+
+Analyze the following vulnerability data to provide a comprehensive risk assessment:
+- Risk score (0-100)
+- Risk level (CRITICAL/HIGH/MEDIUM/LOW)
+- Key risks with likelihood and impact
+- Compliance concerns (PCI-DSS, HIPAA, GDPR)
+- Recommended actions with timeframes
+- Executive summary
+
+Consider the number, severity, and exploitability of vulnerabilities.
+```
+
+### 7. Setup and Configuration
+
+**Environment Variables:**
+```bash
+# OpenAI Configuration
+export OPENAI_API_KEY="sk-..."
+export AI_PROVIDER="openai"
+export AI_MODEL="gpt-4o"
+
+# Anthropic Configuration
+export ANTHROPIC_API_KEY="sk-ant-..."
+export AI_PROVIDER="anthropic"
+export AI_MODEL="claude-3-5-sonnet-20241022"
+
+# Ollama Configuration (local models)
+export AI_PROVIDER="ollama"
+export AI_MODEL="llama2"
+export LOCAL_MODEL_ENDPOINT="http://localhost:11434"
+```
+
+**Installation:**
+```bash
+# OpenAI support
+pip install openai
+
+# Anthropic support
+pip install anthropic
+
+# Ollama (local models) - no additional packages needed
+# Just install Ollama: https://ollama.ai
+```
+
+### 8. Complete AI Workflow Example
+
+```bash
+# Step 1: Generate SBOM
+threat-radar sbom docker ghcr.io/christophetd/log4shell-vulnerable-app --auto-save
+
+# Step 2: Scan for vulnerabilities
+threat-radar cve scan-image ghcr.io/christophetd/log4shell-vulnerable-app > scan.json
+
+# Step 3: AI Analysis (exploitability & impact)
+threat-radar ai analyze scan.json --auto-save
+
+# Step 4: AI Prioritization (ranked by urgency)
+threat-radar ai prioritize scan.json --top 20 --auto-save
+
+# Step 5: AI Remediation (actionable fix steps)
+threat-radar ai remediate scan.json --auto-save
+
+# Step 6: Generate comprehensive report
+threat-radar report generate scan.json -o final-report.html
+
+# All AI results auto-saved to storage/ai_analysis/
+```
+
+### 9. AI Storage Organization
+
+**Auto-save creates organized storage:**
+```
+storage/
+└── ai_analysis/
+    ├── ghcr.io_christophetd_log4shell-vulnerable-app/
+    │   ├── analysis_20251020_230145.json
+    │   ├── prioritization_20251020_230302.json
+    │   └── remediation_20251020_230445.json
+    └── production-app/
+        ├── analysis_20251020_120000.json
+        └── remediation_20251020_120500.json
+```
+
+### 10. Key Benefits
+
+**Why AI-Powered Analysis?**
+- **Context-Aware** - Understands real-world exploitability, not just CVSS scores
+- **Business-Focused** - Evaluates impact to your specific operations
+- **Actionable** - Provides concrete steps, not just vulnerability lists
+- **Time-Saving** - Automated triage instead of manual research
+- **Flexible** - Choose cloud (OpenAI/Anthropic) or local (Ollama) models
+- **Privacy-Conscious** - Can run entirely offline with Ollama
+
+**Use Cases:**
+1. **Security Teams** - Triage hundreds of CVEs efficiently
+2. **DevOps** - Get remediation commands ready for immediate use
+3. **Management** - Executive-friendly reports with business impact
+4. **Compliance** - Identify regulatory concerns automatically
+5. **Research** - Understand vulnerability context and attack vectors
+
+---
+
 ## Technical Architecture
 
 ### Core Components
@@ -620,6 +983,14 @@ fi
 5. **Multi-Ecosystem** - Supports all package types (Python, Java, Go, Alpine, Debian, etc.)
 6. **Regular Updates** - Daily vulnerability database updates
 7. **SBOM Native** - Seamless integration with Syft-generated SBOMs
+
+### ✅ AI-Powered Analysis
+1. **Three AI workflows** - Analyze, prioritize, remediate
+2. **Multiple providers** - OpenAI, Anthropic, or local Ollama models
+3. **Context-aware** - Real-world exploitability, not just CVSS scores
+4. **Actionable output** - Specific upgrade commands and remediation steps
+5. **Privacy options** - Cloud-based or fully offline with local models
+6. **Auto-storage** - Organized AI analysis results with timestamps
 
 ### ✅ Quality Metrics
 1. **Code quality:** 8.5/10 (per code review)
