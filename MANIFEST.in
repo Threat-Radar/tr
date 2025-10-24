@@ -1,0 +1,50 @@
+# Include documentation files
+include README.md
+include LICENSE
+include CLAUDE.md
+include PROJECT_SUMMARY.md
+include BATCH_PROCESSING_IMPLEMENTATION.md
+
+# Include requirements files
+include requirements.txt
+include requirements-dev.txt
+include requirements-ai.txt
+
+# Include environment configuration template
+include .env.example
+
+# Include documentation directory
+recursive-include docs *.md
+recursive-include docs *.txt
+
+# Include examples
+recursive-include examples *.py
+recursive-include examples *.md
+recursive-include examples *.sh
+recursive-include examples *.json
+
+# Include test fixtures but not test outputs
+recursive-include tests/fixtures *.json
+recursive-include tests/fixtures *.txt
+
+# Exclude compiled Python files
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude __pycache__
+global-exclude .DS_Store
+
+# Exclude storage directories (git-ignored)
+prune storage
+prune sbom_storage
+prune .git
+prune .idea
+prune .mypy_cache
+prune .pytest_cache
+prune .venv
+
+# Exclude test outputs and reports
+exclude *.html
+exclude *.csv
+exclude scan*.json
+exclude sbom.json
+exclude report.json

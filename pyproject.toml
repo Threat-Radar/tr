@@ -5,20 +5,46 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "threat-radar"
 version = "0.1.0"
-description = "Threat Radar (tr) application and associated libraries"
-authors = [{name = "Your Name", email = "your.email@example.com"}]
+description = "Enterprise-grade threat assessment and vulnerability analysis platform for Docker containers and software dependencies"
+authors = [{name = "Threat Radar Team", email = "contact@threat-radar.dev"}]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.8"
+keywords = [
+    "security",
+    "vulnerability",
+    "cve",
+    "docker",
+    "sbom",
+    "scanning",
+    "threat-analysis",
+    "grype",
+    "syft",
+    "ai-security",
+    "vulnerability-scanning",
+    "container-security",
+]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Information Technology",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: System :: Monitoring",
+    "Topic :: System :: Systems Administration",
+    "Environment :: Console",
+    "Typing :: Typed",
 ]
 dependencies = [
     "PyGithub==2.1.1",
@@ -49,8 +75,10 @@ tradar = "threat_radar.cli.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/yourusername/threat-radar"
+Documentation = "https://github.com/yourusername/threat-radar/blob/main/README.md"
 Repository = "https://github.com/yourusername/threat-radar.git"
 Issues = "https://github.com/yourusername/threat-radar/issues"
+Changelog = "https://github.com/yourusername/threat-radar/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 where = ["."]
