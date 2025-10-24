@@ -18,6 +18,15 @@ threat-radar --help
 # Run vulnerability scan
 threat-radar cve scan-image alpine:3.18 --auto-save
 
+# Use global options for verbose output and JSON format
+threat-radar -vv -f json cve scan-image python:3.11 --auto-save
+
+# Load configuration from custom file
+threat-radar --config ./myconfig.json cve scan-image ubuntu:22.04
+
+# Quiet mode for CI/CD (errors only)
+threat-radar -q --no-color cve scan-image myapp:latest --fail-on HIGH
+
 # Generate SBOM
 threat-radar sbom docker python:3.11 -o sbom.json
 
@@ -99,11 +108,157 @@ mypy threat_radar/
 flake8 threat_radar/
 ```
 
+## CLI Global Options & Configuration
+
+### Global Options
+
+All Threat Radar commands support global options that control behavior across the entire CLI:
+
+```bash
+threat-radar [OPTIONS] COMMAND [ARGS]
+
+Global Options:
+  -c, --config PATH        Path to configuration file (JSON format)
+  -v, --verbose            Increase verbosity (can be repeated: -v, -vv, -vvv)
+  -q, --quiet              Suppress all output except errors
+  -f, --output-format TEXT Default output format (table, json, yaml, csv)
+  --no-color               Disable colored output
+  --no-progress            Disable progress indicators
+  --help                   Show help message
+```
+
+### Verbosity Levels
+
+Control the amount of output and logging:
+
+| Level | Flag | Description | Use Case |
+|-------|------|-------------|----------|
+| 0 | `--quiet` or `-q` | Errors only | Scripts, automation |
+| 1 | (default) | Warnings and errors | Normal interactive use |
+| 2 | `-v` | Info, warnings, errors | Debugging issues |
+| 3 | `-vv` or `-vvv` | Debug - everything | Development, troubleshooting |
+
+**Examples:**
+```bash
+# Quiet mode for automation
+threat-radar -q cve scan-image alpine:3.18
+
+# Verbose debugging
+threat-radar -vv cve scan-image python:3.11
+
+# Very verbose with all internal logging
+threat-radar -vvv ai analyze scan.json
+```
+
+### Configuration File Support
+
+Threat Radar supports persistent configuration through JSON files. Configuration is searched in the following order (first found wins):
+
+1. `./.threat-radar.json` (current directory)
+2. `./threat-radar.json` (current directory)
+3. `~/.threat-radar/config.json` (user home)
+4. `~/.config/threat-radar/config.json` (XDG config)
+
+**Configuration precedence (later overrides earlier):**
+1. Default values (built into code)
+2. Configuration file (if found)
+3. Environment variables (if set)
+4. Command-line options (highest priority)
+
+**Example configuration file:**
+```json
+{
+  "scan": {
+    "severity": "HIGH",
+    "only_fixed": false,
+    "auto_save": true,
+    "cleanup": false,
+    "scope": "squashed",
+    "output_format": "json"
+  },
+  "ai": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "temperature": 0.3,
+    "batch_size": 25,
+    "auto_batch_threshold": 30
+  },
+  "report": {
+    "level": "detailed",
+    "format": "json",
+    "include_executive_summary": true,
+    "include_dashboard_data": true
+  },
+  "output": {
+    "format": "table",
+    "verbosity": 1,
+    "color": true,
+    "progress": true
+  },
+  "paths": {
+    "cve_storage": "./storage/cve_storage",
+    "ai_storage": "./storage/ai_analysis",
+    "sbom_storage": "./sbom_storage",
+    "cache_dir": "~/.threat-radar/cache",
+    "config_dir": "~/.threat-radar"
+  }
+}
+```
+
+### Configuration Management Commands
+
+```bash
+# Initialize new configuration file
+threat-radar config init
+threat-radar config init --path ./my-config.json
+threat-radar config init --force  # Overwrite existing
+
+# Show current configuration
+threat-radar config show
+threat-radar config show scan.severity
+threat-radar config show ai.provider
+
+# Modify configuration
+threat-radar config set scan.severity HIGH
+threat-radar config set ai.provider ollama
+threat-radar config set output.verbosity 2
+
+# Validate configuration file
+threat-radar config validate
+threat-radar config validate ./my-config.json
+
+# Show configuration file locations
+threat-radar config path
+```
+
+### Output Formats
+
+Threat Radar supports multiple output formats for different use cases:
+
+- **table** (default) - Human-readable formatted tables for interactive use
+- **json** - Machine-readable JSON output for automation and parsing
+- **yaml** - YAML format for human-readable structured data
+- **csv** - Comma-separated values for spreadsheet compatibility
+
+**Examples:**
+```bash
+# JSON output for automation
+threat-radar -f json cve scan-image alpine:3.18
+
+# CSV output for spreadsheets
+threat-radar -f csv sbom components sbom.json -o packages.csv
+
+# Combine with other global options
+threat-radar -q -f json --no-color cve scan-image myapp:latest > results.json
+```
+
+**For complete CLI features documentation, see [docs/CLI_FEATURES.md](docs/CLI_FEATURES.md)**
+
 ## Architecture
 
 ### CLI Structure
 The CLI is built with Typer and uses a modular command structure in `threat_radar/cli/`:
-- `app.py` - Main CLI app that registers all sub-commands
+- `app.py` - Main CLI app with global options callback (--config, --verbose, --quiet, --output-format, --no-color, --no-progress) and sub-command registration
 - `__main__.py` - Entry point for `python -m threat_radar.cli` and CLI scripts
 - `cve.py` - CVE vulnerability scanning with Grype (scan-image, scan-sbom, scan-directory, db-update, db-status)
 - `docker.py` - Docker container analysis commands (import-image, scan, packages, list-images, python-sbom)
@@ -111,7 +266,7 @@ The CLI is built with Typer and uses a modular command structure in `threat_rada
 - `ai.py` - AI-powered vulnerability analysis (analyze, prioritize, remediate) with batch processing support
 - `report.py` - Comprehensive reporting with AI executive summaries (generate, dashboard-export, compare)
 - `hash.py` - File hashing utilities
-- `config.py` - Configuration management
+- `config.py` - Configuration management (show, set, init, path, validate)
 - `enrich.py` - Data enrichment operations (reserved for future features)
 
 ### Core Modules
@@ -163,6 +318,17 @@ The CLI is built with Typer and uses a modular command structure in `threat_rada
 
 #### Utilities (`threat_radar/utils/`)
 - **`hasher.py`** - File hashing utilities for integrity verification
+- **`config_manager.py`** - Configuration management system
+  - `ThreatRadarConfig` - Main configuration dataclass with nested defaults for scan, AI, report, output, and paths
+  - `ConfigManager` - Manages config loading from JSON files, environment variables, and defaults
+  - Supports multiple config file locations with precedence rules
+  - Dot-notation key access (e.g., `config.get('scan.severity')`)
+  - Save/load config to/from JSON files
+- **`cli_context.py`** - Global CLI context management
+  - `CLIContext` - Holds global CLI state (config_manager, verbosity, output_format, console, etc.)
+  - Integrates with Rich console for colored output and progress bars
+  - Sets up logging based on verbosity level (0-3)
+  - Global context getter/setter for accessing CLI options across commands
 
 ### Docker Analysis Workflow
 
@@ -1405,3 +1571,22 @@ mkdir -p sbom_storage/docker sbom_storage/local
 ```
 
 For more troubleshooting help, see `examples/TROUBLESHOOTING.md`
+
+---
+
+## Documentation Resources
+
+### User Documentation
+- **[INSTALLATION.md](INSTALLATION.md)** - Complete installation guide for all platforms (macOS, Linux, Windows)
+- **[docs/CLI_FEATURES.md](docs/CLI_FEATURES.md)** - Comprehensive CLI features guide (global options, configuration, filtering, output formats)
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
+
+### Developer Documentation
+- **[docs/API.md](docs/API.md)** - Complete Python API reference for programmatic usage
+- **[PUBLISHING.md](PUBLISHING.md)** - PyPI publishing and release workflow guide
+- **[threat-radar.config.example.json](threat-radar.config.example.json)** - Example configuration file template
+
+### Additional Resources
+- **[README.md](README.md)** - Project overview and quick start
+- **[examples/TROUBLESHOOTING.md](examples/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[.env.example](.env.example)** - Environment variables template
