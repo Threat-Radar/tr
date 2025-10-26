@@ -1,5 +1,5 @@
 # Threat Radar Architecture & Design Patterns Analysis
-## Executive Summary for Professor Presentation
+## Executive Summary for Midterm Presentation
 
 This document provides a detailed walkthrough of design patterns and architectural decisions in the Threat Radar vulnerability assessment platform. The analysis includes concrete code examples and file references suitable for an academic presentation.
 

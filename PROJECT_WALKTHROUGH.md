@@ -1,4 +1,4 @@
-# Threat Radar - Professor Walkthrough Guide
+# Threat Radar - Midterm Walkthrough Guide
 
 **Project**: Threat Radar (tr-m2)
 **Type**: Enterprise Security Vulnerability Management CLI Tool
