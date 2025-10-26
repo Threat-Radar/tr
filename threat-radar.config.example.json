@@ -1,0 +1,36 @@
+{
+  "scan": {
+    "severity": null,
+    "only_fixed": false,
+    "auto_save": true,
+    "cleanup": false,
+    "scope": "squashed",
+    "output_format": "json"
+  },
+  "ai": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "temperature": 0.3,
+    "batch_size": 25,
+    "auto_batch_threshold": 30
+  },
+  "report": {
+    "level": "detailed",
+    "format": "json",
+    "include_executive_summary": true,
+    "include_dashboard_data": true
+  },
+  "output": {
+    "format": "table",
+    "verbosity": 1,
+    "color": true,
+    "progress": true
+  },
+  "paths": {
+    "cve_storage": "./storage/cve_storage",
+    "ai_storage": "./storage/ai_analysis",
+    "sbom_storage": "./sbom_storage",
+    "cache_dir": "~/.threat-radar/cache",
+    "config_dir": "~/.threat-radar"
+  }
+}
