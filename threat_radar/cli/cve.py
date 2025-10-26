@@ -526,3 +526,282 @@ def _get_severity_color(severity: str) -> str:
         "negligible": "green",
     }
     return colors.get(severity, "white")
+
+
+@app.command("list-scans")
+def list_scans(
+    type: str = typer.Option("all", "--type", "-t", help="Filter by scan type (image, sbom, directory, all)"),
+    severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Filter scans with minimum severity (critical, high, medium, low)"),
+    limit: Optional[int] = typer.Option(None, "--limit", "-n", help="Limit number of results shown"),
+    sort_by: str = typer.Option("date", "--sort-by", help="Sort by: date, vulnerabilities, critical, name"),
+    details: bool = typer.Option(False, "--details", "-d", help="Show detailed view with severity breakdown"),
+    format: str = typer.Option("table", "--format", "-f", help="Output format: table, json"),
+):
+    """
+    List all stored CVE scan results.
+
+    Shows scans from the storage/cve_storage/ directory with metadata including
+    scan target, type, total vulnerabilities, severity breakdown, and scan date.
+
+    Examples:
+        threat-radar cve list-scans
+        threat-radar cve list-scans --type image
+        threat-radar cve list-scans --severity critical
+        threat-radar cve list-scans --details
+        threat-radar cve list-scans --limit 10 --sort-by vulnerabilities
+        threat-radar cve list-scans --format json
+    """
+    from ..core.cve_storage_manager import CVEStorageManager
+    from ..utils.cve_utils import display_scans_table
+
+    with handle_cli_error("listing CVE scans", console):
+        manager = CVEStorageManager()
+
+        # Get scans
+        scans = manager.list_scans(
+            type_filter=type,
+            severity_filter=severity,
+            limit=limit,
+            sort_by=sort_by
+        )
+
+        if format == "json":
+            import json
+            scans_data = [
+                {
+                    "filename": s.filename,
+                    "target": s.target,
+                    "scan_type": s.scan_type,
+                    "total_vulnerabilities": s.total_vulnerabilities,
+                    "severity_counts": s.severity_counts,
+                    "scan_date": s.scan_date.isoformat(),
+                    "file_size": s.file_size,
+                }
+                for s in scans
+            ]
+            console.print_json(data=scans_data)
+        else:
+            display_scans_table(scans, console, details=details)
+
+
+@app.command("show")
+def show_scan(
+    scan_file: Path = typer.Argument(..., help="CVE scan file to display (can use wildcards)"),
+    severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Filter by severity (critical, high, medium, low, all)"),
+    package: Optional[str] = typer.Option(None, "--package", "-p", help="Filter by package name (partial match)"),
+    cve_id: Optional[str] = typer.Option(None, "--cve-id", "-c", help="Filter by specific CVE ID"),
+    fixed_only: bool = typer.Option(False, "--fixed-only", help="Show only vulnerabilities with fixes"),
+    no_fix: bool = typer.Option(False, "--no-fix", help="Show only vulnerabilities without fixes"),
+    limit: Optional[int] = typer.Option(20, "--limit", "-n", help="Limit vulnerabilities shown"),
+    format: str = typer.Option("table", "--format", "-f", help="Output: table, json, summary, detailed"),
+    group_by: Optional[str] = typer.Option(None, "--group-by", "-g", help="Group by: package, severity, type"),
+    export: Optional[Path] = typer.Option(None, "--export", "-o", help="Export filtered results to file"),
+):
+    """
+    Display detailed information about a specific CVE scan.
+
+    Shows vulnerabilities with filtering, grouping, and export capabilities.
+
+    Examples:
+        threat-radar cve show storage/cve_storage/alpine*.json
+        threat-radar cve show node_16_*.json --severity critical
+        threat-radar cve show scan.json --package openssl
+        threat-radar cve show scan.json --cve-id CVE-2023-4863
+        threat-radar cve show scan.json --no-fix --severity high
+        threat-radar cve show scan.json --group-by package
+        threat-radar cve show scan.json --severity high --export critical.json
+    """
+    from ..core.cve_storage_manager import CVEStorageManager
+    from ..utils.cve_utils import (
+        display_scan_summary,
+        display_vulnerabilities_table,
+        display_vulnerabilities_grouped_by_package
+    )
+    import glob
+
+    with handle_cli_error("displaying CVE scan", console):
+        # Handle wildcards
+        scan_path_str = str(scan_file)
+        matching_files = glob.glob(scan_path_str)
+
+        if not matching_files:
+            console.print(f"[red]Error: No files found matching '{scan_path_str}'[/red]")
+            raise typer.Exit(code=1)
+
+        if len(matching_files) > 1:
+            console.print(f"[yellow]Warning: Multiple files match. Using first: {matching_files[0]}[/yellow]")
+
+        scan_path = Path(matching_files[0])
+
+        if not scan_path.exists():
+            console.print(f"[red]Error: File not found: {scan_path}[/red]")
+            raise typer.Exit(code=1)
+
+        manager = CVEStorageManager()
+        scan_data = manager.load_scan(scan_path)
+        vulnerabilities = scan_data.get("vulnerabilities", [])
+
+        # Apply filters
+        filtered_vulns = vulnerabilities
+
+        # Severity filter
+        if severity:
+            severity_priority = {"critical": 0, "high": 1, "medium": 2, "low": 3, "negligible": 4}
+            min_level = severity_priority.get(severity.lower(), 5)
+            filtered_vulns = [
+                v for v in filtered_vulns
+                if severity_priority.get(v.get("severity", "").lower(), 5) <= min_level
+            ]
+
+        # Package filter
+        if package:
+            filtered_vulns = [
+                v for v in filtered_vulns
+                if package.lower() in v.get("package", "").lower()
+            ]
+
+        # CVE ID filter
+        if cve_id:
+            filtered_vulns = [
+                v for v in filtered_vulns
+                if cve_id.upper() in v.get("id", "").upper()
+            ]
+
+        # Fix availability filters
+        if fixed_only:
+            filtered_vulns = [v for v in filtered_vulns if v.get("fixed_in")]
+        elif no_fix:
+            filtered_vulns = [v for v in filtered_vulns if not v.get("fixed_in")]
+
+        # Update scan data with filtered vulnerabilities for export
+        if export:
+            export_data = scan_data.copy()
+            export_data["vulnerabilities"] = filtered_vulns
+            export_data["total_vulnerabilities"] = len(filtered_vulns)
+            save_json(export_data, export, console)
+
+        # Display based on format
+        target = scan_data.get("target") or scan_data.get("sbom_file") or scan_data.get("directory", scan_path.name)
+
+        if format == "json":
+            console.print_json(data=scan_data)
+        elif format == "summary":
+            display_scan_summary(scan_data, target, console)
+        elif format == "detailed" or group_by == "package":
+            display_vulnerabilities_grouped_by_package(filtered_vulns, console, severity)
+        else:  # table
+            if format != "detailed":
+                # Show summary first
+                display_scan_summary(scan_data, target, console)
+                console.print()
+
+            # Then show table
+            display_vulnerabilities_table(filtered_vulns, console, limit=limit)
+
+
+@app.command("search")
+def search_scans(
+    query: str = typer.Argument(..., help="Search query (CVE ID, package name, or description text)"),
+    query_type: str = typer.Option("auto", "--query-type", "-t", help="Search type: auto, cve-id, package, description"),
+    severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Filter by minimum severity"),
+    scans: str = typer.Option("*", "--scans", help="Limit to specific scans (glob pattern)"),
+    case_sensitive: bool = typer.Option(False, "--case-sensitive", help="Case-sensitive search"),
+    exact_match: bool = typer.Option(False, "--exact-match", help="Exact match only (no partial)"),
+    show_scan_info: bool = typer.Option(True, "--show-scan-info", help="Show which scan each result came from"),
+    format: str = typer.Option("table", "--format", "-f", help="Output format: table, json"),
+):
+    """
+    Search across ALL stored CVE scans for specific vulnerabilities, packages, or patterns.
+
+    Searches through all scans in storage/cve_storage/ directory.
+
+    Examples:
+        threat-radar cve search CVE-2023-4863
+        threat-radar cve search openssl --query-type package
+        threat-radar cve search "buffer overflow" --query-type description
+        threat-radar cve search "node" --severity critical
+        threat-radar cve search "CVE-2023*" --scans "*node*"
+        threat-radar cve search "libwebp" --exact-match
+    """
+    from ..core.cve_storage_manager import CVEStorageManager
+    from ..utils.cve_utils import display_search_results
+
+    with handle_cli_error("searching CVE scans", console):
+        manager = CVEStorageManager()
+
+        # Perform search
+        results = manager.search_scans(
+            query=query,
+            query_type=query_type,
+            severity_filter=severity,
+            scan_pattern=scans,
+            case_sensitive=case_sensitive,
+            exact_match=exact_match
+        )
+
+        if format == "json":
+            import json
+            results_data = [
+                {
+                    "scan": {
+                        "target": r.scan_metadata.target,
+                        "scan_type": r.scan_metadata.scan_type,
+                        "scan_date": r.scan_metadata.scan_date.isoformat(),
+                    },
+                    "matches": r.total_matches,
+                    "vulnerabilities": r.matching_vulnerabilities
+                }
+                for r in results
+            ]
+            console.print_json(data=results_data)
+        else:
+            display_search_results(results, query, console)
+
+
+@app.command("stats")
+def show_stats(
+    scans: str = typer.Option("*", "--scans", help="Filter scans (glob pattern)"),
+    type: str = typer.Option("all", "--type", "-t", help="Scan type filter (image, sbom, directory, all)"),
+    format: str = typer.Option("table", "--format", "-f", help="Output format: table, json"),
+):
+    """
+    Show aggregate statistics across all stored CVE scans.
+
+    Displays total vulnerabilities, severity breakdown, top CVEs, and more.
+
+    Examples:
+        threat-radar cve stats
+        threat-radar cve stats --type image
+        threat-radar cve stats --scans "*node*"
+        threat-radar cve stats --format json
+    """
+    from ..core.cve_storage_manager import CVEStorageManager
+    from ..utils.cve_utils import display_aggregate_stats
+
+    with handle_cli_error("calculating CVE statistics", console):
+        manager = CVEStorageManager()
+
+        # Get aggregate stats
+        stats = manager.get_aggregate_stats(
+            scan_pattern=scans,
+            type_filter=type
+        )
+
+        if format == "json":
+            import json
+            stats_data = {
+                "total_scans": stats.total_scans,
+                "total_storage_size_bytes": stats.total_storage_size,
+                "total_vulnerabilities": stats.total_vulnerabilities,
+                "unique_cve_ids": stats.unique_cve_ids,
+                "severity_breakdown": stats.severity_breakdown,
+                "top_cves": [
+                    {"cve_id": cve, "scan_count": sc, "package_count": pc}
+                    for cve, sc, pc in stats.top_cves
+                ],
+                "package_type_breakdown": stats.package_type_breakdown,
+                "fix_availability": stats.fix_availability,
+            }
+            console.print_json(data=stats_data)
+        else:
+            display_aggregate_stats(stats, console)

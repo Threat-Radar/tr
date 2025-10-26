@@ -2,13 +2,22 @@
 
 Complete command-line interface examples for vulnerability management.
 
+**Powered by Anchore's Syft (SBOM) and Grype (Vulnerability Scanning)**
+
+Threat Radar provides a unified CLI that combines:
+- **Syft** - Fast, comprehensive SBOM generation
+- **Grype** - Industry-standard vulnerability scanning
+- **Integrated Workflow** - Seamless SBOM → Scan → Report pipeline
+
 ## Table of Contents
 
 - [Setup](#setup)
+- [Why Grype?](#why-grype)
 - [CVE Operations](#cve-operations)
 - [Docker Analysis](#docker-analysis)
 - [Vulnerability Scanning](#vulnerability-scanning)
 - [Database Management](#database-management)
+- [AI-Powered Analysis](#ai-powered-analysis)
 - [Workflows](#complete-workflows)
 
 ## Setup
@@ -28,90 +37,140 @@ threat-radar --help
 tradar --help  # Shorthand alias
 ```
 
-### First-Time Database Setup
+### First-Time Setup
 
 ```bash
-# Initialize and populate CVE database
-threat-radar cve update --days 30
+# Install Grype (required for vulnerability scanning)
+# macOS:
+brew install grype
 
-# View database statistics
-threat-radar cve stats
+# Linux:
+curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh
+
+# Update Grype vulnerability database
+threat-radar cve db-update
+
+# Verify installation
+threat-radar cve db-status
 ```
+
+## Why Grype?
+
+Threat Radar uses **Grype** from Anchore for vulnerability detection, providing enterprise-grade security scanning with zero configuration.
+
+### Key Benefits
+
+**1. Comprehensive Vulnerability Coverage**
+- **Multiple Data Sources** - NVD, GitHub Security Advisories, OS-specific databases
+- **200,000+ CVEs** - Complete coverage from 1999 to present
+- **Daily Updates** - Fresh vulnerability data every day
+- **Cross-Ecosystem** - Python, Java, Go, Node.js, Ruby, .NET, OS packages, and more
+
+**2. High Accuracy & Performance**
+```
+Test: ghcr.io/christophetd/log4shell-vulnerable-app
+Scan Time: 5 seconds
+Vulnerabilities: 432 found
+├─ CRITICAL: 28 (including Log4Shell CVSS 10.0)
+├─ HIGH: 95
+├─ MEDIUM: 183
+└─ LOW: 126
+
+✓ Log4Shell (GHSA-jfh8-c2jp-5v3q) detected in log4j-core 2.14.1
+✓ Spring Framework CVEs in version 5.3.13
+✓ All package types scanned (JARs, Alpine packages, etc.)
+```
+
+**3. Industry Standard Tool**
+- **Trusted by Enterprises** - Used by Fortune 500 companies
+- **Open Source** - Transparent, community-driven (Apache 2.0)
+- **Active Development** - Regular updates from Anchore
+- **SBOM Native** - Built to work with CycloneDX, SPDX, Syft formats
+
+**4. What Threat Radar Adds**
+- **Unified CLI** - Single interface for SBOM + CVE scanning
+- **Automated Workflows** - Generate SBOM, scan, export results
+- **Storage Management** - Organized SBOM storage with timestamps
+- **Export Options** - CSV, requirements.txt, JSON reports
+- **CI/CD Integration** - Easy pipeline integration
+
+### Complete Workflow Example
+
+```bash
+# Step 1: Generate SBOM (Syft)
+threat-radar sbom docker myapp:latest --auto-save
+
+# Step 2: Scan for vulnerabilities (Grype)
+threat-radar cve scan-image myapp:latest
+
+# Step 3: Export results
+threat-radar sbom export sbom.json -o packages.csv --format csv
+
+# Step 4: Track over time
+threat-radar cve scan-sbom sbom.json > scan_$(date +%Y%m%d).txt
+```
+
+### Why Not Write Our Own Scanner?
+
+**Grype Advantages:**
+- ✅ **Proven Accuracy** - Battle-tested by thousands of organizations
+- ✅ **Database Maintenance** - Anchore maintains fresh CVE data daily
+- ✅ **Performance Optimized** - Years of optimization for speed
+- ✅ **Broad Coverage** - Supports 13+ package ecosystems
+- ✅ **Active Community** - Bug fixes and updates from large community
+- ✅ **Professional Support** - Enterprise support available from Anchore
+
+**Custom Scanner Drawbacks:**
+- ❌ **Maintenance Burden** - Daily CVE database updates required
+- ❌ **Accuracy Issues** - False positives/negatives take years to tune
+- ❌ **Limited Resources** - Can't match Anchore's dedicated team
+- ❌ **Ecosystem Coverage** - Supporting all package types is complex
+- ❌ **Reinventing the Wheel** - Why rebuild what works?
 
 ## CVE Operations
 
-### Retrieve Specific CVEs
+### Vulnerability Scanning
 
 ```bash
-# Get a single CVE
-threat-radar cve get CVE-2021-44228
+# Scan a Docker image
+threat-radar cve scan-image ghcr.io/christophetd/log4shell-vulnerable-app
 
-# Get multiple CVEs
-threat-radar cve get CVE-2021-44228 CVE-2021-45046
+# Scan from a pre-generated SBOM file
+threat-radar cve scan-sbom path/to/sbom.json
 
-# Save to JSON file
-threat-radar cve get CVE-2021-44228 -o log4shell.json
-
-# Bypass cache and fetch fresh data
-threat-radar cve get CVE-2021-44228 --no-cache
+# Scan a local directory
+threat-radar cve scan-directory /path/to/project
 ```
 
 **Example Output:**
 ```
-CVE-2021-44228
+⚠ Found 432 vulnerabilities in ghcr.io/christophetd/log4shell-vulnerable-app:
 
-Severity    HIGH
-CVSS Score  10.0
-Published   2021-12-10
-Modified    2023-12-10
-CWE IDs     CWE-502, CWE-400
+Severity Breakdown:
+ CRITICAL   28
+ HIGH       95
+ MEDIUM    183
+ LOW       126
 
-Description:
-Apache Log4j2 2.0-beta9 through 2.15.0 (excluding security releases...
+Vulnerabilities (showing top 20):
+
+┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━┓
+┃ CVE ID              ┃ Severity ┃ Package    ┃ Installed  ┃ Fixed In   ┃ CVSS ┃
+┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━┩
+│ GHSA-jfh8-c2jp-5v3q │ CRITICAL │ log4j-core │ 2.14.1     │ 2.15.0     │ 10.0 │
+│ GHSA-36p3-wjmg-h94x │ CRITICAL │ spring-be… │ 5.3.13     │ 5.3.18     │  9.8 │
+│ ...                 │          │            │            │            │      │
+└─────────────────────┴──────────┴────────────┴────────────┴────────────┴──────┘
 ```
 
-### Search CVEs
+### Database Management
 
 ```bash
-# Search by keyword
-threat-radar cve search --keyword "log4j"
+# Update Grype vulnerability database
+threat-radar cve db-update
 
-# Search with severity filter
-threat-radar cve search --severity CRITICAL --limit 20
-
-# Search by CPE (Common Platform Enumeration)
-threat-radar cve search --cpe "cpe:2.3:a:apache:log4j:2.14.1"
-
-# Recent CVEs (last N days)
-threat-radar cve search --days 7 --limit 50
-
-# Complex search with output
-threat-radar cve search \
-  --keyword "remote code execution" \
-  --severity HIGH \
-  --limit 10 \
-  -o rce_vulns.json
-```
-
-### Local Database Search (Faster)
-
-```bash
-# Search local database
-threat-radar cve db-search --keyword "openssl"
-
-# Filter by severity
-threat-radar cve db-search --severity CRITICAL
-
-# Filter by minimum CVSS score
-threat-radar cve db-search --min-cvss 9.0
-
-# Combined filters
-threat-radar cve db-search \
-  --severity HIGH \
-  --min-cvss 7.5 \
-  --keyword "buffer overflow" \
-  --limit 20 \
-  -o critical_issues.json
+# Check database status
+threat-radar cve db-status
 ```
 
 ## Docker Analysis
@@ -119,30 +178,47 @@ threat-radar cve db-search \
 ### Image Analysis
 
 ```bash
-# Analyze an image
-threat-radar docker scan alpine:3.18
+# Scan an image
+threat-radar docker scan ghcr.io/christophetd/log4shell-vulnerable-app
 
 # Import and analyze
-threat-radar docker import-image ubuntu:22.04 -o analysis.json
+threat-radar docker import-image ghcr.io/christophetd/log4shell-vulnerable-app -o analysis.json
 
 # List local images
 threat-radar docker list-images
 
 # List packages in image
-threat-radar docker packages nginx:alpine --limit 50
+threat-radar docker packages ghcr.io/christophetd/log4shell-vulnerable-app --limit 50
 
 # Filter packages
-threat-radar docker packages ubuntu:22.04 \
-  --filter openssl \
+threat-radar docker packages ghcr.io/christophetd/log4shell-vulnerable-app \
+  --filter log4j \
   --limit 10
 ```
 
-### Python SBOM Generation
+### SBOM Generation (Recommended: Use threat-radar sbom)
 
 ```bash
-# Generate CycloneDX SBOM
+# Generate SBOM from Docker image (using Syft)
+threat-radar sbom docker ghcr.io/christophetd/log4shell-vulnerable-app --auto-save
+
+# Generate in different formats
+threat-radar sbom docker ghcr.io/christophetd/log4shell-vulnerable-app --format cyclonedx-json -o sbom.json
+threat-radar sbom docker ghcr.io/christophetd/log4shell-vulnerable-app --format spdx-json -o sbom-spdx.json
+
+# Export SBOM to CSV
+threat-radar sbom export sbom.json -o packages.csv --format csv
+
+# Export Python packages to requirements.txt
+threat-radar sbom export sbom.json -o requirements.txt --format requirements
+```
+
+### Python SBOM (Legacy - for Python-specific images)
+
+```bash
+# Generate Python-specific SBOM
 threat-radar docker python-sbom python:3.11 \
-  -o sbom.json \
+  -o python-packages.json \
   --format cyclonedx
 
 # Generate CSV format
@@ -162,108 +238,342 @@ threat-radar docker python-sbom python:3.11 \
 
 ```bash
 # Basic scan
-threat-radar cve scan-image alpine:3.18
+threat-radar cve scan-image ghcr.io/christophetd/log4shell-vulnerable-app
 
-# Scan with custom confidence threshold
-threat-radar cve scan-image ubuntu:22.04 --confidence 0.8
+# Scan from SBOM file
+threat-radar cve scan-sbom path/to/sbom.json
 
-# Filter by minimum severity
-threat-radar cve scan-image nginx:alpine --severity HIGH
-
-# Save detailed report
-threat-radar cve scan-image ubuntu:22.04 \
-  --confidence 0.7 \
-  --severity CRITICAL \
-  -o vulnerability_report.json
+# Scan local directory
+threat-radar cve scan-directory /path/to/project
 ```
 
 **Example Output:**
 ```
-Found 143 packages
+⚠ Found 432 vulnerabilities in ghcr.io/christophetd/log4shell-vulnerable-app:
 
-✓ Updated 1234 CVEs in local database
-✓ Loaded 5000 CVEs
+Severity Breakdown:
+ CRITICAL   28
+ HIGH       95
+ MEDIUM    183
+ LOW       126
 
-⚠ Found vulnerabilities in 8 packages:
+Vulnerabilities (showing top 20):
 
-openssl
-  ● CVE-2023-12345 (Confidence: 95%)
-    Severity: HIGH | CVSS: 8.1
-    exact name match with openssl/openssl (version affected)
-
-curl
-  ● CVE-2023-67890 (Confidence: 87%)
-    Severity: MEDIUM | CVSS: 5.3
-    exact name match with curl/curl (version not confirmed)
-
-Summary:
-  Vulnerable packages: 8
-  Total vulnerabilities: 15
+┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━┓
+┃ CVE ID              ┃ Severity ┃ Package    ┃ Installed  ┃ Fixed In   ┃ CVSS ┃
+┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━┩
+│ GHSA-jfh8-c2jp-5v3q │ CRITICAL │ log4j-core │ 2.14.1     │ 2.15.0     │ 10.0 │
+│ GHSA-36p3-wjmg-h94x │ CRITICAL │ spring-be… │ 5.3.13     │ 5.3.18     │  9.8 │
+│ ...                 │          │            │            │            │      │
+└─────────────────────┴──────────┴────────────┴────────────┴────────────┴──────┘
 ```
 
 ### Batch Scanning
 
 ```bash
 # Scan multiple images
-for image in alpine:3.17 alpine:3.18 alpine:3.19; do
-  threat-radar cve scan-image $image -o "report_${image//:/_}.json"
+for image in ghcr.io/christophetd/log4shell-vulnerable-app node:10 python:2.7; do
+  echo "Scanning $image..."
+  threat-radar cve scan-image $image > "report_${image//[:\\/]/_}.txt"
 done
 
 # Compare results
-ls -lh report_*.json
+ls -lh report_*.txt
 ```
 
 ## Database Management
 
-### Update Database
+### Grype Database Management
 
 ```bash
-# Update with recent CVEs (last 7 days)
-threat-radar cve update
+# Update Grype vulnerability database
+threat-radar cve db-update
 
-# Update with custom timeframe
-threat-radar cve update --days 30
-
-# Force update (bypass throttling)
-threat-radar cve update --days 14 --force
-```
-
-### Database Statistics
-
-```bash
-# View database stats
-threat-radar cve stats
+# Check database status
+threat-radar cve db-status
 ```
 
 **Example Output:**
 ```
-CVE Database Statistics
+Grype Database Status:
 
-Total CVEs        25,432
-Last Update       2024-01-15 10:30:00
-
-Date Range:
-  Earliest CVE    2020-01-01
-  Latest CVE      2024-01-15
-
-CVEs by Severity:
-  CRITICAL        2,145  (8.4%)
-  HIGH            8,234  (32.4%)
-  MEDIUM          11,567 (45.5%)
-  LOW             3,486  (13.7%)
+Location: ~/.cache/grype/db/5
+Built: 2024-01-15 10:30:00
+Schema Version: 5
 ```
 
-### Cache Management
+## AI-Powered Analysis
+
+Transform raw vulnerability scan results into actionable intelligence using AI-powered analysis. Threat Radar supports multiple AI providers for exploitability assessment, smart prioritization, and automated remediation planning.
+
+### Supported AI Providers
+
+**1. OpenAI (GPT-4o, GPT-4-Turbo, GPT-3.5-Turbo)**
+- Best for: Production analysis, highest accuracy
+- Requires: OpenAI API key
+- Cost: Pay-per-use (varies by model)
+
+**2. Anthropic (Claude 3.5 Sonnet, Claude 3 Opus)**
+- Best for: Detailed vulnerability analysis
+- Requires: Anthropic API key
+- Cost: Pay-per-use
+
+**3. Ollama (Mistral, Llama2, CodeLlama)**
+- Best for: Privacy-focused, offline analysis
+- Requires: Local Ollama installation
+- Cost: Free (runs locally)
+
+### Setup
 
 ```bash
-# Clear all cache
-threat-radar cve clear-cache --yes
+# Option 1: OpenAI (Recommended for production)
+export OPENAI_API_KEY="sk-..."
+export AI_PROVIDER="openai"
+export AI_MODEL="gpt-4o"
 
-# Clear cache older than 7 days
-threat-radar cve clear-cache --older-than 7 --yes
+# Option 2: Anthropic
+export ANTHROPIC_API_KEY="sk-ant-..."
+export AI_PROVIDER="anthropic"
+export AI_MODEL="claude-3-5-sonnet-20241022"
 
-# Interactive (prompts for confirmation)
-threat-radar cve clear-cache
+# Option 3: Ollama (Local, free)
+# First install Ollama: https://ollama.ai
+brew install ollama  # macOS
+ollama pull mistral  # Download model
+export AI_PROVIDER="ollama"
+export AI_MODEL="mistral"
+```
+
+### Three AI Workflows
+
+**1. Vulnerability Analysis** - Assess exploitability and business impact
+**2. Prioritization** - Rank vulnerabilities by urgency
+**3. Remediation** - Generate actionable fix steps
+
+### 1. Vulnerability Analysis (`ai analyze`)
+
+Analyzes each vulnerability for real-world exploitability and business impact.
+
+```bash
+# Basic analysis
+threat-radar ai analyze scan.json
+
+# With specific AI provider (GPT-4o)
+threat-radar ai analyze scan.json --provider openai --model gpt-4o
+
+# Save and auto-store results
+threat-radar ai analyze scan.json --provider openai --model gpt-4o --auto-save
+
+# Using local Ollama model
+threat-radar ai analyze scan.json --provider ollama --model mistral --auto-save
+```
+
+**Example Output:**
+```
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ AI Vulnerability Analysis                                                    │
+│                                                                              │
+│ Target: ghcr.io/christophetd/log4shell-vulnerable-app                        │
+│ Total Vulnerabilities: 432                                                   │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Summary:
+The vulnerability landscape is dominated by critical remote code execution
+vulnerabilities, particularly in widely used libraries like Log4j and Spring
+Framework. These vulnerabilities pose significant risks of system compromise,
+data breaches, and service disruptions. Immediate patching and mitigation
+strategies are essential to protect against potential exploitation.
+
+High Priority Vulnerabilities (6):
+┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
+┃ CVE ID              ┃ Package           ┃ Exploitability ┃ Business Impact ┃
+┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩
+│ GHSA-jfh8-c2jp-5v3q │ log4j-core        │ HIGH           │ HIGH            │
+│ GHSA-7rjr-3q55-vv33 │ log4j-core        │ HIGH           │ HIGH            │
+│ GHSA-36p3-wjmg-h94x │ spring-beans      │ HIGH           │ HIGH            │
+│ GHSA-36p3-wjmg-h94x │ spring-webmvc     │ HIGH           │ HIGH            │
+│ GHSA-83qj-6fr2-vhqg │ tomcat-embed-core │ HIGH           │ HIGH            │
+│ GHSA-mjmj-j48q-9wg2 │ snakeyaml         │ HIGH           │ HIGH            │
+└─────────────────────┴───────────────────┴────────────────┴─────────────────┘
+
+Analysis auto-saved to storage/ai_analysis/...
+```
+
+### 2. Vulnerability Prioritization (`ai prioritize`)
+
+Generate intelligent priority rankings based on severity, exploitability, and business impact.
+
+```bash
+# Generate priority list
+threat-radar ai prioritize scan.json --provider openai --model gpt-4o
+
+# Show top 20 priorities
+threat-radar ai prioritize scan.json --provider openai --model gpt-4o --top 20 --auto-save
+
+# Using local model
+threat-radar ai prioritize scan.json --provider ollama --model mistral --top 10
+```
+
+**Example Output:**
+```
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Prioritized Vulnerability List                                               │
+│                                                                              │
+│ Target: ghcr.io/christophetd/log4shell-vulnerable-app                        │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Overall Strategy:
+Prioritize patching critical and high-severity vulnerabilities with available
+fixes, focusing on those with high exploitability and business impact. Implement
+network-level security controls and conduct thorough security assessments to
+mitigate risks. Regularly monitor for updates and educate users on safe practices.
+
+Quick Wins:
+1. Upgrade log4j-core to version 2.15.0 or later to address GHSA-jfh8-c2jp-5v3q
+2. Upgrade log4j-core to version 2.16.0 or later to address GHSA-7rjr-3q55-vv33
+3. Upgrade spring-beans to version 5.3.18 or later to address GHSA-36p3-wjmg-h94x
+4. Upgrade spring-webmvc to version 5.3.18 or later to address GHSA-36p3-wjmg-h94x
+5. Upgrade tomcat-embed-core to version 9.0.99 or later to address GHSA-83qj-6fr2-vhqg
+6. Upgrade snakeyaml to version 2.0 or later to address GHSA-mjmj-j48q-9wg2
+
+Top 20 Priorities:
+┏━━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
+┃ #  ┃ CVE ID              ┃ Package           ┃ Urgency ┃ Reason           ┃
+┡━━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
+│ 1  │ GHSA-jfh8-c2jp-5v3q │ log4j-core        │ 100     │ Remote code ex...│
+│ 2  │ GHSA-7rjr-3q55-vv33 │ log4j-core        │ 95      │ Incomplete fix...│
+│ 3  │ GHSA-36p3-wjmg-h94x │ spring-beans      │ 90      │ Highly exploit...│
+│ 4  │ GHSA-36p3-wjmg-h94x │ spring-webmvc     │ 90      │ Similar to spr...│
+│ 5  │ GHSA-83qj-6fr2-vhqg │ tomcat-embed-core │ 90      │ Highly exploit...│
+...
+└────┴─────────────────────┴───────────────────┴─────────┴──────────────────┘
+
+Priority Distribution:
+  Critical: 2
+  High: 5
+  Medium: 13
+  Low: 0
+```
+
+### 3. Remediation Planning (`ai remediate`)
+
+Generate detailed, actionable remediation steps for each vulnerability.
+
+```bash
+# Generate remediation plan
+threat-radar ai remediate scan.json --provider openai --model gpt-4o --auto-save
+
+# Show commands
+threat-radar ai remediate scan.json --provider openai --model gpt-4o --show-commands
+
+# Save to file
+threat-radar ai remediate scan.json --provider openai --model gpt-4o -o remediation.json
+```
+
+**Example Output:**
+```
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Remediation Plan                                                             │
+│                                                                              │
+│ Target: ghcr.io/christophetd/log4shell-vulnerable-app                        │
+│ Vulnerabilities: 432                                                         │
+│ Packages Affected: 5                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Packages Requiring Updates:
+  • log4j-core: 3 vulnerabilities → 2.17.0 [✓ Upgrade fixes all]
+  • spring-beans: 1 vulnerabilities → 5.3.18 [✓ Upgrade fixes all]
+  • tomcat-embed-core: 4 vulnerabilities → 9.0.99 [✓ Upgrade fixes all]
+  • freetype: 2 vulnerabilities → No fix available [⚠ Partial fix]
+  • zlib: 1 vulnerabilities → No fix available [⚠ Partial fix]
+
+Upgrade Commands:
+
+MAVEN:
+  mvn dependency:purge-local-repository -DreResolve=false && mvn clean install -Dlog4j2.version=2.15.0
+  mvn dependency:purge-local-repository -DreResolve=false && mvn clean install -Dlog4j2.version=2.16.0
+  mvn dependency:purge-local-repository -DreResolve=false && mvn clean install -Dspring.version=5.3.18
+  mvn dependency:purge-local-repository -DreResolve=false && mvn clean install -Dtomcat.version=9.0.99
+
+Quick Fixes (1 low-effort remediations):
+  • CVE-2020-15999 (freetype): N/A
+
+Remediation plan auto-saved to storage/ai_analysis/...
+```
+
+### Complete AI Workflow
+
+**Step-by-step: Scan → Analyze → Prioritize → Remediate**
+
+```bash
+#!/bin/bash
+# ai_security_analysis.sh
+
+# Set your AI provider (choose one)
+export OPENAI_API_KEY="sk-..."  # For GPT-4o
+# OR
+# export ANTHROPIC_API_KEY="sk-ant-..."  # For Claude
+# OR
+# ollama pull mistral  # For local Ollama
+
+IMAGE="ghcr.io/christophetd/log4shell-vulnerable-app"
+
+echo "Step 1: Scanning image for vulnerabilities..."
+threat-radar cve scan-image $IMAGE --output scan.json
+
+echo "Step 2: AI Analysis - Assessing exploitability and business impact..."
+threat-radar ai analyze scan.json --provider openai --model gpt-4o --auto-save
+
+echo "Step 3: AI Prioritization - Ranking vulnerabilities by urgency..."
+threat-radar ai prioritize scan.json --provider openai --model gpt-4o --auto-save --top 20
+
+echo "Step 4: AI Remediation - Generating actionable fix steps..."
+threat-radar ai remediate scan.json --provider openai --model gpt-4o --auto-save
+
+echo "✓ Complete! All AI analysis results saved to storage/ai_analysis/"
+ls -lh storage/ai_analysis/
+```
+
+### AI Storage Organization
+
+Results are automatically organized when using `--auto-save`:
+
+```
+storage/ai_analysis/
+└── ghcr_io_christophetd_log4shell-vulnerable-app/
+    ├── analysis_2025-10-21_00-15-50.json
+    ├── prioritization_2025-10-21_00-19-28.json
+    └── remediation_2025-10-21_00-19-56.json
+```
+
+### Comparison: Ollama vs OpenAI
+
+| Feature | Ollama (Local) | OpenAI (GPT-4o) |
+|---------|----------------|-----------------|
+| **Cost** | Free | ~$0.01-0.10 per scan |
+| **Privacy** | Complete (offline) | Data sent to OpenAI |
+| **Speed** | Slower (depends on hardware) | Fast (cloud optimized) |
+| **Quality** | Good | Excellent |
+| **Setup** | Requires local install | API key only |
+| **Best For** | Privacy, testing | Production, accuracy |
+
+### Example: Comparing AI Providers
+
+```bash
+# Scan once, analyze with different providers
+threat-radar cve scan-image ghcr.io/christophetd/log4shell-vulnerable-app --output scan.json
+
+# Analyze with GPT-4o
+threat-radar ai analyze scan.json --provider openai --model gpt-4o -o analysis_gpt4o.json
+
+# Analyze with Claude
+threat-radar ai analyze scan.json --provider anthropic --model claude-3-5-sonnet-20241022 -o analysis_claude.json
+
+# Analyze with local Mistral
+threat-radar ai analyze scan.json --provider ollama --model mistral -o analysis_mistral.json
+
+# Compare results
+diff analysis_gpt4o.json analysis_claude.json
 ```
 
 ## Complete Workflows
@@ -274,19 +584,20 @@ threat-radar cve clear-cache
 #!/bin/bash
 # setup_and_scan.sh
 
-# 1. Update CVE database
-echo "Updating CVE database..."
-threat-radar cve update --days 30
+# 1. Update Grype database
+echo "Updating vulnerability database..."
+threat-radar cve db-update
 
-# 2. Scan image
-echo "Scanning ubuntu:22.04..."
-threat-radar cve scan-image ubuntu:22.04 \
-  --confidence 0.7 \
-  --severity HIGH \
-  -o ubuntu_vulnerabilities.json
+# 2. Generate SBOM for image
+echo "Generating SBOM..."
+threat-radar sbom docker ghcr.io/christophetd/log4shell-vulnerable-app --auto-save
 
-# 3. View statistics
-threat-radar cve stats
+# 3. Scan image for vulnerabilities
+echo "Scanning for vulnerabilities..."
+threat-radar cve scan-image ghcr.io/christophetd/log4shell-vulnerable-app > scan_results.txt
+
+# 4. View database status
+threat-radar cve db-status
 ```
 
 ### Workflow 2: Continuous Monitoring
@@ -296,45 +607,49 @@ threat-radar cve stats
 # daily_scan.sh - Run this daily via cron
 
 DATE=$(date +%Y%m%d)
-IMAGES=("nginx:alpine" "python:3.11-slim" "node:18-alpine")
+IMAGES=("ghcr.io/christophetd/log4shell-vulnerable-app" "python:3.11-slim" "node:18-alpine")
 
-# Update CVE database
-threat-radar cve update --days 1 --force
+# Update Grype database
+threat-radar cve db-update
 
 # Scan each image
 for IMAGE in "${IMAGES[@]}"; do
   SAFE_NAME=${IMAGE//[:\/]/_}
-  threat-radar cve scan-image $IMAGE \
-    --confidence 0.75 \
-    -o "reports/${DATE}_${SAFE_NAME}.json"
-done
+  echo "Scanning $IMAGE..."
+  threat-radar cve scan-image $IMAGE > "reports/${DATE}_${SAFE_NAME}.txt"
 
-# Alert on critical findings
-# (Add your alerting logic here)
+  # Check for CRITICAL vulnerabilities
+  if grep -q "CRITICAL" "reports/${DATE}_${SAFE_NAME}.txt"; then
+    echo "⚠️  CRITICAL vulnerabilities found in $IMAGE"
+    # Add your alerting logic here
+  fi
+done
 ```
 
-### Workflow 3: Image Comparison
+### Workflow 3: SBOM Comparison
 
 ```bash
 #!/bin/bash
-# compare_images.sh
+# compare_sboms.sh
 
-echo "Comparing Alpine versions..."
+echo "Comparing different application versions..."
 
-for VERSION in 3.17 3.18 3.19; do
-  echo "Scanning alpine:${VERSION}..."
-  threat-radar cve scan-image alpine:${VERSION} \
-    -o "alpine_${VERSION}_report.json"
-done
+# Generate SBOMs for two versions
+threat-radar sbom docker myapp:v1.0 -o sbom_v1.json
+threat-radar sbom docker myapp:v2.0 -o sbom_v2.json
 
-echo "Reports generated:"
-ls -lh alpine_*_report.json
+# Compare SBOMs to see what changed
+threat-radar sbom compare sbom_v1.json sbom_v2.json --versions
 
-# Parse and compare (example with jq)
-for FILE in alpine_*_report.json; do
-  VULNS=$(jq '.vulnerable_packages' $FILE)
-  echo "$FILE: $VULNS vulnerable packages"
-done
+# Scan both for vulnerabilities
+threat-radar cve scan-sbom sbom_v1.json > vuln_v1.txt
+threat-radar cve scan-sbom sbom_v2.json > vuln_v2.txt
+
+# Compare vulnerability counts
+echo "V1 Vulnerabilities:"
+grep -c "CRITICAL\|HIGH\|MEDIUM\|LOW" vuln_v1.txt || echo "0"
+echo "V2 Vulnerabilities:"
+grep -c "CRITICAL\|HIGH\|MEDIUM\|LOW" vuln_v2.txt || echo "0"
 ```
 
 ### Workflow 4: CI/CD Integration
@@ -345,20 +660,22 @@ done
 # Exit with error if critical vulnerabilities found
 
 IMAGE=$1
-THRESHOLD=0.8
+
+if [ -z "$IMAGE" ]; then
+  echo "Usage: $0 <docker-image>"
+  exit 1
+fi
 
 # Scan image
-threat-radar cve scan-image $IMAGE \
-  --confidence $THRESHOLD \
-  --severity CRITICAL \
-  -o scan_results.json
+echo "Scanning $IMAGE for vulnerabilities..."
+threat-radar cve scan-image $IMAGE > scan_results.txt
 
 # Check for critical vulnerabilities
-CRITICAL_COUNT=$(jq '.vulnerable_packages' scan_results.json)
+CRITICAL_COUNT=$(grep -c "CRITICAL" scan_results.txt || true)
 
 if [ "$CRITICAL_COUNT" -gt 0 ]; then
   echo "❌ FAILED: $CRITICAL_COUNT critical vulnerabilities found"
-  jq '.matches' scan_results.json
+  grep "CRITICAL" scan_results.txt | head -10
   exit 1
 else
   echo "✓ PASSED: No critical vulnerabilities"
@@ -387,29 +704,28 @@ jobs:
       - name: Install Threat Radar
         run: pip install threat-radar
 
-      - name: Update CVE Database
-        run: threat-radar cve update --days 30
-        env:
-          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+      - name: Install Grype
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Update Grype Database
+        run: threat-radar cve db-update
 
       - name: Scan Docker Image
         run: |
-          threat-radar cve scan-image myapp:latest \
-            --confidence 0.8 \
-            --severity CRITICAL \
-            -o vulnerability_report.json
+          threat-radar cve scan-image myapp:latest > vulnerability_report.txt
 
       - name: Upload Report
         uses: actions/upload-artifact@v3
         with:
           name: vulnerability-report
-          path: vulnerability_report.json
+          path: vulnerability_report.txt
 
       - name: Check for Critical Issues
         run: |
-          CRITICAL=$(jq '.vulnerable_packages' vulnerability_report.json)
-          if [ "$CRITICAL" -gt 0 ]; then
+          if grep -q "CRITICAL" vulnerability_report.txt; then
             echo "Critical vulnerabilities found!"
+            grep "CRITICAL" vulnerability_report.txt
             exit 1
           fi
 ```
@@ -424,8 +740,8 @@ DATE=$(date +%Y%m%d)
 REPORT_DIR="reports/weekly_${DATE}"
 mkdir -p $REPORT_DIR
 
-# Update database
-threat-radar cve update --days 7 --force
+# Update Grype database
+threat-radar cve db-update
 
 # Scan production images
 IMAGES=(
@@ -440,15 +756,22 @@ echo "" >> $REPORT_DIR/summary.md
 for IMAGE in "${IMAGES[@]}"; do
   SAFE_NAME=${IMAGE//[:\/]/_}
 
-  # Scan
-  threat-radar cve scan-image $IMAGE \
-    --confidence 0.7 \
-    -o "$REPORT_DIR/${SAFE_NAME}.json"
+  # Generate SBOM
+  echo "Generating SBOM for $IMAGE..."
+  threat-radar sbom docker $IMAGE -o "$REPORT_DIR/${SAFE_NAME}_sbom.json"
+
+  # Scan for vulnerabilities
+  echo "Scanning $IMAGE..."
+  threat-radar cve scan-image $IMAGE > "$REPORT_DIR/${SAFE_NAME}_scan.txt"
+
+  # Count vulnerabilities by severity
+  CRITICAL=$(grep -c "CRITICAL" "$REPORT_DIR/${SAFE_NAME}_scan.txt" || echo "0")
+  HIGH=$(grep -c "HIGH" "$REPORT_DIR/${SAFE_NAME}_scan.txt" || echo "0")
 
   # Add to summary
   echo "## $IMAGE" >> $REPORT_DIR/summary.md
-  VULNS=$(jq -r '.vulnerable_packages' "$REPORT_DIR/${SAFE_NAME}.json")
-  echo "- Vulnerable packages: $VULNS" >> $REPORT_DIR/summary.md
+  echo "- CRITICAL: $CRITICAL" >> $REPORT_DIR/summary.md
+  echo "- HIGH: $HIGH" >> $REPORT_DIR/summary.md
   echo "" >> $REPORT_DIR/summary.md
 done
 
@@ -458,49 +781,73 @@ done
 
 ## Advanced Usage
 
-### Custom Filtering with jq
+### Combining SBOM and Vulnerability Scanning
 
 ```bash
-# Get all CRITICAL CVEs for a specific package
-threat-radar cve scan-image ubuntu:22.04 -o report.json
-jq '.matches.openssl[] | select(.severity == "CRITICAL")' report.json
+# Generate SBOM, export to CSV, and scan for vulnerabilities
+IMAGE="ghcr.io/christophetd/log4shell-vulnerable-app"
 
-# List all unique CVE IDs
-jq -r '.matches | to_entries | .[].value[].cve_id' report.json | sort -u
+# Step 1: Generate SBOM
+threat-radar sbom docker $IMAGE -o sbom.json
 
-# Count vulnerabilities by severity
-jq '.matches | to_entries | .[].value[] | .severity' report.json | \
-  sort | uniq -c
+# Step 2: Export package list to CSV
+threat-radar sbom export sbom.json -o packages.csv --format csv
+
+# Step 3: Scan for vulnerabilities
+threat-radar cve scan-sbom sbom.json > vulnerabilities.txt
+
+# Step 4: View results
+echo "Packages:"
+wc -l packages.csv
+echo ""
+echo "Vulnerabilities:"
+grep -c "CRITICAL\|HIGH\|MEDIUM\|LOW" vulnerabilities.txt || echo "0"
 ```
 
-### Programmatic Usage
+### Filtering Scan Results
 
 ```bash
-# Get CVE as JSON for scripting
-threat-radar cve get CVE-2021-44228 -o - | jq '.cves[0].cvss_score'
+# Scan and filter results
+threat-radar cve scan-image ghcr.io/christophetd/log4shell-vulnerable-app > scan.txt
 
-# Check if specific CVE exists in database
-threat-radar cve db-search --keyword "CVE-2021-44228" --limit 1 | \
-  jq -e '.count > 0' && echo "Found" || echo "Not found"
+# Show only CRITICAL vulnerabilities
+grep "CRITICAL" scan.txt
+
+# Count vulnerabilities by severity
+echo "CRITICAL: $(grep -c "CRITICAL" scan.txt || echo 0)"
+echo "HIGH: $(grep -c "HIGH" scan.txt || echo 0)"
+echo "MEDIUM: $(grep -c "MEDIUM" scan.txt || echo 0)"
+echo "LOW: $(grep -c "LOW" scan.txt || echo 0)"
 ```
 
 ## Tips & Best Practices
 
-1. **Use API Key:** Set `NVD_API_KEY` for higher rate limits (50 req/30s vs 5 req/30s)
+1. **Install Grype:** The CVE scanning features require Grype to be installed
+   ```bash
+   # macOS
+   brew install grype
 
-2. **Local Database:** Use `db-search` instead of `search` for faster queries
+   # Linux
+   curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh
+   ```
 
-3. **Confidence Threshold:**
-   - 0.9+ : Very strict, fewer false positives
-   - 0.7-0.8 : Balanced (recommended)
-   - 0.5-0.6 : Permissive, may have false positives
+2. **Update Database Regularly:** Keep the Grype vulnerability database up to date
+   ```bash
+   threat-radar cve db-update
+   ```
 
-4. **Update Frequency:**
-   - Development: Weekly
-   - Staging: Daily
-   - Production: Real-time or hourly
+3. **Use SBOM for Faster Scans:** Generate SBOM once, scan multiple times
+   ```bash
+   threat-radar sbom docker myapp:latest -o sbom.json
+   threat-radar cve scan-sbom sbom.json  # Fast repeated scans
+   ```
 
-5. **Cache Management:** Clear cache monthly to save disk space
+4. **Automate Scanning:** Set up daily/weekly scans in CI/CD
+
+5. **Focus on CRITICAL/HIGH:** Filter scan results to prioritize serious vulnerabilities
+   ```bash
+   threat-radar cve scan-image myapp:latest | grep -E "CRITICAL|HIGH"
+   ```
 
 ## Troubleshooting
 
@@ -511,20 +858,69 @@ threat-radar --help
 # Verify Docker access
 threat-radar docker list-images
 
-# Test NVD API connection
-threat-radar cve get CVE-2021-44228
+# Check if Grype is installed
+grype version
+# If not installed:
+# macOS: brew install grype
+# Linux: curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh
 
-# Check database status
-threat-radar cve stats
+# Check Grype database status
+threat-radar cve db-status
 
-# Clear and rebuild database
-rm ~/.threat_radar/cve.db
-threat-radar cve update --days 30 --force
+# Update Grype database
+threat-radar cve db-update
+
+# Test SBOM generation
+threat-radar sbom docker alpine:latest -o test_sbom.json
+
+# Test vulnerability scanning
+threat-radar cve scan-image alpine:latest
 ```
 
 ## See Also
 
+### Threat Radar Resources
 - **Examples:** `/examples/` directory for Python examples
 - **Documentation:** `threat-radar --help` for all commands
-- **NVD API:** https://nvd.nist.gov/developers
-- **CPE Search:** https://nvd.nist.gov/products/cpe/search
+- **Project Repository:** https://github.com/Threat-Radar/tr-nvd
+
+### Core Tools Documentation
+- **Syft (SBOM Generation):** https://github.com/anchore/syft
+  - Used by Threat Radar for SBOM generation
+  - Supports 13+ package ecosystems
+  - Multiple output formats (CycloneDX, SPDX, Syft-JSON)
+
+- **Grype (Vulnerability Scanning):** https://github.com/anchore/grype
+  - Used by Threat Radar for CVE detection
+  - Multi-source vulnerability database
+  - Fast, accurate, enterprise-ready
+
+### Additional Resources
+- **NVD (Vulnerability Database):** https://nvd.nist.gov/
+- **CycloneDX Specification:** https://cyclonedx.org/
+- **SPDX Specification:** https://spdx.dev/
+
+---
+
+## Architecture Overview
+
+```
+Threat Radar = Unified CLI + Workflow Automation
+    │
+    ├─ SBOM Generation ────► Syft (Anchore)
+    │                         └─ Scans containers/directories
+    │                         └─ Outputs CycloneDX/SPDX/Syft-JSON
+    │
+    ├─ Vulnerability Scan ──► Grype (Anchore)
+    │                         └─ Scans images/SBOMs/directories
+    │                         └─ Multi-source CVE database
+    │
+    └─ Value-Add Features
+        ├─ Automated SBOM storage with timestamps
+        ├─ Export to CSV/requirements.txt
+        ├─ SBOM comparison and analysis
+        ├─ CI/CD integration helpers
+        └─ Unified command interface
+```
+
+**Philosophy:** Leverage best-in-class open source tools (Syft, Grype) and add value through automation, storage, and workflow integration.

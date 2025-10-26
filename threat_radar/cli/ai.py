@@ -82,10 +82,30 @@ def load_cve_results(file_path: str) -> GrypeScanResult:
 @app.command("analyze")
 def analyze_vulnerabilities(
     cve_results: str = typer.Argument(..., help="Path to CVE scan results JSON file"),
-    provider: Optional[str] = typer.Option(None, "--provider", "-p", help="AI provider (openai, ollama)"),
+    provider: Optional[str] = typer.Option(None, "--provider", "-p", help="AI provider (openai, anthropic, ollama)"),
     model: Optional[str] = typer.Option(None, "--model", "-m", help="Model name (e.g., gpt-4o, llama2)"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Save analysis to JSON file"),
     auto_save: bool = typer.Option(False, "--auto-save", "--as", help="Auto-save to storage/ai_analysis/"),
+    batch_mode: str = typer.Option(
+        "auto",
+        "--batch-mode",
+        help="Batch processing mode: auto (default), enabled, disabled"
+    ),
+    batch_size: int = typer.Option(
+        25,
+        "--batch-size",
+        help="Vulnerabilities per batch (default: 25)"
+    ),
+    show_progress: bool = typer.Option(
+        True,
+        "--progress/--no-progress",
+        help="Show progress bar for batch processing"
+    ),
+    severity: Optional[str] = typer.Option(
+        None,
+        "--severity",
+        help="Filter to minimum severity: critical, high, medium, low"
+    ),
 ):
     """
     Analyze vulnerabilities using AI to assess exploitability and business impact.
@@ -96,10 +116,29 @@ def analyze_vulnerabilities(
     - Business impact evaluation (potential damage to operations)
     - Contextual recommendations
 
+    BATCH PROCESSING:
+    - Automatically handles large scans (>30 CVEs) via batch processing
+    - Use --batch-mode to control: auto (default), enabled, disabled
+    - Adjust --batch-size for optimal performance (default: 25)
+
     Examples:
+        # Auto batch for large scans (recommended)
         threat-radar ai analyze cve-results.json
-        threat-radar ai analyze results.json --provider openai --model gpt-4
-        threat-radar ai analyze scan.json -o analysis.json --auto-save
+
+        # Analyze only critical and high severity vulnerabilities
+        threat-radar ai analyze scan.json --severity high
+
+        # Force batch mode with custom size
+        threat-radar ai analyze scan.json --batch-mode enabled --batch-size 30
+
+        # Combine severity filter with batching
+        threat-radar ai analyze large-scan.json --severity critical --batch-size 20
+
+        # Disable batching (may fail for large scans)
+        threat-radar ai analyze scan.json --batch-mode disabled
+
+        # With specific AI provider
+        threat-radar ai analyze results.json --provider openai --model gpt-4o
     """
     with handle_cli_error("analyzing vulnerabilities", console):
         # Load CVE scan results
@@ -116,25 +155,94 @@ def analyze_vulnerabilities(
             console.print("[yellow]No vulnerabilities found in scan results.[/yellow]")
             return
 
-        # Analyze with AI
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console,
-        ) as progress:
-            task = progress.add_task("Analyzing with AI...", total=None)
+        # Validate batch_mode
+        if batch_mode not in ["auto", "enabled", "disabled"]:
+            console.print(f"[red]Invalid --batch-mode: {batch_mode}. Use: auto, enabled, or disabled[/red]")
+            return
 
-            analyzer = VulnerabilityAnalyzer(provider=provider, model=model)
-            analysis = analyzer.analyze_scan_result(scan_result)
+        # Create analyzer with batch configuration
+        analyzer = VulnerabilityAnalyzer(
+            provider=provider,
+            model=model,
+            batch_size=batch_size,
+            auto_batch_threshold=30,
+        )
 
-            progress.update(task, completed=True, description="Analysis complete!")
+        # Apply severity filter if specified
+        original_count = scan_result.total_count
+        if severity:
+            try:
+                scan_result = analyzer.filter_by_severity(scan_result, severity)
+                if scan_result.total_count == 0:
+                    console.print(f"[yellow]No vulnerabilities found at {severity.upper()} severity or above.[/yellow]")
+                    console.print(f"[dim]Original scan had {original_count} vulnerabilities[/dim]")
+                    return
+                console.print(f"[cyan]Filtered to {scan_result.total_count} vulnerabilities (>= {severity.upper()}) from {original_count} total[/cyan]")
+            except ValueError as e:
+                console.print(f"[red]Error: {str(e)}[/red]")
+                return
+
+        # Analyze with AI - with batch progress tracking
+        if show_progress and (batch_mode == "enabled" or (batch_mode == "auto" and scan_result.total_count > 30)):
+            # Use batch progress display
+            from rich.progress import BarColumn, TimeRemainingColumn
+
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+                TimeRemainingColumn(),
+                console=console,
+            ) as progress:
+                total_batches = (scan_result.total_count + batch_size - 1) // batch_size
+                task = progress.add_task(
+                    f"Analyzing {scan_result.total_count} vulnerabilities...",
+                    total=total_batches
+                )
+
+                def progress_callback(batch_num, total_batches, analyzed_count):
+                    progress.update(
+                        task,
+                        completed=batch_num,
+                        description=f"Batch {batch_num}/{total_batches} - {analyzed_count} analyzed"
+                    )
+
+                analysis = analyzer.analyze_scan_result(
+                    scan_result,
+                    batch_mode=batch_mode,
+                    progress_callback=progress_callback,
+                )
+
+                progress.update(task, completed=total_batches, description="Analysis complete!")
+        else:
+            # Simple progress for single-pass analysis
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=console,
+            ) as progress:
+                task = progress.add_task("Analyzing with AI...", total=None)
+
+                analysis = analyzer.analyze_scan_result(
+                    scan_result,
+                    batch_mode=batch_mode,
+                )
+
+                progress.update(task, completed=True, description="Analysis complete!")
 
         # Display results
         console.print("\n")
-        console.print(Panel(
-            f"[bold]AI Vulnerability Analysis[/bold]\n\nTarget: {scan_result.target}\nTotal Vulnerabilities: {scan_result.total_count}",
-            border_style="blue"
-        ))
+
+        # Build panel content with batch info if applicable
+        panel_content = f"[bold]AI Vulnerability Analysis[/bold]\n\nTarget: {scan_result.target}\nTotal Vulnerabilities: {scan_result.total_count}"
+
+        if analysis.metadata.get("batch_processing"):
+            batches = analysis.metadata.get("batches_processed", 0)
+            insights = analysis.metadata.get("insights_generated", 0)
+            panel_content += f"\nBatch Processing: {batches} batches (size: {batch_size})\nInsights Generated: {insights}"
+
+        console.print(Panel(panel_content, border_style="blue"))
 
         console.print(f"\n[bold cyan]Summary:[/bold cyan]")
         console.print(analysis.summary)

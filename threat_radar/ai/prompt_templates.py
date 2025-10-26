@@ -1,6 +1,6 @@
 """Prompt templates for AI-powered vulnerability analysis"""
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import json
 
 
@@ -150,31 +150,45 @@ Risk score should be 0-100 based on number, severity, and exploitability of vuln
 """
 
 
-def format_vulnerability_data(vulnerabilities: List[Dict[str, Any]], limit: int = 20) -> str:
+def format_vulnerability_data(
+    vulnerabilities: List[Dict[str, Any]],
+    limit: Optional[int] = 20,
+    include_truncation_notice: bool = True,
+) -> str:
     """
     Format vulnerability data for prompt inclusion.
 
     Args:
         vulnerabilities: List of vulnerability dictionaries
-        limit: Maximum number of vulnerabilities to include
+        limit: Maximum number of vulnerabilities to include (None = no limit)
+        include_truncation_notice: Show "... N more" message when truncated
 
     Returns:
         Formatted string representation
     """
-    limited_vulns = vulnerabilities[:limit]
+    # Apply limit if specified, otherwise use all vulnerabilities
+    if limit is not None:
+        limited_vulns = vulnerabilities[:limit]
+    else:
+        limited_vulns = vulnerabilities
 
     formatted = []
     for vuln in limited_vulns:
+        # Handle None description safely
+        description = vuln.get('description') or 'No description available'
+        description_preview = description[:200] + "..." if len(description) > 200 else description
+
         formatted.append(f"""
 CVE ID: {vuln.get('id', 'N/A')}
 Package: {vuln.get('package_name', 'N/A')} @ {vuln.get('package_version', 'N/A')}
 Severity: {vuln.get('severity', 'N/A').upper()}
 CVSS Score: {vuln.get('cvss_score', 'N/A')}
 Fixed In: {vuln.get('fixed_in_version') or 'No fix available'}
-Description: {vuln.get('description', 'No description available')[:200]}...
+Description: {description_preview}
 """.strip())
 
-    if len(vulnerabilities) > limit:
+    # Add truncation notice if data was limited
+    if include_truncation_notice and limit is not None and len(vulnerabilities) > limit:
         formatted.append(f"\n... and {len(vulnerabilities) - limit} more vulnerabilities")
 
     return "\n\n---\n\n".join(formatted)
@@ -214,3 +228,98 @@ def create_risk_assessment_prompt(
         total_count=total_count,
         severity_distribution=severity_dist_str,
     )
+
+
+def create_batch_analysis_prompt(
+    vulnerabilities: List[Dict[str, Any]],
+    batch_number: int,
+    total_batches: int,
+) -> str:
+    """
+    Create prompt optimized for batch processing.
+
+    Args:
+        vulnerabilities: List of vulnerability dictionaries for this batch
+        batch_number: Current batch number (1-indexed)
+        total_batches: Total number of batches
+
+    Returns:
+        Formatted prompt for batch analysis
+    """
+    vuln_data = format_vulnerability_data(vulnerabilities, limit=None, include_truncation_notice=False)
+
+    return f"""{VULNERABILITY_ANALYSIS_PROMPT.split('VULNERABILITY DATA:')[0]}
+BATCH CONTEXT:
+This is batch {batch_number} of {total_batches} in a large vulnerability scan analysis.
+Focus on providing accurate, detailed analysis for the vulnerabilities in this batch.
+
+VULNERABILITY DATA:
+{vuln_data}
+
+For each vulnerability, analyze:
+1. **Exploitability**: How easily can this vulnerability be exploited? (e.g., requires authentication, network access, user interaction)
+2. **Attack Vectors**: What are the possible attack vectors? (e.g., remote code execution, SQL injection, XSS)
+3. **Business Impact**: What is the potential business impact if exploited? (e.g., data breach, service disruption, financial loss)
+4. **Context**: Consider the package name, version, and severity to assess real-world risk
+
+Provide your analysis in JSON format with this structure:
+{{{{
+    "vulnerabilities": [
+        {{{{
+            "cve_id": "CVE-XXXX-XXXX",
+            "package_name": "package-name",
+            "exploitability": "HIGH|MEDIUM|LOW",
+            "exploitability_details": "Detailed explanation",
+            "attack_vectors": ["vector1", "vector2"],
+            "business_impact": "HIGH|MEDIUM|LOW",
+            "business_impact_details": "Detailed explanation",
+            "recommendations": ["recommendation1", "recommendation2"]
+        }}}}
+    ],
+    "summary": "Summary of vulnerabilities in this batch"
+}}}}
+"""
+
+
+def create_summary_consolidation_prompt(
+    target: str,
+    total_vulnerabilities: int,
+    severity_counts: Dict[str, int],
+    batch_summaries: List[str],
+    high_priority_count: int,
+) -> str:
+    """
+    Create prompt to consolidate multiple batch analysis results.
+
+    Args:
+        target: Scan target (image name, etc.)
+        total_vulnerabilities: Total CVE count
+        severity_counts: Distribution of severities
+        batch_summaries: List of summary strings from each batch
+        high_priority_count: Number of high-priority vulnerabilities found
+
+    Returns:
+        Formatted prompt for summary consolidation
+    """
+    severity_dist_str = ", ".join([f"{k.capitalize()}: {v}" for k, v in severity_counts.items()])
+    batch_summaries_str = "\n\n".join([f"Batch {i+1}: {summary}" for i, summary in enumerate(batch_summaries)])
+
+    return f"""You are a cybersecurity expert consolidating analysis from multiple batches.
+
+SCAN OVERVIEW:
+- Target: {target}
+- Total Vulnerabilities: {total_vulnerabilities}
+- Severity Distribution: {severity_dist_str}
+- High Priority Vulnerabilities: {high_priority_count}
+
+BATCH SUMMARIES:
+{batch_summaries_str}
+
+Create a consolidated executive summary (3-5 sentences) covering:
+1. Overall risk assessment and security posture
+2. Most critical threats and attack vectors identified
+3. Key recommendations for immediate action
+4. Business impact considerations
+
+Provide a clear, actionable summary that gives leadership a complete picture of the vulnerability landscape.
+"""
