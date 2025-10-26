@@ -55,7 +55,7 @@ syft version
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/tr-nvd.git
+git clone https://github.com/Threat-Radar/tr.git
 cd tr-nvd
 
 # Option A: Using pip with requirements.txt
