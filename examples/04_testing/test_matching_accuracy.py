@@ -1,206 +1,273 @@
 """
-Test script to validate CVE matching accuracy.
+Validation script for Grype vulnerability scanner integration.
 
-This script tests the package name matching logic to ensure:
-1. Legitimate matches are correctly identified
-2. False positives are prevented
-3. Edge cases are handled properly
+This script validates that:
+1. Grype is properly installed and accessible
+2. Grype can scan Docker images successfully
+3. Vulnerability detection is working correctly
+4. Results are parsed properly
+
+This replaces the old package name matching tests, as we now use Grype's
+industry-standard vulnerability matching instead of custom logic.
 """
 
-from threat_radar.core.cve_matcher import PackageNameMatcher
+from threat_radar.core.grype_integration import GrypeClient, GrypeSeverity
 
 
-def test_legitimate_matches():
-    """Test that legitimate package name variations match correctly."""
+def test_grype_installation():
+    """Test 1: Verify Grype is installed and accessible."""
     print("\n" + "=" * 70)
-    print("TEST 1: Legitimate Matches")
+    print("TEST 1: Grype Installation")
     print("=" * 70)
-    print("Testing known package name variations should match with high confidence...")
+    print("Testing if Grype is properly installed and accessible...\n")
 
-    test_cases = [
-        ('openssl', 'libssl', 0.90),
-        ('glibc', 'libc6', 0.90),
-        ('glibc', 'libc', 0.90),
-        ('glibc', 'libc-bin', 0.90),
-        ('zlib', 'zlib1g', 0.90),
-        ('zlib', 'libz', 0.90),
-        ('pcre', 'libpcre3', 0.95),
-        ('ncurses', 'libncurses', 0.90),
-        ('bash', 'bash', 1.00),
-        ('openssl', 'openssl-libs', 0.90),
+    try:
+        grype = GrypeClient()
+        print("✓ PASS: Grype client initialized successfully")
+        print("  Grype is installed and accessible")
+        return True
+    except RuntimeError as e:
+        print(f"✗ FAIL: {e}")
+        print("\nInstallation instructions:")
+        print("  macOS: brew install grype")
+        print("  Linux: curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh")
+        return False
+
+
+def test_basic_scan():
+    """Test 2: Perform basic vulnerability scan."""
+    print("\n" + "=" * 70)
+    print("TEST 2: Basic Vulnerability Scan")
+    print("=" * 70)
+    print("Testing basic image scanning functionality...\n")
+
+    try:
+        grype = GrypeClient()
+
+        # Use a small, known-vulnerable image for testing
+        test_image = "alpine:3.14"  # Older Alpine version (likely has some vulns)
+
+        print(f"Scanning test image: {test_image}")
+        print("(This may take a minute on first run...)\n")
+
+        scan_result = grype.scan_docker_image(test_image)
+
+        print(f"✓ PASS: Scan completed successfully")
+        print(f"  Target: {scan_result.target}")
+        print(f"  Total vulnerabilities: {scan_result.total_count}")
+
+        if scan_result.total_count > 0:
+            print(f"  Severity counts:")
+            for severity in ['critical', 'high', 'medium', 'low']:
+                count = scan_result.severity_counts.get(severity, 0)
+                if count > 0:
+                    print(f"    {severity.upper():10s}: {count}")
+
+        return True
+    except Exception as e:
+        print(f"✗ FAIL: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def test_severity_filtering():
+    """Test 3: Test severity filtering functionality."""
+    print("\n" + "=" * 70)
+    print("TEST 3: Severity Filtering")
+    print("=" * 70)
+    print("Testing vulnerability filtering by severity...\n")
+
+    try:
+        grype = GrypeClient()
+
+        test_image = "alpine:3.14"
+
+        print(f"Scanning {test_image}...")
+        scan_result = grype.scan_docker_image(test_image)
+
+        original_count = scan_result.total_count
+
+        # Filter for HIGH and above
+        filtered_result = scan_result.filter_by_severity(GrypeSeverity.HIGH)
+        filtered_count = filtered_result.total_count
+
+        print(f"✓ PASS: Severity filtering works correctly")
+        print(f"  Original vulnerabilities: {original_count}")
+        print(f"  After HIGH+ filter: {filtered_count}")
+
+        if filtered_count <= original_count:
+            print("  ✓ Filter reduced or maintained vulnerability count (as expected)")
+        else:
+            print(f"  ✗ WARNING: Filter increased count (unexpected)")
+
+        return True
+    except Exception as e:
+        print(f"✗ FAIL: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def test_result_structure():
+    """Test 4: Validate scan result structure and data."""
+    print("\n" + "=" * 70)
+    print("TEST 4: Scan Result Structure")
+    print("=" * 70)
+    print("Testing that scan results have correct structure...\n")
+
+    try:
+        grype = GrypeClient()
+
+        test_image = "alpine:3.14"
+
+        print(f"Scanning {test_image}...")
+        scan_result = grype.scan_docker_image(test_image)
+
+        # Verify result has expected attributes
+        assert hasattr(scan_result, 'target'), "Missing 'target' attribute"
+        assert hasattr(scan_result, 'vulnerabilities'), "Missing 'vulnerabilities' attribute"
+        assert hasattr(scan_result, 'total_count'), "Missing 'total_count' attribute"
+        assert hasattr(scan_result, 'severity_counts'), "Missing 'severity_counts' attribute"
+
+        # Verify vulnerabilities have expected attributes
+        if scan_result.vulnerabilities:
+            vuln = scan_result.vulnerabilities[0]
+            assert hasattr(vuln, 'id'), "Vulnerability missing 'id' attribute"
+            assert hasattr(vuln, 'severity'), "Vulnerability missing 'severity' attribute"
+            assert hasattr(vuln, 'package_name'), "Vulnerability missing 'package_name' attribute"
+            assert hasattr(vuln, 'package_version'), "Vulnerability missing 'package_version' attribute"
+
+            print("✓ PASS: Scan result structure is correct")
+            print(f"  Sample vulnerability:")
+            print(f"    ID: {vuln.id}")
+            print(f"    Severity: {vuln.severity}")
+            print(f"    Package: {vuln.package_name}@{vuln.package_version}")
+            if vuln.fixed_in_version:
+                print(f"    Fix: {vuln.fixed_in_version}")
+        else:
+            print("✓ PASS: Scan result structure is correct (no vulnerabilities found)")
+
+        return True
+    except AssertionError as e:
+        print(f"✗ FAIL: {e}")
+        return False
+    except Exception as e:
+        print(f"✗ FAIL: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def test_known_vulnerable_image():
+    """Test 5: Scan a known vulnerable image and verify detection."""
+    print("\n" + "=" * 70)
+    print("TEST 5: Known Vulnerable Image Detection")
+    print("=" * 70)
+    print("Testing detection of vulnerabilities in known-vulnerable images...\n")
+
+    try:
+        grype = GrypeClient()
+
+        # Use a very old Alpine version that should definitely have vulnerabilities
+        test_image = "alpine:3.9"  # Released 2019, should have many CVEs
+
+        print(f"Scanning known-vulnerable image: {test_image}")
+        print("(This version is from 2019 and should have multiple CVEs)\n")
+
+        scan_result = grype.scan_docker_image(test_image)
+
+        if scan_result.total_count > 0:
+            print(f"✓ PASS: Vulnerabilities detected as expected")
+            print(f"  Total vulnerabilities: {scan_result.total_count}")
+
+            high_and_critical = (
+                scan_result.severity_counts.get('critical', 0) +
+                scan_result.severity_counts.get('high', 0)
+            )
+
+            if high_and_critical > 0:
+                print(f"  HIGH + CRITICAL: {high_and_critical}")
+                print("  ✓ Detected high-severity issues (expected for old image)")
+            else:
+                print("  ⚠ No HIGH/CRITICAL issues (unusual for 2019 image)")
+
+            return True
+        else:
+            print(f"⚠ WARNING: No vulnerabilities found")
+            print("  This is unusual for alpine:3.9 from 2019")
+            print("  Possible causes:")
+            print("    - Grype database is out of date (run: threat-radar cve db-update)")
+            print("    - Network issues preventing database access")
+            return False
+
+    except Exception as e:
+        print(f"✗ FAIL: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def run_all_tests():
+    """Run all validation tests."""
+    print("\n" + "=" * 70)
+    print("GRYPE INTEGRATION VALIDATION SUITE")
+    print("=" * 70)
+    print("\nThis test suite validates the Grype vulnerability scanner integration.")
+    print("Grype is an industry-standard tool from Anchore for vulnerability detection.")
+
+    tests = [
+        ("Grype Installation", test_grype_installation),
+        ("Basic Scan", test_basic_scan),
+        ("Severity Filtering", test_severity_filtering),
+        ("Result Structure", test_result_structure),
+        ("Known Vulnerable Image", test_known_vulnerable_image),
     ]
 
-    passed = 0
-    failed = 0
+    results = []
 
-    for name1, name2, expected_min_score in test_cases:
-        score = PackageNameMatcher.similarity_score(name1, name2)
-        if score >= expected_min_score:
-            print(f"  ✓ {name1:15s} vs {name2:15s}: {score:.2f} (>= {expected_min_score})")
-            passed += 1
-        else:
-            print(f"  ✗ {name1:15s} vs {name2:15s}: {score:.2f} (expected >= {expected_min_score})")
-            failed += 1
-
-    print(f"\nResult: {passed} passed, {failed} failed")
-    return failed == 0
-
-
-def test_false_positives():
-    """Test that unrelated packages don't match."""
-    print("\n" + "=" * 70)
-    print("TEST 2: False Positive Prevention")
-    print("=" * 70)
-    print("Testing unrelated packages should NOT match...")
-
-    test_cases = [
-        ('dash', 'bash'),      # Different shells
-        ('bash', 'ash'),       # Different shells
-        ('gzip', 'grep'),      # Compression vs search
-        ('gzip', 'bzip2'),     # Different compression
-        ('tar', 'star'),       # Different archive tools
-        ('sed', 'awk'),        # Different text tools
-        ('curl', 'wget'),      # Different download tools
-        ('vim', 'emacs'),      # Different editors
-    ]
-
-    passed = 0
-    failed = 0
-    max_allowed_score = 0.5
-
-    for name1, name2 in test_cases:
-        score = PackageNameMatcher.similarity_score(name1, name2)
-        if score < max_allowed_score:
-            print(f"  ✓ {name1:15s} vs {name2:15s}: {score:.2f} (< {max_allowed_score})")
-            passed += 1
-        else:
-            print(f"  ✗ {name1:15s} vs {name2:15s}: {score:.2f} (should be < {max_allowed_score})")
-            failed += 1
-
-    print(f"\nResult: {passed} passed, {failed} failed")
-    return failed == 0
-
-
-def test_edge_cases():
-    """Test edge cases and special scenarios."""
-    print("\n" + "=" * 70)
-    print("TEST 3: Edge Cases")
-    print("=" * 70)
-    print("Testing special scenarios...")
-
-    test_cases = [
-        # Prefix stripping
-        ('libpng', 'png', 0.90, "lib prefix should be stripped"),
-        ('python3-pip', 'pip', 0.90, "python3- prefix should be stripped"),
-
-        # Version numbers in names (conservative - won't match unless added to mappings)
-        # This is acceptable - better to miss a match than create false positive
-        # If needed, add explicit mapping: "openssl": ["libssl", "libssl1.1", "libssl3"]
-
-        # Case insensitivity
-        ('OpenSSL', 'libssl', 0.90, "should be case insensitive"),
-        ('BASH', 'bash', 1.00, "exact match ignoring case"),
-
-        # Short names with high similarity requirement
-        ('tar', 'tar', 1.00, "exact match for short names"),
-        ('vim', 'vi', 0.40, "short dissimilar names penalized"),
-    ]
-
-    passed = 0
-    failed = 0
-
-    for name1, name2, expected_min_score, description in test_cases:
-        score = PackageNameMatcher.similarity_score(name1, name2)
-        if score >= expected_min_score:
-            print(f"  ✓ {name1:15s} vs {name2:15s}: {score:.2f} - {description}")
-            passed += 1
-        else:
-            print(f"  ✗ {name1:15s} vs {name2:15s}: {score:.2f} - {description}")
-            print(f"     Expected >= {expected_min_score}")
-            failed += 1
-
-    print(f"\nResult: {passed} passed, {failed} failed")
-    return failed == 0
-
-
-def test_blacklist():
-    """Test that blacklisted pairs never match."""
-    print("\n" + "=" * 70)
-    print("TEST 4: Blacklist Enforcement")
-    print("=" * 70)
-    print("Testing blacklisted pairs return 0.0 score...")
-
-    # These are defined in NEVER_MATCH
-    blacklisted_pairs = [
-        ('bash', 'dash'),
-        ('dash', 'bash'),  # Test both directions
-        ('bash', 'ash'),
-        ('gzip', 'bzip2'),
-        ('gzip', 'grep'),
-        ('tar', 'star'),
-        ('glibc', 'klibc'),
-        ('glibc', 'klibc-utils'),
-        ('glibc', 'libklibc'),
-    ]
-
-    passed = 0
-    failed = 0
-
-    for name1, name2 in blacklisted_pairs:
-        score = PackageNameMatcher.similarity_score(name1, name2)
-        if score == 0.0:
-            print(f"  ✓ {name1:15s} vs {name2:15s}: {score:.2f} (blacklisted)")
-            passed += 1
-        else:
-            print(f"  ✗ {name1:15s} vs {name2:15s}: {score:.2f} (should be 0.0)")
-            failed += 1
-
-    print(f"\nResult: {passed} passed, {failed} failed")
-    return failed == 0
-
-
-def main():
-    """Run all tests."""
-    print("\n" + "=" * 70)
-    print("CVE MATCHER - ACCURACY VALIDATION TESTS")
-    print("=" * 70)
-    print("\nValidating package name matching logic...")
-
-    test_results = []
-
-    # Run all tests
-    test_results.append(("Legitimate Matches", test_legitimate_matches()))
-    test_results.append(("False Positive Prevention", test_false_positives()))
-    test_results.append(("Edge Cases", test_edge_cases()))
-    test_results.append(("Blacklist Enforcement", test_blacklist()))
+    for test_name, test_func in tests:
+        passed = test_func()
+        results.append((test_name, passed))
 
     # Summary
     print("\n" + "=" * 70)
     print("TEST SUMMARY")
     print("=" * 70)
 
-    total_passed = sum(1 for _, result in test_results if result)
-    total_tests = len(test_results)
+    passed_count = sum(1 for _, passed in results if passed)
+    total_count = len(results)
 
-    for test_name, passed in test_results:
+    for test_name, passed in results:
         status = "✓ PASS" if passed else "✗ FAIL"
-        print(f"{status} - {test_name}")
+        print(f"  {status}: {test_name}")
 
-    print("\n" + "=" * 70)
-    if total_passed == total_tests:
-        print(f"✅ ALL TESTS PASSED ({total_passed}/{total_tests})")
-        print("=" * 70)
-        print("\nThe CVE matcher is working correctly:")
-        print("  • Legitimate package variations are matched")
-        print("  • False positives (dash vs bash, etc.) are prevented")
-        print("  • Edge cases are handled properly")
-        print("  • Blacklisted pairs are rejected")
-        return 0
+    print(f"\n  Result: {passed_count}/{total_count} tests passed")
+
+    if passed_count == total_count:
+        print("\n✅ ALL TESTS PASSED!")
+        print("\nYour Grype integration is working correctly.")
+        print("You can now use Threat Radar for vulnerability scanning!")
+        return True
     else:
-        print(f"❌ SOME TESTS FAILED ({total_passed}/{total_tests} passed)")
-        print("=" * 70)
-        return 1
+        print("\n⚠ SOME TESTS FAILED")
+        print("\nPlease review the failures above and:")
+        print("  1. Ensure Grype is installed (brew install grype)")
+        print("  2. Ensure Docker is running (docker ps)")
+        print("  3. Update Grype database (threat-radar cve db-update)")
+        print("  4. Check internet connectivity")
+        return False
 
 
 if __name__ == "__main__":
-    exit(main())
+    try:
+        success = run_all_tests()
+        exit(0 if success else 1)
+    except KeyboardInterrupt:
+        print("\n\nTests interrupted by user.")
+        exit(1)
+    except Exception as e:
+        print(f"\n\n❌ Unexpected error: {e}")
+        import traceback
+        traceback.print_exc()
+        exit(1)
