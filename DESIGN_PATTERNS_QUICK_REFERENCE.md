@@ -1,5 +1,5 @@
 # Threat Radar Design Patterns - Quick Reference
-## For Professor Presentation
+## For Midterm Presentation
 
 ### Design Patterns Used
 

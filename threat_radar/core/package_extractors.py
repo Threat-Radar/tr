@@ -14,6 +14,7 @@ class Package:
     version: str
     architecture: Optional[str] = None
     description: Optional[str] = None
+    type: Optional[str] = None  # Package type (deb, rpm, npm, etc.)
 
 
 class PackageExtractor:

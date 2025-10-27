@@ -267,7 +267,6 @@ The CLI is built with Typer and uses a modular command structure in `threat_rada
 - `report.py` - Comprehensive reporting with AI executive summaries (generate, dashboard-export, compare)
 - `hash.py` - File hashing utilities
 - `config.py` - Configuration management (show, set, init, path, validate)
-- `enrich.py` - Data enrichment operations (reserved for future features)
 
 ### Core Modules
 
@@ -1390,12 +1389,12 @@ threat-radar docker python-sbom python:3.11 -o sbom.json --format cyclonedx
 
 ### Module Structure
 - `threat_radar/ai/` - **IMPLEMENTED**: AI-powered vulnerability analysis, prioritization, and remediation
-  - Supports OpenAI GPT and Ollama (local models)
+  - Includes `remediation_generator.py` for creating actionable fix plans
+  - Supports OpenAI GPT, Anthropic Claude, and Ollama (local models)
   - See AI Commands Reference section above for full capabilities
-- `threat_radar/ontology/` - Reserved for ontology/schema definitions
-- `threat_radar/remediation/` - Reserved for remediation strategies
-- `threat_radar/risk/` - Reserved for risk assessment
-- `threat_radar/scenarios/` - Reserved for threat scenarios
+- `threat_radar/core/` - Core business logic for scanning, SBOM generation, and container analysis
+- `threat_radar/cli/` - CLI commands and user interface
+- `threat_radar/utils/` - Utilities for reporting, storage, configuration, and helpers
 
 ### Storage Organization
 
