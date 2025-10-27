@@ -205,3 +205,4 @@ cve_storage/
 # Example outputs - keep these for demonstration
 !examples/output/*.json
 
+/CONTRIBUTOR_SUMMARY.md
