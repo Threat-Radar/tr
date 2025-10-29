@@ -13,6 +13,8 @@ from ..core.grype_integration import GrypeScanResult, GrypeVulnerability
 from ..ai.vulnerability_analyzer import VulnerabilityAnalyzer
 from ..ai.prioritization import PrioritizationEngine
 from ..ai.remediation_generator import RemediationGenerator
+from ..ai.business_context_analyzer import BusinessContextAnalyzer
+from ..environment.parser import EnvironmentParser
 from ..utils import save_json, handle_cli_error, get_ai_storage
 
 app = typer.Typer(help="AI-powered vulnerability analysis and remediation")
@@ -478,3 +480,213 @@ def generate_remediation(
             storage = get_ai_storage()
             saved_path = storage.save_analysis(scan_result.target, output_data, "remediation")
             console.print(f"[green]Remediation plan auto-saved to {saved_path}[/green]")
+
+
+@app.command("analyze-with-context")
+def analyze_with_business_context(
+    cve_results: str = typer.Argument(..., help="Path to CVE scan results JSON file"),
+    environment: str = typer.Argument(..., help="Path to environment configuration JSON file"),
+    provider: Optional[str] = typer.Option(None, "--provider", "-p", help="AI provider (openai, anthropic, ollama)"),
+    model: Optional[str] = typer.Option(None, "--model", "-m", help="Model name (e.g., gpt-4o, llama2)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save analysis to JSON file"),
+    auto_save: bool = typer.Option(False, "--auto-save", "--as", help="Auto-save to storage/ai_analysis/"),
+    asset_id: Optional[str] = typer.Option(None, "--asset-id", help="Explicit asset ID from environment"),
+    batch_mode: str = typer.Option(
+        "auto",
+        "--batch-mode",
+        help="Batch processing mode: auto (default), enabled, disabled"
+    ),
+    show_top: int = typer.Option(10, "--show-top", help="Show top N business risks"),
+):
+    """
+    Analyze vulnerabilities with business context from environment configuration.
+
+    This command enhances vulnerability analysis with business context including:
+    - Asset criticality levels and scores
+    - Data classification (PII, PCI, PHI)
+    - Network exposure (internet-facing vs internal)
+    - Compliance requirements (PCI-DSS, HIPAA, GDPR)
+    - Business impact assessment
+
+    The business risk score (0-100) is computed from:
+    - Technical severity (CVSS score)
+    - Asset criticality (from environment config)
+    - Network exposure (internet-facing assets)
+    - Data sensitivity (PII, PCI, PHI handling)
+
+    Examples:
+        # Analyze with business context
+        threat-radar ai analyze-with-context cve-scan.json production-env.json
+
+        # Specify which asset the scan corresponds to
+        threat-radar ai analyze-with-context scan.json env.json --asset-id api-gateway-001
+
+        # Save results and show top 20 business risks
+        threat-radar ai analyze-with-context scan.json env.json -o analysis.json --show-top 20
+
+        # Use with specific AI provider
+        threat-radar ai analyze-with-context scan.json env.json --provider ollama --model llama2
+    """
+    with handle_cli_error("analyzing vulnerabilities with business context", console):
+        # Load CVE scan results
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Loading CVE results...", total=None)
+            scan_result = load_cve_results(cve_results)
+            progress.update(task, completed=True, description=f"Loaded {scan_result.total_count} vulnerabilities")
+
+        if scan_result.total_count == 0:
+            console.print("[yellow]No vulnerabilities found in scan results.[/yellow]")
+            return
+
+        # Load environment configuration
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Loading environment configuration...", total=None)
+            env = EnvironmentParser.load_from_file(environment)
+            progress.update(task, completed=True, description=f"Loaded environment: {env.environment.name}")
+
+        console.print(f"\n[cyan]Environment:[/cyan] {env.environment.name} ({env.environment.type.value})")
+        console.print(f"[cyan]Assets:[/cyan] {len(env.assets)}")
+
+        if env.environment.compliance_requirements:
+            frameworks = ", ".join([f.value.upper() for f in env.environment.compliance_requirements])
+            console.print(f"[cyan]Compliance:[/cyan] {frameworks}")
+
+        # Create analyzer with business context
+        analyzer = BusinessContextAnalyzer(
+            provider=provider,
+            model=model,
+            batch_size=25,
+            auto_batch_threshold=30,
+        )
+
+        # Build asset mapping if provided
+        asset_mapping = None
+        if asset_id:
+            asset_mapping = {scan_result.target: asset_id}
+
+        # Analyze with business context
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Analyzing with AI and business context...", total=None)
+
+            analysis = analyzer.analyze_with_business_context(
+                scan_result=scan_result,
+                environment=env,
+                asset_mapping=asset_mapping,
+                batch_mode=batch_mode,
+            )
+
+            progress.update(task, completed=True, description="Analysis complete!")
+
+        # Display results
+        console.print("\n")
+
+        # Asset information
+        if analysis.metadata.get("asset_id"):
+            asset_criticality = analysis.metadata.get("asset_criticality", "unknown")
+            criticality_score = analysis.metadata.get("criticality_score", 0)
+            internet_facing = "Yes" if analysis.metadata.get("internet_facing") else "No"
+
+            console.print(Panel(
+                f"[bold]Business Context Analysis[/bold]\n\n"
+                f"Asset: {analysis.metadata.get('asset_name', 'Unknown')}\n"
+                f"Criticality: {asset_criticality.upper()} (Score: {criticality_score}/100)\n"
+                f"Internet-Facing: {internet_facing}\n"
+                f"Overall Risk Rating: [bold red]{analysis.overall_risk_rating}[/bold red]",
+                border_style="blue"
+            ))
+        else:
+            console.print(Panel(
+                f"[bold]Vulnerability Analysis[/bold]\n\n"
+                f"[yellow]Warning: Could not map scan target to environment asset[/yellow]\n"
+                f"Using technical analysis only",
+                border_style="yellow"
+            ))
+
+        # Environment summary
+        if analysis.environment_summary:
+            console.print(f"\n[bold cyan]Environment Summary:[/bold cyan]")
+            console.print(analysis.environment_summary)
+
+        # Compliance summary
+        if analysis.compliance_summary:
+            console.print(f"\n[bold magenta]Compliance Impact:[/bold magenta]")
+            console.print(analysis.compliance_summary)
+
+        # Prioritized actions
+        if analysis.prioritized_actions:
+            console.print(f"\n[bold green]Prioritized Actions:[/bold green]")
+            for idx, action in enumerate(analysis.prioritized_actions, 1):
+                console.print(f"{idx}. {action}")
+
+        # Show top business risks
+        if analysis.business_assessments:
+            console.print(f"\n[bold red]Top {show_top} Business Risks:[/bold red]")
+
+            top_risks = analyzer.get_top_business_risks(analysis, limit=show_top)
+
+            table = Table(show_header=True)
+            table.add_column("CVE ID", style="cyan")
+            table.add_column("Package", style="yellow")
+            table.add_column("Tech.", style="white")
+            table.add_column("Business Risk", style="red")
+            table.add_column("Risk Factors", style="dim")
+
+            for risk in top_risks:
+                # Colorize business risk score
+                if risk.business_risk_score >= 80:
+                    risk_color = "bold red"
+                elif risk.business_risk_score >= 60:
+                    risk_color = "red"
+                elif risk.business_risk_score >= 40:
+                    risk_color = "yellow"
+                else:
+                    risk_color = "white"
+
+                # Truncate risk factors for display
+                factors_str = ", ".join(risk.risk_factors[:2])
+                if len(risk.risk_factors) > 2:
+                    factors_str += "..."
+
+                table.add_row(
+                    risk.cve_id,
+                    risk.package_name,
+                    risk.technical_severity,
+                    f"[{risk_color}]{risk.business_risk_score}[/{risk_color}] ({risk.business_risk_level})",
+                    factors_str,
+                )
+
+            console.print(table)
+
+            # Summary statistics
+            critical_count = sum(1 for r in analysis.business_assessments if r.business_risk_level == "CRITICAL")
+            high_count = sum(1 for r in analysis.business_assessments if r.business_risk_level == "HIGH")
+            immediate_count = sum(1 for r in analysis.business_assessments if r.remediation_urgency == "IMMEDIATE")
+
+            console.print(f"\n[bold]Business Risk Distribution:[/bold]")
+            console.print(f"  Critical Business Risk: {critical_count}")
+            console.print(f"  High Business Risk: {high_count}")
+            console.print(f"  Immediate Remediation Required: {immediate_count}")
+
+        # Save results
+        output_data = analysis.to_dict()
+
+        if output:
+            save_json(output_data, output)
+            console.print(f"\n[green]Analysis saved to {output}[/green]")
+
+        if auto_save:
+            storage = get_ai_storage()
+            saved_path = storage.save_analysis(scan_result.target, output_data, "business_context_analysis")
+            console.print(f"[green]Analysis auto-saved to {saved_path}[/green]")

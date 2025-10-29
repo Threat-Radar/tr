@@ -36,6 +36,11 @@ threat-radar ai analyze scan-results.json --auto-save
 # Generate comprehensive report
 threat-radar report generate scan-results.json -o report.html -f html
 
+# Build vulnerability graph for relationship analysis
+threat-radar graph build scan-results.json --auto-save
+threat-radar graph query graph.graphml --cve CVE-2023-1234
+threat-radar graph query graph.graphml --top-packages 10 --stats
+
 # Run tests
 pytest                                    # All tests
 pytest tests/test_grype_integration.py   # Specific test file
@@ -1385,9 +1390,215 @@ threat-radar docker packages alpine:3.18 --limit 20 --filter openssl
 threat-radar docker python-sbom python:3.11 -o sbom.json --format cyclonedx
 ```
 
+## Graph Commands Reference
+
+### Overview
+
+The graph database integration provides relationship-based vulnerability analysis using NetworkX. It models containers, packages, vulnerabilities, and their relationships as a graph structure for advanced queries.
+
+**Key Features:**
+- **Vulnerability Blast Radius**: Find all assets affected by a CVE
+- **Package Risk Analysis**: Identify most vulnerable packages
+- **Fix Recommendations**: Discover vulnerabilities with available patches
+- **Attack Path Discovery**: Trace potential attack vectors through dependencies
+- **Persistent Storage**: Save graphs for historical analysis
+
+### Graph Building
+
+```bash
+# Build graph from CVE scan results
+threat-radar graph build scan-results.json -o vulnerability-graph.graphml
+
+# Auto-save to storage/graph_storage/
+threat-radar graph build scan-results.json --auto-save
+
+# Example workflow: Scan and build graph
+threat-radar cve scan-image alpine:3.18 --auto-save -o scan.json
+threat-radar graph build scan.json --auto-save
+```
+
+### Graph Querying
+
+```bash
+# Find containers affected by a CVE (blast radius)
+threat-radar graph query graph.graphml --cve CVE-2023-1234
+
+# Show top 10 most vulnerable packages
+threat-radar graph query graph.graphml --top-packages 10
+
+# Display vulnerability statistics
+threat-radar graph query graph.graphml --stats
+
+# Combined query
+threat-radar graph query graph.graphml --cve CVE-2023-1234 --stats
+```
+
+### Graph Management
+
+```bash
+# List all stored graphs
+threat-radar graph list
+threat-radar graph list --limit 10
+
+# Show detailed graph information
+threat-radar graph info graph.graphml
+
+# Find vulnerabilities with available fixes
+threat-radar graph fixes graph.graphml
+threat-radar graph fixes graph.graphml --severity critical
+
+# Clean up old graphs
+threat-radar graph cleanup --days 30
+threat-radar graph cleanup --days 30 --force
+```
+
+### Graph Architecture
+
+**Node Types:**
+- **Container**: Docker images and their metadata
+- **Package**: Installed packages (OS and application)
+- **Vulnerability**: CVE entries with severity and CVSS scores
+- **Service**: Exposed services (ports, protocols)
+- **Host**: Infrastructure hosts (future)
+- **ScanResult**: Scan metadata and timestamps
+
+**Edge Types:**
+- **CONTAINS**: Container → Package (container includes package)
+- **HAS_VULNERABILITY**: Package → Vulnerability (package has CVE)
+- **FIXED_BY**: Vulnerability → Package (CVE fixed in version)
+- **DEPENDS_ON**: Container → Container (dependency chain)
+- **EXPOSES**: Container → Service (exposed services)
+- **RUNS_ON**: Container → Host (deployment location)
+- **SCANNED_BY**: Container → ScanResult (scan history)
+
+### Graph Storage
+
+Graphs are stored in `./storage/graph_storage/` with timestamped filenames:
+
+```bash
+# Storage location
+./storage/graph_storage/
+  ├── alpine_3_18_2025-01-09_14-30-45.graphml
+  ├── alpine_3_18_2025-01-09_14-30-45.json  # Metadata
+  └── python_3_11_2025-01-09_15-00-00.graphml
+
+# Manage storage
+ls -lh storage/graph_storage/
+du -sh storage/graph_storage/
+```
+
+### Complete Workflow Example
+
+```bash
+# 1. Scan multiple images
+threat-radar cve scan-image alpine:3.18 --auto-save -o alpine-scan.json
+threat-radar cve scan-image python:3.11 --auto-save -o python-scan.json
+threat-radar cve scan-image nginx:alpine --auto-save -o nginx-scan.json
+
+# 2. Build graphs
+threat-radar graph build alpine-scan.json --auto-save
+threat-radar graph build python-scan.json --auto-save
+threat-radar graph build nginx-scan.json --auto-save
+
+# 3. Analyze vulnerability landscape
+threat-radar graph list
+threat-radar graph query latest-graph.graphml --stats
+
+# 4. Find critical CVE impact
+threat-radar graph query latest-graph.graphml --cve CVE-2023-XXXX
+
+# 5. Identify fix candidates
+threat-radar graph fixes latest-graph.graphml --severity critical
+
+# 6. Export for custom dashboards
+# Graphs are in GraphML format, compatible with:
+# - Python NetworkX
+# - Gephi (visualization)
+# - Neo4j (import)
+# - Custom analysis tools
+```
+
+### Python API Usage
+
+```python
+from threat_radar.graph import NetworkXClient, GraphBuilder, GraphAnalyzer
+from threat_radar.core import GrypeScanResult
+from threat_radar.utils.graph_storage import GraphStorageManager
+
+# Load scan results
+with open("scan-results.json") as f:
+    scan_data = json.load(f)
+    scan_result = GrypeScanResult.from_dict(scan_data)
+
+# Build graph
+client = NetworkXClient()
+builder = GraphBuilder(client)
+builder.build_from_scan(scan_result)
+
+# Query graph
+analyzer = GraphAnalyzer(client)
+blast_radius = analyzer.blast_radius("CVE-2023-1234")
+vulnerable_packages = analyzer.most_vulnerable_packages(top_n=10)
+stats = analyzer.vulnerability_statistics()
+
+# Save graph
+storage = GraphStorageManager()
+storage.save_graph(client, "my-analysis")
+```
+
+### Advanced Use Cases
+
+**1. Vulnerability Trend Analysis**
+```bash
+# Build graphs over time
+threat-radar graph build scan-week1.json -o week1.graphml
+threat-radar graph build scan-week2.json -o week2.graphml
+threat-radar graph build scan-week3.json -o week3.graphml
+
+# Compare graphs programmatically to track improvements
+```
+
+**2. Multi-Container Risk Assessment**
+```bash
+# Scan entire stack
+for image in frontend:latest backend:latest api:latest; do
+  threat-radar cve scan-image $image --auto-save -o ${image//:/─}-scan.json
+  threat-radar graph build ${image//:/─}-scan.json --auto-save
+done
+
+# Analyze shared vulnerabilities across containers
+```
+
+**3. CI/CD Integration**
+```bash
+# Pipeline: Fail if critical vulnerabilities found
+threat-radar cve scan-image $IMAGE --auto-save -o scan.json
+threat-radar graph build scan.json -o graph.graphml
+threat-radar graph fixes graph.graphml --severity critical > critical-fixes.txt
+
+if [ -s critical-fixes.txt ]; then
+  echo "CRITICAL vulnerabilities found!"
+  exit 1
+fi
+```
+
+### Future Enhancements (Sprint 2+)
+
+- **Neo4j Support**: Migrate to Neo4j for production-scale deployments
+- **Container Dependencies**: Auto-detect Docker Compose/orchestration dependencies
+- **Network Topology**: Map container communication patterns
+- **Graph Visualization**: Built-in graph rendering (matplotlib/graphviz)
+- **Attack Path Analysis**: Automated attack vector identification
+- **Remediation Impact**: Predict remediation impact before changes
+
 ## Development Notes
 
 ### Module Structure
+- `threat_radar/graph/` - **IMPLEMENTED**: Graph database integration for vulnerability modeling
+  - `models.py` - Graph node and edge data models
+  - `graph_client.py` - NetworkX client implementation
+  - `builders.py` - Convert scan results to graph structures
+  - `queries.py` - Advanced graph analysis and queries
 - `threat_radar/ai/` - **IMPLEMENTED**: AI-powered vulnerability analysis, prioritization, and remediation
   - Includes `remediation_generator.py` for creating actionable fix plans
   - Supports OpenAI GPT, Anthropic Claude, and Ollama (local models)
@@ -1410,6 +1621,12 @@ The project uses organized storage directories (git-ignored):
   - Auto-saved with `--auto-save` flag in AI commands
   - Format: `<target>_<analysis_type>_YYYY-MM-DD_HH-MM-SS.json`
 
+- **`./storage/graph_storage/`** - Graph database files
+  - Vulnerability and infrastructure graphs in GraphML format
+  - Auto-saved with `--auto-save` flag in graph commands
+  - Format: `<target>_YYYY-MM-DD_HH-MM-SS.graphml` with optional `.json` metadata
+  - Compatible with NetworkX, Gephi, Neo4j, and custom analysis tools
+
 - **`./sbom_storage/`** - SBOM files organized by category
   - `docker/` - SBOMs from Docker images
   - `local/` - SBOMs from local directories
@@ -1422,6 +1639,7 @@ The project uses organized storage directories (git-ignored):
 - AI tests in `test_ai_integration.py` require AI provider configuration (or can be mocked)
 - Batch processing tests in `test_batch_processing.py` validate large-scale CVE handling
 - Comprehensive report tests in `test_comprehensive_report.py` validate all report formats
+- Graph integration tests in `test_graph_integration.py` test graph building, querying, and storage
 - Hash tests in `test_hasher.py` test file integrity verification
 - All tests can run independently without external dependencies (except Docker tests)
 
