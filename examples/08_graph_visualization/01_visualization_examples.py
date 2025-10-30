@@ -75,7 +75,7 @@ def create_sample_vulnerability_graph():
         vulnerabilities=vulnerabilities,
     )
 
-    builder.build_from_scan_result(scan_result)
+    builder.build_from_scan(scan_result)
     return client
 
 
