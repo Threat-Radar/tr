@@ -1,0 +1,389 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Threat Radar Environment Schema",
+  "version": "1.0.0",
+  "description": "Technology-agnostic infrastructure and business context schema for vulnerability risk assessment",
+
+  "type": "object",
+  "required": ["environment", "assets"],
+  "properties": {
+
+    "environment": {
+      "type": "object",
+      "description": "Environment metadata",
+      "required": ["name", "type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Environment name",
+          "examples": ["production", "staging-us-east", "customer-acme"]
+        },
+        "type": {
+          "type": "string",
+          "enum": ["production", "staging", "development", "testing", "dr"],
+          "description": "Environment type"
+        },
+        "cloud_provider": {
+          "type": "string",
+          "enum": ["aws", "azure", "gcp", "on-premise", "hybrid", "multi-cloud"],
+          "description": "Infrastructure provider"
+        },
+        "region": {
+          "type": "string",
+          "description": "Geographic region or datacenter",
+          "examples": ["us-east-1", "eu-west-1", "datacenter-nyc"]
+        },
+        "compliance_requirements": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["hipaa", "pci-dss", "sox", "gdpr", "iso27001", "fedramp", "none"]
+          },
+          "description": "Compliance frameworks applicable to this environment"
+        },
+        "owner": {
+          "type": "string",
+          "description": "Team or person responsible",
+          "examples": ["platform-team", "security@company.com"]
+        },
+        "tags": {
+          "type": "object",
+          "additionalProperties": {"type": "string"},
+          "description": "Custom key-value tags",
+          "examples": [{"cost-center": "engineering", "project": "api-v2"}]
+        }
+      }
+    },
+
+    "assets": {
+      "type": "array",
+      "description": "Infrastructure assets (servers, containers, services)",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "type", "criticality"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique asset identifier",
+            "examples": ["asset-frontend-01", "i-0123456789abcdef0"]
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable asset name",
+            "examples": ["frontend-web-server", "payment-api"]
+          },
+          "type": {
+            "type": "string",
+            "enum": ["container", "vm", "bare-metal", "serverless", "saas", "database", "load-balancer", "api-gateway", "service"],
+            "description": "Asset type"
+          },
+          "host": {
+            "type": "string",
+            "description": "Hostname or IP address",
+            "examples": ["10.0.1.50", "frontend.internal.corp"]
+          },
+
+          "software": {
+            "type": "object",
+            "description": "Software running on this asset",
+            "properties": {
+              "image": {
+                "type": "string",
+                "description": "Container image or OS image",
+                "examples": ["nginx:1.21-alpine", "ubuntu:22.04"]
+              },
+              "os": {
+                "type": "string",
+                "description": "Operating system",
+                "examples": ["Ubuntu 22.04", "Alpine Linux 3.18"]
+              },
+              "runtime": {
+                "type": "string",
+                "description": "Runtime environment",
+                "examples": ["node:18", "python:3.11", "java-11"]
+              },
+              "packages": {
+                "type": "array",
+                "description": "Known installed packages",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "version"],
+                  "properties": {
+                    "name": {"type": "string"},
+                    "version": {"type": "string"},
+                    "ecosystem": {
+                      "type": "string",
+                      "examples": ["npm", "pip", "maven", "apk", "deb", "rpm"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+
+          "network": {
+            "type": "object",
+            "description": "Network configuration",
+            "properties": {
+              "internal_ip": {
+                "type": "string",
+                "description": "Internal IP address",
+                "examples": ["10.0.1.50", "192.168.1.100"]
+              },
+              "public_ip": {
+                "type": "string",
+                "description": "Public IP address (if exposed)",
+                "examples": ["54.123.45.67"]
+              },
+              "exposed_ports": {
+                "type": "array",
+                "description": "Exposed network ports",
+                "items": {
+                  "type": "object",
+                  "required": ["port", "protocol"],
+                  "properties": {
+                    "port": {"type": "integer"},
+                    "protocol": {
+                      "type": "string",
+                      "enum": ["tcp", "udp", "http", "https", "grpc"]
+                    },
+                    "public": {
+                      "type": "boolean",
+                      "description": "Is this port internet-accessible?"
+                    },
+                    "description": {
+                      "type": "string",
+                      "examples": ["Web traffic", "API endpoint"]
+                    }
+                  }
+                }
+              },
+              "firewall_rules": {
+                "type": "array",
+                "description": "Firewall or security group rules",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "source": {"type": "string", "examples": ["0.0.0.0/0", "10.0.0.0/8"]},
+                    "destination_port": {"type": "integer"},
+                    "action": {"type": "string", "enum": ["allow", "deny"]}
+                  }
+                }
+              }
+            }
+          },
+
+          "business_context": {
+            "type": "object",
+            "description": "Business criticality and context",
+            "required": ["criticality"],
+            "properties": {
+              "criticality": {
+                "type": "string",
+                "enum": ["critical", "high", "medium", "low"],
+                "description": "Business criticality level"
+              },
+              "criticality_score": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100,
+                "description": "Numerical criticality (0-100)"
+              },
+              "function": {
+                "type": "string",
+                "description": "Business function this asset serves",
+                "examples": ["payment-processing", "user-authentication", "data-analytics"]
+              },
+              "data_classification": {
+                "type": "string",
+                "enum": ["public", "internal", "confidential", "restricted", "pii", "pci", "phi"],
+                "description": "Type of data handled"
+              },
+              "revenue_impact": {
+                "type": "string",
+                "enum": ["critical", "high", "medium", "low", "none"],
+                "description": "Direct revenue impact if compromised"
+              },
+              "customer_facing": {
+                "type": "boolean",
+                "description": "Is this asset customer-facing?"
+              },
+              "sla_tier": {
+                "type": "string",
+                "enum": ["tier-1", "tier-2", "tier-3"],
+                "description": "Service level agreement tier"
+              },
+              "compliance_scope": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["hipaa", "pci-dss", "sox", "gdpr", "iso27001"]
+                },
+                "description": "Compliance requirements for this specific asset"
+              },
+              "mttr_target": {
+                "type": "integer",
+                "description": "Mean time to remediate target (hours)"
+              },
+              "owner_team": {
+                "type": "string",
+                "description": "Team responsible for this asset",
+                "examples": ["platform-team", "payments-team"]
+              },
+              "cost_center": {
+                "type": "string",
+                "description": "Financial cost center"
+              }
+            }
+          },
+
+          "metadata": {
+            "type": "object",
+            "description": "Additional custom metadata",
+            "additionalProperties": true,
+            "properties": {
+              "created_at": {"type": "string", "format": "date-time"},
+              "last_scanned": {"type": "string", "format": "date-time"},
+              "last_patched": {"type": "string", "format": "date-time"},
+              "tags": {
+                "type": "object",
+                "additionalProperties": {"type": "string"}
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "dependencies": {
+      "type": "array",
+      "description": "Service dependencies and relationships",
+      "items": {
+        "type": "object",
+        "required": ["source", "target", "type"],
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "Source asset ID"
+          },
+          "target": {
+            "type": "string",
+            "description": "Target asset ID"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["depends_on", "communicates_with", "reads_from", "writes_to", "authenticates_to"],
+            "description": "Dependency relationship type"
+          },
+          "protocol": {
+            "type": "string",
+            "description": "Communication protocol",
+            "examples": ["https", "grpc", "postgresql", "redis", "kafka"]
+          },
+          "port": {
+            "type": "integer",
+            "description": "Communication port"
+          },
+          "criticality": {
+            "type": "string",
+            "enum": ["critical", "high", "medium", "low"],
+            "description": "How critical is this dependency?"
+          },
+          "data_flow": {
+            "type": "string",
+            "enum": ["pii", "pci", "phi", "confidential", "internal", "public"],
+            "description": "Type of data flowing through this dependency"
+          },
+          "encrypted": {
+            "type": "boolean",
+            "description": "Is communication encrypted?"
+          }
+        }
+      }
+    },
+
+    "network_topology": {
+      "type": "object",
+      "description": "Network segmentation and zones",
+      "properties": {
+        "zones": {
+          "type": "array",
+          "description": "Network security zones",
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "trust_level"],
+            "properties": {
+              "id": {"type": "string"},
+              "name": {
+                "type": "string",
+                "examples": ["dmz", "internal", "database", "management"]
+              },
+              "trust_level": {
+                "type": "string",
+                "enum": ["untrusted", "low", "medium", "high", "trusted"]
+              },
+              "assets": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Asset IDs in this zone"
+              },
+              "internet_accessible": {
+                "type": "boolean",
+                "description": "Can this zone be accessed from internet?"
+              }
+            }
+          }
+        },
+        "segmentation_rules": {
+          "type": "array",
+          "description": "Network segmentation policies",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from_zone": {"type": "string"},
+              "to_zone": {"type": "string"},
+              "allowed": {"type": "boolean"},
+              "policy": {
+                "type": "string",
+                "description": "Policy name or rule description"
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "business_context": {
+      "type": "object",
+      "description": "Global business context for the environment",
+      "properties": {
+        "organization": {
+          "type": "string",
+          "description": "Organization name"
+        },
+        "business_unit": {
+          "type": "string",
+          "examples": ["payments", "customer-service", "analytics"]
+        },
+        "regulatory_requirements": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "risk_tolerance": {
+          "type": "string",
+          "enum": ["very-low", "low", "medium", "high"],
+          "description": "Organization's risk tolerance level"
+        },
+        "incident_cost_estimates": {
+          "type": "object",
+          "description": "Estimated costs of security incidents",
+          "properties": {
+            "data_breach_per_record": {"type": "number"},
+            "downtime_per_hour": {"type": "number"},
+            "reputation_damage": {"type": "number"}
+          }
+        }
+      }
+    }
+  }
+}

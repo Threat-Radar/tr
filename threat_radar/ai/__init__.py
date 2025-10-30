@@ -4,6 +4,7 @@ from .llm_client import LLMClient, OpenAIClient, OllamaClient, get_llm_client
 from .vulnerability_analyzer import VulnerabilityAnalyzer, VulnerabilityAnalysis, VulnerabilityInsight
 from .prioritization import PrioritizationEngine, PrioritizedVulnerabilityList, PrioritizedVulnerability
 from .remediation_generator import RemediationGenerator, RemediationReport, RemediationPlan
+from .business_context_analyzer import BusinessContextAnalyzer, BusinessContextAnalysis, BusinessRiskAssessment
 
 __all__ = [
     # LLM Clients
@@ -23,4 +24,8 @@ __all__ = [
     "RemediationGenerator",
     "RemediationReport",
     "RemediationPlan",
+    # Business Context Analysis
+    "BusinessContextAnalyzer",
+    "BusinessContextAnalysis",
+    "BusinessRiskAssessment",
 ]

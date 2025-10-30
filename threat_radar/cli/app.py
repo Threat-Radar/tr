@@ -3,7 +3,7 @@ import typer
 from typing import Optional
 from pathlib import Path
 
-from . import cve as cve_cmd, sbom, config, hash, docker, ai, report
+from . import cve as cve_cmd, sbom, config, hash, docker, ai, report, graph, env
 from ..utils.cli_context import CLIContext, set_cli_context
 
 app = typer.Typer(
@@ -19,6 +19,8 @@ app.add_typer(hash.app, name="hash", help="File hashing utilities")
 app.add_typer(docker.app, name="docker", help="Docker container analysis")
 app.add_typer(ai.app, name="ai", help="AI-powered vulnerability analysis")
 app.add_typer(report.app, name="report", help="Comprehensive vulnerability reporting")
+app.add_typer(graph.app, name="graph", help="Graph database operations for vulnerability modeling")
+app.add_typer(env.app, name="env", help="Environment configuration and business context management")
 
 
 @app.callback()
