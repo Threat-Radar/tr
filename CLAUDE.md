@@ -526,13 +526,13 @@ threat-radar cve scan-image alpine:3.18 --severity HIGH -o vulns.json
 
 ### Overview
 
-The AI integration provides intelligent analysis of vulnerability scan results using Large Language Models (LLMs). It supports both cloud-based models (OpenAI GPT) and local models (Ollama, LM Studio).
+The AI integration provides intelligent analysis of vulnerability scan results using Large Language Models (LLMs). It supports both cloud-based models (OpenAI GPT, Anthropic Claude, OpenRouter) and local models (Ollama, LM Studio).
 
 **Key Features:**
 - **Vulnerability Analysis**: Assess exploitability, attack vectors, and business impact
 - **Prioritization**: Generate ranked lists based on risk and context
 - **Remediation**: Create actionable fix recommendations and upgrade paths
-- **Flexible Backend**: Support for OpenAI API and local models
+- **Flexible Backend**: Support for OpenAI API, Anthropic Claude, OpenRouter unified API, and local models
 
 ### Installation & Setup
 
@@ -548,8 +548,9 @@ cp .env.example .env
 # Edit .env and add AI configuration:
 # - OPENAI_API_KEY=your_key_here (for OpenAI)
 # - ANTHROPIC_API_KEY=sk-ant-your-key-here (for Claude)
-# - AI_PROVIDER=openai  # or 'anthropic' or 'ollama'
-# - AI_MODEL=gpt-4o  # or 'gpt-4-turbo', 'claude-3-5-sonnet-20241022', 'llama2'
+# - OPENROUTER_API_KEY=sk-or-v1-your-key-here (for OpenRouter)
+# - AI_PROVIDER=openai  # or 'anthropic', 'openrouter', or 'ollama'
+# - AI_MODEL=gpt-4o  # or 'claude-3-5-sonnet-20241022', 'anthropic/claude-3.5-sonnet', 'llama2'
 # - LOCAL_MODEL_ENDPOINT=http://localhost:11434  # Ollama default
 ```
 
@@ -842,6 +843,62 @@ threat-radar ai remediate scan.json --provider anthropic
 - `claude-3-5-sonnet-20241022` (recommended, best balance)
 - `claude-3-opus-20240229` (highest capability)
 - `claude-3-sonnet-20240229` (faster, cost-effective)
+
+#### OpenRouter (Cloud - Unified API)
+- **Models**: Access to 100+ models from multiple providers (Anthropic, OpenAI, Google, Meta, etc.)
+- **Setup**: Requires API key (`OPENROUTER_API_KEY`)
+- **Pros**: Single API for multiple providers, competitive pricing, no rate limits, fallback support
+- **Cons**: API costs, data sent to cloud (third-party)
+- **Use Cases**: Multi-model testing, cost optimization, high availability with fallbacks
+
+```bash
+# Get API key from https://openrouter.ai/keys
+export OPENROUTER_API_KEY=sk-or-v1-your-key-here
+export AI_PROVIDER=openrouter
+export AI_MODEL=anthropic/claude-3.5-sonnet
+
+# Use with any AI command
+threat-radar ai analyze scan.json --provider openrouter
+threat-radar ai prioritize scan.json --provider openrouter --model openai/gpt-4o
+threat-radar ai remediate scan.json --provider openrouter --model google/gemini-pro
+```
+
+**Popular OpenRouter Models:**
+- `anthropic/claude-3.5-sonnet` (recommended for security analysis)
+- `anthropic/claude-3-opus` (highest reasoning capability)
+- `openai/gpt-4o` (excellent for structured outputs)
+- `openai/gpt-4-turbo` (fast and reliable)
+- `google/gemini-pro` (cost-effective alternative)
+- `meta-llama/llama-3.1-70b-instruct` (open-source, good performance)
+- `google/gemini-flash-1.5` (very fast, low cost)
+
+**Benefits of OpenRouter:**
+- **Unified API**: Use multiple AI providers with one integration
+- **Cost Optimization**: Switch to cheaper models for less critical analyses
+- **High Availability**: Automatic fallbacks if primary model is unavailable
+- **No Vendor Lock-in**: Easy to switch between providers
+- **Usage Tracking**: Built-in analytics and cost tracking
+
+**Example Multi-Model Workflow:**
+```bash
+# Use Claude for detailed analysis (best reasoning)
+threat-radar ai analyze scan.json \
+  --provider openrouter \
+  --model anthropic/claude-3.5-sonnet \
+  --auto-save
+
+# Use GPT-4o for prioritization (fast structured output)
+threat-radar ai prioritize scan.json \
+  --provider openrouter \
+  --model openai/gpt-4o \
+  --auto-save
+
+# Use Gemini for cost-effective remediation
+threat-radar ai remediate scan.json \
+  --provider openrouter \
+  --model google/gemini-pro \
+  --auto-save
+```
 
 #### Ollama (Local)
 - **Models**: Llama 2, Mistral, CodeLlama, and more
