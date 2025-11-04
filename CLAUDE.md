@@ -41,6 +41,11 @@ threat-radar graph build scan-results.json --auto-save
 threat-radar graph query graph.graphml --cve CVE-2023-1234
 threat-radar graph query graph.graphml --top-packages 10 --stats
 
+# Environment configuration and business context
+threat-radar env validate my-environment.json
+threat-radar env build-graph production.json --auto-save
+threat-radar env analyze-risk production.json scan-results.json --auto-save
+
 # Run tests
 pytest                                    # All tests
 pytest tests/test_grype_integration.py   # Specific test file
@@ -270,6 +275,8 @@ The CLI is built with Typer and uses a modular command structure in `threat_rada
 - `sbom.py` - SBOM generation and operations (generate, docker, read, compare, stats, export, search, list, components)
 - `ai.py` - AI-powered vulnerability analysis (analyze, prioritize, remediate) with batch processing support
 - `report.py` - Comprehensive reporting with AI executive summaries (generate, dashboard-export, compare)
+- `graph.py` - Graph database operations for vulnerability modeling (build, query, list, info, fixes, cleanup)
+- `env.py` - Environment configuration and business context management (validate, build-graph, analyze-risk)
 - `hash.py` - File hashing utilities
 - `config.py` - Configuration management (show, set, init, path, validate)
 
@@ -1591,6 +1598,568 @@ fi
 - **Attack Path Analysis**: Automated attack vector identification
 - **Remediation Impact**: Predict remediation impact before changes
 
+## Environment Configuration Commands
+
+### Overview
+
+The environment configuration system provides technology-agnostic infrastructure modeling with rich business context for AI-driven risk assessment. It bridges the gap between technical vulnerability data and business impact analysis.
+
+**Key Features:**
+- **Infrastructure Modeling**: Define assets, dependencies, and network topology
+- **Business Context**: Criticality, revenue impact, compliance requirements, SLA tiers
+- **Risk Assessment**: Calculate risk scores based on business context
+- **AI Integration**: Business context-aware vulnerability analysis
+- **Graph Integration**: Merge infrastructure topology with vulnerability data
+- **Compliance Tracking**: PCI-DSS, GDPR, SOX, HIPAA compliance scope
+
+### Environment Configuration File
+
+Environment configurations are defined in JSON format with comprehensive metadata:
+
+**Structure:**
+```json
+{
+  "environment": {
+    "name": "production-ecommerce",
+    "type": "production",
+    "cloud_provider": "aws",
+    "region": "us-east-1",
+    "compliance_requirements": ["pci-dss", "gdpr", "sox"],
+    "owner": "platform-team@acme.com"
+  },
+  "global_business_context": {
+    "industry": "ecommerce",
+    "company_size": "enterprise",
+    "risk_tolerance": "low",
+    "incident_cost_estimates": {
+      "data_breach_per_record": 150.0,
+      "downtime_per_hour": 50000.0,
+      "reputation_damage": 1000000.0,
+      "regulatory_fine_range": [100000.0, 5000000.0]
+    }
+  },
+  "assets": [
+    {
+      "id": "asset-payment-api",
+      "name": "Payment Processing API",
+      "type": "container",
+      "host": "10.0.2.100",
+      "software": {
+        "image": "payment-api:v2.1.0",
+        "os": "Alpine Linux 3.18",
+        "packages": [
+          {"name": "openssl", "version": "1.1.1q", "ecosystem": "apk"}
+        ]
+      },
+      "network": {
+        "internal_ip": "10.0.2.100",
+        "zone": "dmz",
+        "exposed_ports": [
+          {
+            "port": 8443,
+            "protocol": "https",
+            "public": false,
+            "description": "Internal API"
+          }
+        ]
+      },
+      "business_context": {
+        "criticality": "critical",
+        "criticality_score": 95,
+        "function": "payment-processing",
+        "data_classification": "pci",
+        "revenue_impact": "critical",
+        "customer_facing": true,
+        "pci_scope": true,
+        "sla_tier": "tier-1",
+        "mttr_target": 1,
+        "owner_team": "payments-team"
+      }
+    }
+  ],
+  "dependencies": [
+    {
+      "from": "asset-frontend-web",
+      "to": "asset-payment-api",
+      "type": "api-call",
+      "protocol": "https",
+      "critical": true
+    }
+  ],
+  "network_topology": {
+    "zones": [
+      {
+        "name": "dmz",
+        "trust_level": "medium",
+        "internet_facing": true,
+        "description": "Demilitarized zone for public services"
+      },
+      {
+        "name": "internal",
+        "trust_level": "high",
+        "internet_facing": false,
+        "description": "Internal application zone"
+      }
+    ],
+    "segmentation_rules": [
+      {
+        "from_zone": "dmz",
+        "to_zone": "internal",
+        "allowed": true,
+        "ports": [8443, 5432],
+        "protocols": ["https", "postgresql"]
+      }
+    ]
+  }
+}
+```
+
+**Configuration Elements:**
+
+1. **Environment Metadata**
+   - Name, type (production/staging/dev)
+   - Cloud provider and region
+   - Compliance requirements
+   - Owner and contact information
+
+2. **Global Business Context**
+   - Industry and company size
+   - Risk tolerance (low/medium/high)
+   - Incident cost estimates
+   - Compliance frameworks
+
+3. **Assets**
+   - Infrastructure components (containers, VMs, load balancers, databases)
+   - Software inventory (images, OS, packages)
+   - Network configuration (IPs, ports, zones)
+   - Business context (criticality, function, data classification)
+
+4. **Dependencies**
+   - Inter-asset relationships
+   - Communication protocols
+   - Criticality flags
+
+5. **Network Topology**
+   - Network zones and trust levels
+   - Segmentation rules
+   - Firewall configurations
+
+### Environment Commands
+
+#### Validate Configuration
+
+Validate environment configuration file syntax and schema:
+
+```bash
+# Validate configuration file
+threat-radar env validate my-environment.json
+
+# Show detailed validation errors
+threat-radar env validate my-environment.json --errors
+
+# Validate and show risk summary
+threat-radar env validate production-env.json
+```
+
+**Validation checks:**
+- JSON/YAML syntax
+- Schema compliance (Pydantic models)
+- Required fields present
+- Valid enum values
+- Risk score calculation
+- Dependency graph consistency
+
+**Output includes:**
+```
+✓ Validation successful!
+
+Environment: production-ecommerce
+  Type: production
+  Assets: 15
+  Dependencies: 28
+
+Risk Summary:
+  Critical assets: 5
+  Internet-facing: 3
+  PCI scope: 7
+  Risk level: 3.2/4.0
+```
+
+#### Build Infrastructure Graph
+
+Build graph database from environment configuration:
+
+```bash
+# Build graph from environment config
+threat-radar env build-graph my-environment.json -o infrastructure.graphml
+
+# Auto-save to storage/graph_storage/
+threat-radar env build-graph production-env.json --auto-save
+
+# Merge with vulnerability scan results
+threat-radar env build-graph my-environment.json \
+  --merge-scan scan-results-1.json \
+  --merge-scan scan-results-2.json \
+  --auto-save
+```
+
+**How it works:**
+1. Parses environment configuration
+2. Creates graph nodes for assets, zones, and business context
+3. Creates edges for dependencies and network relationships
+4. Optionally merges with CVE scan data
+5. Saves to GraphML format for analysis
+
+**Graph node types created:**
+- **Asset** - Infrastructure components with business context
+- **Zone** - Network zones with trust levels
+- **BusinessContext** - Criticality and compliance metadata
+- **Vulnerability** - CVEs (when merged with scans)
+- **Package** - Software packages (when merged with scans)
+
+**Use cases:**
+```bash
+# Build infrastructure topology graph
+threat-radar env build-graph production.json --auto-save
+
+# Merge infrastructure with vulnerability scans
+threat-radar cve scan-image payment-api:v2.1.0 -o scan1.json
+threat-radar cve scan-image frontend:latest -o scan2.json
+threat-radar env build-graph production.json \
+  --merge-scan scan1.json \
+  --merge-scan scan2.json \
+  -o complete-risk-graph.graphml
+
+# Query merged graph for business-context-aware analysis
+threat-radar graph query complete-risk-graph.graphml --stats
+```
+
+#### Analyze Risk with Business Context
+
+Perform AI-powered risk analysis incorporating business context:
+
+```bash
+# Analyze vulnerabilities with business context
+threat-radar env analyze-risk my-environment.json scan-results.json
+
+# Use specific AI provider
+threat-radar env analyze-risk production.json scan.json \
+  --ai-provider anthropic \
+  --ai-model claude-3-5-sonnet-20241022
+
+# Save analysis results
+threat-radar env analyze-risk env.json scan.json -o risk-analysis.json
+
+# Auto-save to storage/ai_analysis/
+threat-radar env analyze-risk production.json scan.json --auto-save
+```
+
+**Business context-aware analysis includes:**
+
+1. **Risk Prioritization**
+   - Critical assets get higher priority
+   - PCI/HIPAA scope increases urgency
+   - Customer-facing services prioritized
+   - Revenue impact consideration
+
+2. **Impact Assessment**
+   - Downtime cost estimates
+   - Data breach risk calculations
+   - Regulatory fine exposure
+   - Reputation damage potential
+
+3. **Compliance Mapping**
+   - PCI-DSS requirements affected
+   - GDPR data protection implications
+   - SOX financial control impact
+   - HIPAA PHI exposure risk
+
+4. **Business-Driven Remediation**
+   - SLA tier-based timelines
+   - MTTR target recommendations
+   - Quick wins for critical assets
+   - Cost-benefit analysis
+
+**Example output:**
+```json
+{
+  "overall_risk_rating": "HIGH",
+  "business_impact_summary": {
+    "critical_assets_affected": 3,
+    "pci_scope_impact": true,
+    "estimated_breach_cost": 2500000,
+    "downtime_risk_per_hour": 50000,
+    "compliance_violations": ["pci-dss-6.5.1", "gdpr-art-32"]
+  },
+  "prioritized_findings": [
+    {
+      "cve_id": "CVE-2023-1234",
+      "asset": "asset-payment-api",
+      "business_priority": "CRITICAL",
+      "reasoning": "Affects PCI-scoped payment API with critical business function. Exploitable RCE vulnerability in internet-facing service processing card data. Tier-1 SLA requires 1-hour MTTR.",
+      "impact_estimate": {
+        "potential_breach_cost": 500000,
+        "compliance_fine_risk": [100000, 500000],
+        "reputation_damage": "severe"
+      },
+      "recommended_action": "Emergency patch within 24 hours. Implement temporary WAF rules. Notify security team and compliance officer."
+    }
+  ]
+}
+```
+
+### Environment Workflows
+
+#### Complete Infrastructure Risk Assessment
+
+```bash
+#!/bin/bash
+# infrastructure-risk-assessment.sh
+
+ENV_FILE="production-environment.json"
+
+# 1. Validate environment configuration
+echo "Validating environment configuration..."
+threat-radar env validate $ENV_FILE
+
+# 2. Scan all assets for vulnerabilities
+echo "Scanning assets..."
+SCANS=()
+for asset in $(jq -r '.assets[].software.image' $ENV_FILE | grep -v null); do
+  echo "  Scanning $asset..."
+  scan_file="scan-${asset//[:\/]/_}.json"
+  threat-radar cve scan-image $asset --auto-save -o $scan_file
+  SCANS+=("--merge-scan $scan_file")
+done
+
+# 3. Build infrastructure graph with vulnerabilities
+echo "Building infrastructure graph..."
+threat-radar env build-graph $ENV_FILE ${SCANS[@]} --auto-save
+
+# 4. Perform business context-aware risk analysis
+echo "Analyzing risk with business context..."
+for scan in scan-*.json; do
+  threat-radar env analyze-risk $ENV_FILE $scan --auto-save
+done
+
+# 5. Generate executive report
+echo "Generating executive report..."
+threat-radar report generate scan-*.json \
+  -o executive-risk-report.html \
+  -f html \
+  --level executive \
+  --ai-provider openai
+
+echo "✅ Infrastructure risk assessment complete!"
+```
+
+#### CI/CD with Business Context
+
+```yaml
+# .github/workflows/security-with-context.yml
+name: Security Scan with Business Context
+on: [push, pull_request]
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Tools
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh
+          pip install threat-radar
+
+      - name: Build Image
+        run: docker build -t app:${{ github.sha }} .
+
+      - name: Scan for Vulnerabilities
+        run: |
+          threat-radar cve scan-image app:${{ github.sha }} \
+            --auto-save -o scan.json
+
+      - name: Validate Environment Config
+        run: threat-radar env validate .threat-radar/production-env.json
+
+      - name: Analyze with Business Context
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          threat-radar env analyze-risk \
+            .threat-radar/production-env.json \
+            scan.json \
+            -o risk-analysis.json
+
+      - name: Check Critical Business Impact
+        run: |
+          CRITICAL=$(jq '.prioritized_findings | map(select(.business_priority=="CRITICAL")) | length' risk-analysis.json)
+
+          if [ $CRITICAL -gt 0 ]; then
+            echo "❌ Found $CRITICAL critical business-impacting vulnerabilities!"
+            jq -r '.prioritized_findings[] | select(.business_priority=="CRITICAL") | "  - \(.cve_id): \(.asset) - \(.reasoning)"' risk-analysis.json
+            exit 1
+          fi
+```
+
+#### Compliance Reporting
+
+```bash
+#!/bin/bash
+# compliance-risk-report.sh - Generate compliance-focused vulnerability report
+
+ENV_FILE="production-environment.json"
+QUARTER=$(date +%Y-Q$(( ($(date +%-m)-1)/3+1 )))
+
+# Scan all PCI-scoped assets
+echo "Scanning PCI-scoped assets..."
+jq -r '.assets[] | select(.business_context.pci_scope == true) | .software.image' $ENV_FILE | \
+while read -r image; do
+  if [ -n "$image" ]; then
+    echo "  Scanning $image..."
+    threat-radar cve scan-image $image --auto-save
+  fi
+done
+
+# Build infrastructure graph with scans
+echo "Building compliance risk graph..."
+threat-radar env build-graph $ENV_FILE \
+  --merge-scan storage/cve_storage/*.json \
+  -o compliance-risk-${QUARTER}.graphml
+
+# Generate compliance report
+echo "Generating compliance report..."
+threat-radar env analyze-risk $ENV_FILE storage/cve_storage/*.json \
+  -o compliance-report-${QUARTER}.json \
+  --ai-provider openai
+
+# Extract PCI-DSS specific findings
+jq '.prioritized_findings[] | select(.business_context.pci_scope == true)' \
+  compliance-report-${QUARTER}.json > pci-findings-${QUARTER}.json
+
+echo "✅ Compliance report ready: compliance-report-${QUARTER}.json"
+echo "   PCI findings: pci-findings-${QUARTER}.json"
+```
+
+### Environment Architecture
+
+#### Core Components (`threat_radar/environment/`)
+
+- **`models.py`** - Pydantic data models
+  - `Environment` - Environment metadata and configuration
+  - `Asset` - Infrastructure assets with business context
+  - `Dependency` - Inter-asset dependencies
+  - `NetworkTopology` - Network zones and segmentation
+  - `BusinessContext` - Criticality, compliance, and impact data
+  - `GlobalBusinessContext` - Organization-wide risk parameters
+
+- **`parser.py`** - Configuration parser
+  - `EnvironmentParser` - Load and validate environment configs
+  - Supports JSON and YAML formats
+  - Schema validation via Pydantic
+  - Risk score calculation
+
+- **`graph_builder.py`** - Graph construction
+  - `EnvironmentGraphBuilder` - Build infrastructure graphs
+  - Merge with vulnerability data
+  - Create business context nodes and edges
+
+#### Data Models
+
+Key data structures:
+
+```python
+class Asset:
+    id: str
+    name: str
+    type: AssetType  # container, vm, database, load-balancer, etc.
+    host: Optional[str]
+    software: Optional[Software]
+    network: Optional[Network]
+    business_context: BusinessContext
+    metadata: Optional[AssetMetadata]
+
+class BusinessContext:
+    criticality: Criticality  # critical, high, medium, low
+    criticality_score: int  # 0-100
+    function: str
+    data_classification: DataClassification  # public, internal, confidential, pci, hipaa
+    revenue_impact: str
+    customer_facing: bool
+    pci_scope: bool
+    hipaa_scope: bool
+    sla_tier: str
+    mttr_target: int  # hours
+    owner_team: str
+
+class GlobalBusinessContext:
+    industry: str
+    company_size: str  # startup, small, medium, enterprise
+    risk_tolerance: RiskTolerance  # low, medium, high
+    incident_cost_estimates: IncidentCostEstimates
+```
+
+### Example Environment Configurations
+
+**Minimal Configuration:**
+```json
+{
+  "environment": {
+    "name": "dev-environment",
+    "type": "development"
+  },
+  "assets": [
+    {
+      "id": "dev-api",
+      "name": "Development API",
+      "type": "container",
+      "software": {"image": "api:dev"},
+      "business_context": {
+        "criticality": "low",
+        "function": "development-testing"
+      }
+    }
+  ]
+}
+```
+
+**Enterprise Production Configuration:**
+See `examples/environments/ecommerce-production.json` for a comprehensive example with:
+- 15+ assets across multiple zones
+- Complete network topology
+- PCI-DSS and GDPR compliance scope
+- Detailed business context for all assets
+- Inter-asset dependencies
+- Cost estimates and SLA definitions
+
+### Benefits of Environment Configuration
+
+1. **Business-Driven Prioritization**
+   - Vulnerabilities prioritized by business impact
+   - Critical assets get immediate attention
+   - Compliance requirements drive remediation timelines
+
+2. **Accurate Risk Assessment**
+   - Technical severity + business context = true risk
+   - Revenue impact calculations
+   - Compliance violation exposure
+
+3. **Better Communication**
+   - Technical findings translated to business impact
+   - Executive summaries with cost estimates
+   - Compliance reports for auditors
+
+4. **Efficient Remediation**
+   - Focus on highest business risk first
+   - SLA-driven timelines
+   - Quick wins identified
+
+5. **Compliance Automation**
+   - PCI-DSS scope tracking
+   - GDPR data classification
+   - SOX control mapping
+   - HIPAA PHI identification
+
 ## Development Notes
 
 ### Module Structure
@@ -1599,9 +2168,15 @@ fi
   - `graph_client.py` - NetworkX client implementation
   - `builders.py` - Convert scan results to graph structures
   - `queries.py` - Advanced graph analysis and queries
+- `threat_radar/environment/` - **IMPLEMENTED**: Environment configuration and business context integration
+  - `models.py` - Pydantic models for infrastructure, assets, and business context
+  - `parser.py` - Configuration file loading and validation
+  - `graph_builder.py` - Build infrastructure topology graphs
+  - See Environment Configuration Commands section above for full capabilities
 - `threat_radar/ai/` - **IMPLEMENTED**: AI-powered vulnerability analysis, prioritization, and remediation
   - Includes `remediation_generator.py` for creating actionable fix plans
   - Supports OpenAI GPT, Anthropic Claude, and Ollama (local models)
+  - Business context-aware risk assessment when used with environment configs
   - See AI Commands Reference section above for full capabilities
 - `threat_radar/core/` - Core business logic for scanning, SBOM generation, and container analysis
 - `threat_radar/cli/` - CLI commands and user interface
