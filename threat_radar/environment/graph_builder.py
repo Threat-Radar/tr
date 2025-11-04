@@ -137,17 +137,34 @@ class EnvironmentGraphBuilder:
 
         # Add network information if available
         if asset.network:
+            # Check if asset has public-facing ports
+            has_public_port = any(
+                port.public for port in asset.network.exposed_ports
+            ) if asset.network.exposed_ports else False
+
             properties.update({
                 "internal_ip": asset.network.internal_ip,
                 "public_ip": asset.network.public_ip,
+                "zone": asset.network.zone,
                 "internet_accessible": bool(asset.network.public_ip),
+                "internet_facing": bool(asset.network.public_ip) or has_public_port,
+                "has_public_port": has_public_port,
             })
 
         # Add compliance scope
         if asset.business_context.compliance_scope:
-            properties["compliance_scope"] = [
-                c.value for c in asset.business_context.compliance_scope
-            ]
+            compliance_list = [c.value for c in asset.business_context.compliance_scope]
+            properties["compliance_scope"] = compliance_list
+
+            # Add specific compliance flags for attack path discovery
+            properties["pci_scope"] = any(c in ["pci", "pci-dss", "pci_dss"] for c in compliance_list)
+            properties["hipaa_scope"] = any(c in ["hipaa", "hipaa-hitech"] for c in compliance_list)
+
+        # Also check business_context for direct PCI/HIPAA scope flags
+        if hasattr(asset.business_context, "pci_scope") and asset.business_context.pci_scope:
+            properties["pci_scope"] = True
+        if hasattr(asset.business_context, "hipaa_scope") and asset.business_context.hipaa_scope:
+            properties["hipaa_scope"] = True
 
         # Add metadata if available
         if asset.metadata:

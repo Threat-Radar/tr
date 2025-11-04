@@ -581,18 +581,46 @@ class GraphAnalyzer:
                     step_type = AttackStepType.EXPLOIT_VULNERABILITY
 
             # Get vulnerabilities for this node
+            # Need to traverse: CONTAINER -> PACKAGE -> VULNERABILITY
             node_vulns = []
             cvss_score = None
 
-            for successor in self.graph.successors(node_id):
-                if self.graph.nodes[successor].get("node_type") == NodeType.VULNERABILITY.value:
-                    cve_id = self.graph.nodes[successor].get("cve_id")
+            # First, find all packages contained by this node
+            for package_node in self.graph.successors(node_id):
+                package_data = self.graph.nodes.get(package_node, {})
+
+                # Check if this is a package node
+                if package_data.get("node_type") == NodeType.PACKAGE.value:
+                    # Then find vulnerabilities for this package
+                    for vuln_node in self.graph.successors(package_node):
+                        vuln_data = self.graph.nodes.get(vuln_node, {})
+
+                        if vuln_data.get("node_type") == NodeType.VULNERABILITY.value:
+                            cve_id = vuln_data.get("cve_id")
+                            if cve_id:
+                                node_vulns.append(cve_id)
+                                vulnerabilities.append(cve_id)
+
+                                # Get highest CVSS score
+                                node_cvss = vuln_data.get("cvss_score")
+                                if node_cvss:
+                                    try:
+                                        cvss_val = float(node_cvss)
+                                        total_cvss += cvss_val
+                                        if cvss_score is None or cvss_val > cvss_score:
+                                            cvss_score = cvss_val
+                                    except (ValueError, TypeError):
+                                        pass
+
+                # Also check for direct vulnerability connections (for backwards compatibility)
+                elif package_data.get("node_type") == NodeType.VULNERABILITY.value:
+                    cve_id = package_data.get("cve_id")
                     if cve_id:
                         node_vulns.append(cve_id)
                         vulnerabilities.append(cve_id)
 
                         # Get highest CVSS score
-                        node_cvss = self.graph.nodes[successor].get("cvss_score")
+                        node_cvss = package_data.get("cvss_score")
                         if node_cvss:
                             try:
                                 cvss_val = float(node_cvss)
@@ -612,13 +640,14 @@ class GraphAnalyzer:
             )
             steps.append(step)
 
-        # Determine threat level
-        avg_cvss = total_cvss / len(node_path) if node_path else 0.0
-        if avg_cvss >= 9.0:
+        # Determine threat level based on maximum CVSS in the path
+        # An attack path is as dangerous as its most critical vulnerability
+        max_cvss = max((step.cvss_score for step in steps if step.cvss_score is not None), default=0.0)
+        if max_cvss >= 9.0:
             threat_level = ThreatLevel.CRITICAL
-        elif avg_cvss >= 7.0:
+        elif max_cvss >= 7.0:
             threat_level = ThreatLevel.HIGH
-        elif avg_cvss >= 4.0:
+        elif max_cvss >= 4.0:
             threat_level = ThreatLevel.MEDIUM
         else:
             threat_level = ThreatLevel.LOW
