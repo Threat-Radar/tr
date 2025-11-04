@@ -4,6 +4,8 @@ import logging
 from typing import List, Dict, Tuple, Set, Optional
 import networkx as nx
 from itertools import combinations
+import signal
+from contextlib import contextmanager
 
 from .graph_client import NetworkXClient
 from .models import (
@@ -17,8 +19,31 @@ from .models import (
     LateralMovementOpportunity,
     AttackSurface,
 )
+from .exceptions import (
+    GraphTraversalError,
+    MalformedGraphError,
+    TraversalLimitExceeded,
+    TimeoutExceeded,
+)
+from . import constants
 
 logger = logging.getLogger(__name__)
+
+
+@contextmanager
+def timeout_handler(seconds: int):
+    """Context manager for operation timeout."""
+    def timeout_signal_handler(signum, frame):
+        raise TimeoutExceeded(f"Operation exceeded {seconds} second timeout")
+
+    # Set the signal handler and alarm
+    old_handler = signal.signal(signal.SIGALRM, timeout_signal_handler)
+    signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
 
 
 class GraphAnalyzer:
@@ -469,7 +494,8 @@ class GraphAnalyzer:
         self,
         entry_points: Optional[List[str]] = None,
         targets: Optional[List[str]] = None,
-        max_length: int = 10
+        max_length: Optional[int] = None,
+        max_paths: Optional[int] = None
     ) -> List[AttackPath]:
         """
         Find shortest attack paths from entry points to high-value targets.
@@ -477,55 +503,115 @@ class GraphAnalyzer:
         Args:
             entry_points: List of entry point node IDs (auto-detected if None)
             targets: List of target node IDs (auto-detected if None)
-            max_length: Maximum path length to consider
+            max_length: Maximum path length to consider (default: constants.MAX_PATH_LENGTH)
+            max_paths: Maximum number of paths to return (default: constants.MAX_ATTACK_PATHS)
 
         Returns:
             List of AttackPath objects representing shortest paths
+
+        Raises:
+            GraphTraversalError: If graph traversal fails
+            TraversalLimitExceeded: If traversal exceeds safety limits
+            TimeoutExceeded: If operation times out
         """
-        # Auto-detect entry points and targets if not provided
-        if entry_points is None:
-            entry_points = self.identify_entry_points()
+        # Apply default limits
+        if max_length is None:
+            max_length = constants.MAX_PATH_LENGTH
+        if max_paths is None:
+            max_paths = constants.MAX_ATTACK_PATHS
 
-        if targets is None:
-            targets = self.identify_high_value_targets()
+        # Validate inputs
+        if max_length > constants.MAX_GRAPH_TRAVERSAL_DEPTH:
+            raise TraversalLimitExceeded(
+                f"max_length ({max_length}) exceeds safety limit ({constants.MAX_GRAPH_TRAVERSAL_DEPTH})"
+            )
 
-        if not entry_points or not targets:
-            logger.warning("No entry points or targets found")
-            return []
+        try:
+            # Auto-detect entry points and targets if not provided
+            if entry_points is None:
+                entry_points = self.identify_entry_points()
 
-        attack_paths = []
-        path_id = 0
+            if targets is None:
+                targets = self.identify_high_value_targets()
 
-        # Find shortest path from each entry point to each target
-        for entry in entry_points:
-            for target in targets:
-                if entry == target:
-                    continue
+            if not entry_points:
+                logger.warning("No entry points found")
+                return []
 
-                try:
-                    # Use NetworkX shortest path algorithm
-                    shortest_path = nx.shortest_path(
-                        self.graph,
-                        source=entry,
-                        target=target
-                    )
+            if not targets:
+                logger.warning("No high-value targets found")
+                return []
 
-                    if len(shortest_path) <= max_length:
-                        attack_path = self._convert_to_attack_path(
-                            path_id=f"path_{path_id}",
-                            node_path=shortest_path,
-                            entry_point=entry,
+            # Check for DoS risk
+            max_combinations = len(entry_points) * len(targets)
+            if max_combinations > constants.MAX_NODES_TO_VISIT:
+                logger.warning(
+                    f"Large graph: {len(entry_points)} entry points × {len(targets)} targets = "
+                    f"{max_combinations} combinations. Limiting to first {constants.MAX_NODES_TO_VISIT} checks."
+                )
+
+            attack_paths = []
+            path_id = 0
+            checks_performed = 0
+
+            # Find shortest path from each entry point to each target
+            for entry in entry_points:
+                for target in targets:
+                    if entry == target:
+                        continue
+
+                    # DoS prevention: limit number of path checks
+                    checks_performed += 1
+                    if checks_performed > constants.MAX_NODES_TO_VISIT:
+                        logger.warning(
+                            f"Exceeded maximum path checks ({constants.MAX_NODES_TO_VISIT}). "
+                            f"Returning {len(attack_paths)} paths found so far."
+                        )
+                        break
+
+                    # Stop if we've found enough paths
+                    if len(attack_paths) >= max_paths:
+                        logger.info(f"Reached max_paths limit ({max_paths})")
+                        break
+
+                    try:
+                        # Use NetworkX shortest path algorithm
+                        shortest_path = nx.shortest_path(
+                            self.graph,
+                            source=entry,
                             target=target
                         )
-                        attack_paths.append(attack_path)
-                        path_id += 1
 
-                except nx.NetworkXNoPath:
-                    logger.debug(f"No path from {entry} to {target}")
-                    continue
-                except nx.NodeNotFound:
-                    logger.warning(f"Node not found: {entry} or {target}")
-                    continue
+                        if len(shortest_path) <= max_length:
+                            attack_path = self._convert_to_attack_path(
+                                path_id=f"path_{path_id}",
+                                node_path=shortest_path,
+                                entry_point=entry,
+                                target=target
+                            )
+                            attack_paths.append(attack_path)
+                            path_id += 1
+
+                    except nx.NetworkXNoPath:
+                        logger.debug(f"No path from {entry} to {target}")
+                        continue
+                    except nx.NodeNotFound as e:
+                        logger.warning(f"Node not found: {e}")
+                        continue
+                    except Exception as e:
+                        logger.error(f"Unexpected error finding path {entry} -> {target}: {e}")
+                        continue
+
+                # Break outer loop if max paths reached
+                if len(attack_paths) >= max_paths:
+                    break
+
+        except TimeoutExceeded:
+            logger.error("Attack path discovery timed out")
+            raise
+        except Exception as e:
+            logger.error(f"Error during attack path discovery: {e}")
+            raise GraphTraversalError(f"Failed to find attack paths: {e}") from e
 
         # Sort by threat level and path length
         attack_paths.sort(
@@ -643,17 +729,31 @@ class GraphAnalyzer:
         # Determine threat level based on maximum CVSS in the path
         # An attack path is as dangerous as its most critical vulnerability
         max_cvss = max((step.cvss_score for step in steps if step.cvss_score is not None), default=0.0)
-        if max_cvss >= 9.0:
+
+        # Apply business context multipliers to CVSS
+        target_data = self.graph.nodes.get(target, {})
+        business_multiplier = self._calculate_business_multiplier(target_data)
+        effective_cvss = min(10.0, max_cvss * business_multiplier)
+
+        # Classify threat level using constants
+        if effective_cvss >= constants.CVSS_CRITICAL_THRESHOLD:
             threat_level = ThreatLevel.CRITICAL
-        elif max_cvss >= 7.0:
+        elif effective_cvss >= constants.CVSS_HIGH_THRESHOLD:
             threat_level = ThreatLevel.HIGH
-        elif max_cvss >= 4.0:
+        elif effective_cvss >= constants.CVSS_MEDIUM_THRESHOLD:
             threat_level = ThreatLevel.MEDIUM
         else:
             threat_level = ThreatLevel.LOW
 
         # Calculate exploitability (based on path length and CVSS)
-        exploitability = max(0.0, min(1.0, 1.0 - (len(node_path) * 0.1)))
+        # Shorter paths with higher CVSS are more exploitable
+        exploitability = max(
+            constants.MIN_EXPLOITABILITY,
+            min(
+                constants.MAX_EXPLOITABILITY,
+                constants.MAX_EXPLOITABILITY - (len(node_path) * constants.EXPLOITABILITY_STEP_PENALTY)
+            )
+        )
 
         return AttackPath(
             path_id=path_id,
@@ -666,6 +766,41 @@ class GraphAnalyzer:
             path_length=len(node_path),
             description=f"Attack path from {entry_point} to {target} via {len(node_path)-2} intermediate nodes"
         )
+
+    def _calculate_business_multiplier(self, target_data: Dict) -> float:
+        """
+        Calculate business context multiplier for threat scoring.
+
+        Considers criticality, compliance scope, and customer-facing status
+        to adjust CVSS scores based on business impact.
+
+        Args:
+            target_data: Node data dictionary for the target asset
+
+        Returns:
+            Multiplier value (>= 1.0) to apply to CVSS score
+        """
+        multiplier = 1.0
+
+        # Criticality multiplier
+        criticality = target_data.get("criticality", "").lower()
+        if criticality == "critical":
+            multiplier *= constants.BUSINESS_CRITICAL_MULTIPLIER
+        elif criticality == "high":
+            multiplier *= constants.BUSINESS_HIGH_MULTIPLIER
+
+        # Compliance scope multipliers
+        if target_data.get("pci_scope"):
+            multiplier *= constants.PCI_SCOPE_MULTIPLIER
+
+        if target_data.get("hipaa_scope"):
+            multiplier *= constants.HIPAA_SCOPE_MULTIPLIER
+
+        # Customer-facing multiplier
+        if target_data.get("customer_facing"):
+            multiplier *= constants.CUSTOMER_FACING_MULTIPLIER
+
+        return multiplier
 
     def _is_privilege_escalation_step(self, from_node: str, to_node: str) -> bool:
         """Check if a step represents privilege escalation."""
@@ -790,8 +925,13 @@ class GraphAnalyzer:
                             target=high_node
                         )
 
-                        # Determine difficulty
-                        difficulty = "easy" if len(path) <= 3 else "medium" if len(path) <= 6 else "hard"
+                        # Determine difficulty using constants
+                        if len(path) <= constants.ESCALATION_EASY_MAX_STEPS:
+                            difficulty = "easy"
+                        elif len(path) <= constants.ESCALATION_MEDIUM_MAX_STEPS:
+                            difficulty = "medium"
+                        else:
+                            difficulty = "hard"
 
                         # Extract unique vulnerabilities
                         vulns = list(set([
@@ -899,7 +1039,11 @@ class GraphAnalyzer:
                                 vulnerabilities=vulns,
                                 network_requirements=[f"Access to {zone1} zone"],
                                 prerequisites=[f"Compromise of {asset1_data.get('name', asset1)}"],
-                                detection_difficulty="medium" if len(path) <= 3 else "hard"
+                                detection_difficulty=(
+                                    "easy" if len(path) <= constants.LATERAL_MOVEMENT_EASY_MAX_STEPS
+                                    else "medium" if len(path) <= constants.LATERAL_MOVEMENT_MEDIUM_MAX_STEPS
+                                    else "hard"
+                                )
                             )
 
                             opportunities.append(opportunity)
@@ -1011,12 +1155,12 @@ class GraphAnalyzer:
         avg_cvss = sum(p.total_cvss for p in attack_paths) / len(attack_paths)
         avg_exploitability = sum(p.exploitability for p in attack_paths) / len(attack_paths)
 
-        # Risk formula
+        # Risk formula using configured weights
         risk_score = (
-            (critical_paths * 10.0) +
-            (high_paths * 5.0) +
-            (len(privilege_escalations) * 3.0) +
-            (len(lateral_movements) * 1.0) +
+            (critical_paths * constants.RISK_WEIGHT_CRITICAL) +
+            (high_paths * constants.RISK_WEIGHT_HIGH) +
+            (len(privilege_escalations) * constants.RISK_WEIGHT_PRIVILEGE_ESCALATION) +
+            (len(lateral_movements) * constants.RISK_WEIGHT_LATERAL_MOVEMENT) +
             (avg_cvss * avg_exploitability)
         )
 
