@@ -41,6 +41,12 @@ threat-radar graph build scan-results.json --auto-save
 threat-radar graph query graph.graphml --cve CVE-2023-1234
 threat-radar graph query graph.graphml --top-packages 10 --stats
 
+# Attack path discovery and security analysis
+threat-radar graph attack-paths graph.graphml --max-paths 20 -o paths.json
+threat-radar graph privilege-escalation graph.graphml -o privesc.json
+threat-radar graph lateral-movement graph.graphml -o lateral.json
+threat-radar graph attack-surface graph.graphml -o attack-surface.json
+
 # Environment configuration and business context
 threat-radar env validate my-environment.json
 threat-radar env build-graph production.json --auto-save
@@ -1589,14 +1595,303 @@ if [ -s critical-fixes.txt ]; then
 fi
 ```
 
-### Future Enhancements (Sprint 2+)
+### Attack Path Discovery Commands
+
+Threat Radar includes advanced attack path discovery capabilities for identifying potential security attack vectors through your infrastructure.
+
+#### Find Attack Paths
+
+Discover shortest attack paths from entry points to high-value targets:
+
+```bash
+# Find attack paths in a graph
+threat-radar graph attack-paths graph.graphml
+
+# Limit number of paths and save to JSON
+threat-radar graph attack-paths graph.graphml \
+  --max-paths 20 \
+  --max-length 10 \
+  -o attack-paths.json
+
+# Example output shows:
+# - Threat level (CRITICAL/HIGH/MEDIUM/LOW)
+# - Attack path steps with descriptions
+# - CVEs exploited at each step
+# - Total CVSS score and exploitability rating
+```
+
+**What it analyzes:**
+- Automatically identifies potential entry points (internet-facing assets, DMZ zones, public services)
+- Identifies high-value targets (critical assets, PCI/HIPAA scope, confidential data)
+- Finds shortest paths using NetworkX algorithms
+- Rates threat level based on CVSS scores
+- Calculates exploitability (0-100%) based on path length and vulnerabilities
+
+#### Detect Privilege Escalation
+
+Identify opportunities for attackers to escalate privileges:
+
+```bash
+# Find privilege escalation paths
+threat-radar graph privilege-escalation graph.graphml
+
+# Limit results and save output
+threat-radar graph privilege-escalation graph.graphml \
+  --max-paths 20 \
+  -o privilege-escalation.json
+
+# Shows escalation from:
+# - DMZ → Internal zones
+# - Public → Trusted zones
+# - User → Admin/Root privileges
+```
+
+**Output includes:**
+- Source and target privilege levels
+- Difficulty rating (easy/medium/hard)
+- CVEs that enable escalation
+- Mitigation recommendations
+- Step-by-step attack path
+
+#### Identify Lateral Movement
+
+Find lateral movement opportunities within the infrastructure:
+
+```bash
+# Identify lateral movement opportunities
+threat-radar graph lateral-movement graph.graphml
+
+# Customize search parameters
+threat-radar graph lateral-movement graph.graphml \
+  --max-opportunities 30 \
+  -o lateral-movement.json
+
+# Identifies movement between assets in:
+# - Same network zones
+# - Same privilege levels
+# - Connected systems
+```
+
+**Output includes:**
+- Source and target assets
+- Movement type (network/credential/vulnerability)
+- Detection difficulty (easy/medium/hard)
+- Network access requirements
+- Prerequisites for successful movement
+
+#### Comprehensive Attack Surface Analysis
+
+Combine all attack path analysis into a complete security assessment:
+
+```bash
+# Full attack surface analysis
+threat-radar graph attack-surface graph.graphml
+
+# Comprehensive analysis with custom limits
+threat-radar graph attack-surface graph.graphml \
+  --max-paths 50 \
+  -o attack-surface.json
+
+# Provides:
+# - Total risk score (0-100)
+# - All attack paths
+# - Privilege escalation opportunities
+# - Lateral movement opportunities
+# - Security recommendations
+```
+
+**Analysis includes:**
+- Overall risk score calculation
+- Threat distribution (critical/high/medium/low counts)
+- Entry points and high-value targets inventory
+- Comprehensive security recommendations
+- Prioritized remediation guidance
+
+### Attack Path Analysis Workflows
+
+#### Complete Infrastructure Security Assessment
+
+```bash
+#!/bin/bash
+# complete-attack-analysis.sh
+
+# 1. Build environment graph with vulnerability data
+threat-radar env build-graph production-env.json \
+  --merge-scan scan-results-1.json \
+  --merge-scan scan-results-2.json \
+  -o complete-graph.graphml
+
+# 2. Analyze all attack vectors
+threat-radar graph attack-surface complete-graph.graphml \
+  -o attack-surface.json
+
+# 3. Find critical attack paths
+threat-radar graph attack-paths complete-graph.graphml \
+  --max-paths 50 \
+  -o critical-paths.json
+
+# 4. Detect privilege escalation opportunities
+threat-radar graph privilege-escalation complete-graph.graphml \
+  --max-paths 20 \
+  -o privesc.json
+
+# 5. Identify lateral movement risks
+threat-radar graph lateral-movement complete-graph.graphml \
+  --max-opportunities 30 \
+  -o lateral.json
+
+# 6. Generate comprehensive report
+echo "Attack Surface Analysis Complete:"
+jq -r '.total_risk_score' attack-surface.json
+jq -r '.recommendations[]' attack-surface.json
+```
+
+#### Red Team Attack Path Simulation
+
+```bash
+#!/bin/bash
+# simulate-attack-paths.sh - Simulate attack scenarios
+
+GRAPH="production-graph.graphml"
+
+# Find all critical-severity attack paths
+threat-radar graph attack-paths $GRAPH -o paths.json
+
+# Extract critical paths
+CRITICAL=$(jq -r '.attack_paths[] | select(.threat_level=="critical") | .path_id' paths.json)
+
+echo "CRITICAL ATTACK PATHS FOUND:"
+echo "$CRITICAL"
+
+# For each critical path, generate detailed analysis
+for path_id in $CRITICAL; do
+  echo "Analyzing path: $path_id"
+
+  # Extract path details
+  jq ".attack_paths[] | select(.path_id==\"$path_id\")" paths.json > path_${path_id}.json
+
+  # Show attack steps
+  echo "  Steps:"
+  jq -r '.steps[] | "    - \(.description) [\(.type)]"' path_${path_id}.json
+
+  # Show exploitable CVEs
+  echo "  CVEs:"
+  jq -r '.steps[].vulnerabilities[]?' path_${path_id}.json | sort -u
+done
+```
+
+#### Continuous Attack Surface Monitoring
+
+```bash
+#!/bin/bash
+# continuous-monitoring.sh - Track attack surface changes
+
+BASELINE="baseline-attack-surface.json"
+CURRENT="current-attack-surface.json"
+
+# Scan current state
+threat-radar cve scan-image production:latest --auto-save -o scan.json
+threat-radar graph build scan.json -o graph.graphml
+threat-radar graph attack-surface graph.graphml -o $CURRENT
+
+# Compare with baseline
+BASELINE_RISK=$(jq -r '.total_risk_score' $BASELINE)
+CURRENT_RISK=$(jq -r '.total_risk_score' $CURRENT)
+
+echo "Risk Score Comparison:"
+echo "  Baseline: $BASELINE_RISK"
+echo "  Current:  $CURRENT_RISK"
+
+# Calculate delta
+DELTA=$(echo "$CURRENT_RISK - $BASELINE_RISK" | bc)
+
+if (( $(echo "$DELTA > 5.0" | bc -l) )); then
+  echo "⚠️  ALERT: Risk score increased by $DELTA points!"
+
+  # Find new attack paths
+  comm -13 \
+    <(jq -r '.attack_paths[].path_id' $BASELINE | sort) \
+    <(jq -r '.attack_paths[].path_id' $CURRENT | sort) \
+    > new-paths.txt
+
+  echo "New attack paths detected:"
+  cat new-paths.txt
+
+  # Send alert
+  send_security_alert "Attack surface increased: +$DELTA risk points"
+else
+  echo "✅ Attack surface stable or improved"
+fi
+```
+
+#### Integration with Environment Business Context
+
+Attack path analysis integrates with environment configuration for business-aware risk assessment:
+
+```bash
+#!/bin/bash
+# business-context-attack-analysis.sh
+
+ENV_FILE="production-environment.json"
+
+# 1. Build graph with environment context
+threat-radar env build-graph $ENV_FILE \
+  --merge-scan scan1.json \
+  --merge-scan scan2.json \
+  -o context-graph.graphml
+
+# 2. Find attack paths to critical business assets
+threat-radar graph attack-paths context-graph.graphml -o paths.json
+
+# 3. Filter paths targeting PCI-scoped assets
+jq '.attack_paths[] | select(.target | contains("asset-payment"))' paths.json \
+  > pci-attack-paths.json
+
+# 4. Generate business impact report
+echo "PCI-Scoped Attack Paths:"
+jq -r '.[] | "Path \(.path_id): \(.threat_level) - CVSS \(.total_cvss)"' \
+  pci-attack-paths.json
+
+# 5. Calculate compliance risk
+PCI_PATHS=$(jq '. | length' pci-attack-paths.json)
+if [ "$PCI_PATHS" -gt 0 ]; then
+  echo "⚠️  COMPLIANCE RISK: $PCI_PATHS attack paths to PCI-scoped assets"
+  exit 1
+fi
+```
+
+### Attack Path Architecture
+
+The attack path discovery system uses advanced graph algorithms to model attack scenarios:
+
+**Key Components:**
+- **Entry Point Detection**: Identifies internet-facing assets, DMZ zones, and public services
+- **Target Identification**: Finds critical assets based on business context, compliance scope, and data sensitivity
+- **Path Finding**: Uses NetworkX shortest path algorithms (Dijkstra, BFS)
+- **Threat Modeling**: Classifies attack steps (entry, exploit, privilege escalation, lateral movement, target access)
+- **Risk Calculation**: Combines CVSS scores, path length, and exploitability for threat levels
+
+**Attack Step Types:**
+- **ENTRY_POINT**: Initial access via exposed service
+- **EXPLOIT_VULNERABILITY**: Exploitation of CVEs
+- **PRIVILEGE_ESCALATION**: Elevation from low to high privilege
+- **LATERAL_MOVEMENT**: Movement between assets in same zone
+- **TARGET_ACCESS**: Final access to high-value target
+
+**Integration Points:**
+- Works with environment configuration for business context
+- Uses vulnerability data from CVE scans
+- Leverages graph topology for relationship analysis
+- Integrates with AI for risk assessment and recommendations
+
+### Future Enhancements (Sprint 3+)
 
 - **Neo4j Support**: Migrate to Neo4j for production-scale deployments
 - **Container Dependencies**: Auto-detect Docker Compose/orchestration dependencies
-- **Network Topology**: Map container communication patterns
-- **Graph Visualization**: Built-in graph rendering (matplotlib/graphviz)
-- **Attack Path Analysis**: Automated attack vector identification
-- **Remediation Impact**: Predict remediation impact before changes
+- **Graph Visualization**: Built-in graph rendering (matplotlib/graphviz) of attack paths
+- **Attack Simulation**: Interactive "what-if" attack scenario modeling
+- **Remediation Impact**: Predict attack surface reduction before applying patches
+- **ML-based Path Scoring**: Machine learning for attack path likelihood estimation
 
 ## Environment Configuration Commands
 

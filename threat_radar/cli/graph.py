@@ -413,5 +413,460 @@ def cleanup(
     console.print(f"[green]✓[/green] Deleted {deleted} old graph(s)")
 
 
+@app.command(name="attack-paths")
+def attack_paths(
+    graph_file: Path = typer.Argument(
+        ...,
+        help="Path to graph file (.graphml)",
+        exists=True,
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "-o",
+        "--output",
+        help="Save results to JSON file",
+    ),
+    max_paths: int = typer.Option(
+        20,
+        "--max-paths",
+        help="Maximum number of attack paths to find",
+    ),
+    max_length: int = typer.Option(
+        10,
+        "--max-length",
+        help="Maximum path length to consider",
+    ),
+):
+    """
+    Find shortest attack paths from entry points to high-value targets.
+
+    Identifies potential attack paths through the infrastructure by
+    analyzing relationships between vulnerable assets.
+    """
+    console.print(f"[cyan]Loading graph: {graph_file}[/cyan]")
+
+    try:
+        # Load graph
+        client = NetworkXClient()
+        client.load(str(graph_file))
+
+        analyzer = GraphAnalyzer(client)
+
+        # Identify entry points and targets
+        with console.status("[bold green]Identifying entry points and targets..."):
+            entry_points = analyzer.identify_entry_points()
+            targets = analyzer.identify_high_value_targets()
+
+        console.print(f"[green]✓[/green] Found {len(entry_points)} entry points")
+        console.print(f"[green]✓[/green] Found {len(targets)} high-value targets")
+
+        if not entry_points or not targets:
+            console.print("[yellow]⚠[/yellow] No entry points or targets found")
+            return
+
+        # Find attack paths
+        with console.status("[bold green]Finding attack paths..."):
+            attack_paths = analyzer.find_shortest_attack_paths(
+                entry_points=entry_points,
+                targets=targets,
+                max_length=max_length
+            )[:max_paths]
+
+        if not attack_paths:
+            console.print("[yellow]No attack paths found[/yellow]")
+            return
+
+        console.print(f"\n[bold]Found {len(attack_paths)} Attack Paths:[/bold]")
+
+        # Display paths
+        for i, path in enumerate(attack_paths[:10], 1):  # Show top 10 in console
+            threat_color = {
+                "critical": "red",
+                "high": "bright_red",
+                "medium": "yellow",
+                "low": "blue",
+            }.get(path.threat_level.value, "white")
+
+            console.print(f"\n[bold cyan]Path {i}:[/bold cyan]")
+            console.print(f"  Threat Level: [{threat_color}]{path.threat_level.value.upper()}[/{threat_color}]")
+            console.print(f"  Total CVSS: {path.total_cvss:.2f}")
+            console.print(f"  Length: {path.path_length} steps")
+            console.print(f"  Exploitability: {path.exploitability:.0%}")
+
+            console.print(f"\n  [dim]Steps:[/dim]")
+            for step in path.steps:
+                console.print(f"    • {step.description}")
+                if step.vulnerabilities:
+                    console.print(f"      CVEs: {', '.join(step.vulnerabilities[:3])}")
+
+        # Save to JSON
+        if output:
+            attack_paths_data = [
+                {
+                    "path_id": p.path_id,
+                    "entry_point": p.entry_point,
+                    "target": p.target,
+                    "threat_level": p.threat_level.value,
+                    "total_cvss": p.total_cvss,
+                    "path_length": p.path_length,
+                    "exploitability": p.exploitability,
+                    "requires_privileges": p.requires_privileges,
+                    "description": p.description,
+                    "steps": [
+                        {
+                            "node_id": s.node_id,
+                            "type": s.step_type.value,
+                            "description": s.description,
+                            "vulnerabilities": s.vulnerabilities,
+                            "cvss_score": s.cvss_score,
+                        }
+                        for s in p.steps
+                    ],
+                }
+                for p in attack_paths
+            ]
+
+            with open(output, "w") as f:
+                json.dump({
+                    "total_paths": len(attack_paths),
+                    "entry_points": entry_points,
+                    "targets": targets,
+                    "attack_paths": attack_paths_data
+                }, f, indent=2)
+
+            console.print(f"\n[green]✓[/green] Saved {len(attack_paths)} paths to: {output}")
+
+    except Exception as e:
+        console.print(f"[red]✗[/red] Error analyzing attack paths: {e}")
+        logger.exception("Error analyzing attack paths")
+        raise typer.Exit(code=1)
+
+
+@app.command(name="privilege-escalation")
+def privilege_escalation(
+    graph_file: Path = typer.Argument(
+        ...,
+        help="Path to graph file (.graphml)",
+        exists=True,
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "-o",
+        "--output",
+        help="Save results to JSON file",
+    ),
+    max_paths: int = typer.Option(
+        20,
+        "--max-paths",
+        help="Maximum number of paths to find",
+    ),
+):
+    """
+    Detect privilege escalation opportunities.
+
+    Identifies paths where an attacker can escalate from lower to higher
+    privilege levels (e.g., DMZ to internal zone, user to admin).
+    """
+    console.print(f"[cyan]Loading graph: {graph_file}[/cyan]")
+
+    try:
+        # Load graph
+        client = NetworkXClient()
+        client.load(str(graph_file))
+
+        analyzer = GraphAnalyzer(client)
+
+        # Detect privilege escalations
+        with console.status("[bold green]Detecting privilege escalation paths..."):
+            escalation_paths = analyzer.detect_privilege_escalation_paths(
+                max_paths=max_paths
+            )
+
+        if not escalation_paths:
+            console.print("[yellow]No privilege escalation paths found[/yellow]")
+            return
+
+        console.print(f"\n[bold]Found {len(escalation_paths)} Privilege Escalation Paths:[/bold]")
+
+        # Display paths
+        for i, esc in enumerate(escalation_paths[:10], 1):  # Show top 10
+            diff_color = {
+                "easy": "red",
+                "medium": "yellow",
+                "hard": "green",
+            }.get(esc.difficulty, "white")
+
+            console.print(f"\n[bold cyan]Escalation {i}:[/bold cyan]")
+            console.print(f"  From: {esc.from_privilege}")
+            console.print(f"  To: {esc.to_privilege}")
+            console.print(f"  Difficulty: [{diff_color}]{esc.difficulty.upper()}[/{diff_color}]")
+            console.print(f"  Path Length: {esc.path.path_length} steps")
+            console.print(f"  CVEs: {', '.join(esc.vulnerabilities[:5])}")
+
+            if esc.mitigation:
+                console.print(f"\n  [dim]Mitigation:[/dim]")
+                for mit in esc.mitigation[:3]:
+                    console.print(f"    • {mit}")
+
+        # Save to JSON
+        if output:
+            escalation_data = [
+                {
+                    "from_privilege": e.from_privilege,
+                    "to_privilege": e.to_privilege,
+                    "difficulty": e.difficulty,
+                    "vulnerabilities": e.vulnerabilities,
+                    "mitigation": e.mitigation,
+                    "path": {
+                        "entry_point": e.path.entry_point,
+                        "target": e.path.target,
+                        "length": e.path.path_length,
+                        "total_cvss": e.path.total_cvss,
+                        "steps": [
+                            {
+                                "node_id": s.node_id,
+                                "type": s.step_type.value,
+                                "description": s.description,
+                            }
+                            for s in e.path.steps
+                        ],
+                    },
+                }
+                for e in escalation_paths
+            ]
+
+            with open(output, "w") as f:
+                json.dump({
+                    "total_escalations": len(escalation_paths),
+                    "privilege_escalations": escalation_data
+                }, f, indent=2)
+
+            console.print(f"\n[green]✓[/green] Saved {len(escalation_paths)} escalations to: {output}")
+
+    except Exception as e:
+        console.print(f"[red]✗[/red] Error detecting privilege escalation: {e}")
+        logger.exception("Error detecting privilege escalation")
+        raise typer.Exit(code=1)
+
+
+@app.command(name="lateral-movement")
+def lateral_movement(
+    graph_file: Path = typer.Argument(
+        ...,
+        help="Path to graph file (.graphml)",
+        exists=True,
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "-o",
+        "--output",
+        help="Save results to JSON file",
+    ),
+    max_opportunities: int = typer.Option(
+        30,
+        "--max-opportunities",
+        help="Maximum number of opportunities to find",
+    ),
+):
+    """
+    Identify lateral movement opportunities.
+
+    Finds ways an attacker could move between compromised assets within
+    the same network zone or privilege level.
+    """
+    console.print(f"[cyan]Loading graph: {graph_file}[/cyan]")
+
+    try:
+        # Load graph
+        client = NetworkXClient()
+        client.load(str(graph_file))
+
+        analyzer = GraphAnalyzer(client)
+
+        # Identify lateral movements
+        with console.status("[bold green]Identifying lateral movement opportunities..."):
+            opportunities = analyzer.identify_lateral_movement_opportunities(
+                max_opportunities=max_opportunities
+            )
+
+        if not opportunities:
+            console.print("[yellow]No lateral movement opportunities found[/yellow]")
+            return
+
+        console.print(f"\n[bold]Found {len(opportunities)} Lateral Movement Opportunities:[/bold]")
+
+        # Display opportunities
+        for i, opp in enumerate(opportunities[:10], 1):  # Show top 10
+            detect_color = {
+                "easy": "green",
+                "medium": "yellow",
+                "hard": "red",
+            }.get(opp.detection_difficulty, "white")
+
+            console.print(f"\n[bold cyan]Opportunity {i}:[/bold cyan]")
+            console.print(f"  From: {opp.from_asset}")
+            console.print(f"  To: {opp.to_asset}")
+            console.print(f"  Type: {opp.movement_type}")
+            console.print(f"  Detection: [{detect_color}]{opp.detection_difficulty.upper()}[/{detect_color}]")
+            console.print(f"  Path Length: {opp.path.path_length} steps")
+
+            if opp.vulnerabilities:
+                console.print(f"  CVEs: {', '.join(opp.vulnerabilities[:3])}")
+
+        # Save to JSON
+        if output:
+            movement_data = [
+                {
+                    "from_asset": o.from_asset,
+                    "to_asset": o.to_asset,
+                    "movement_type": o.movement_type,
+                    "detection_difficulty": o.detection_difficulty,
+                    "vulnerabilities": o.vulnerabilities,
+                    "network_requirements": o.network_requirements,
+                    "prerequisites": o.prerequisites,
+                    "path": {
+                        "entry_point": o.path.entry_point,
+                        "target": o.path.target,
+                        "length": o.path.path_length,
+                    },
+                }
+                for o in opportunities
+            ]
+
+            with open(output, "w") as f:
+                json.dump({
+                    "total_opportunities": len(opportunities),
+                    "lateral_movements": movement_data
+                }, f, indent=2)
+
+            console.print(f"\n[green]✓[/green] Saved {len(opportunities)} opportunities to: {output}")
+
+    except Exception as e:
+        console.print(f"[red]✗[/red] Error identifying lateral movement: {e}")
+        logger.exception("Error identifying lateral movement")
+        raise typer.Exit(code=1)
+
+
+@app.command(name="attack-surface")
+def attack_surface(
+    graph_file: Path = typer.Argument(
+        ...,
+        help="Path to graph file (.graphml)",
+        exists=True,
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "-o",
+        "--output",
+        help="Save results to JSON file",
+    ),
+    max_paths: int = typer.Option(
+        50,
+        "--max-paths",
+        help="Maximum paths to analyze",
+    ),
+):
+    """
+    Comprehensive attack surface analysis.
+
+    Combines attack path discovery, privilege escalation detection, and
+    lateral movement identification into a complete security assessment.
+    """
+    console.print(f"[cyan]Loading graph: {graph_file}[/cyan]")
+
+    try:
+        # Load graph
+        client = NetworkXClient()
+        client.load(str(graph_file))
+
+        analyzer = GraphAnalyzer(client)
+
+        # Analyze attack surface
+        with console.status("[bold green]Analyzing attack surface..."):
+            attack_surface = analyzer.analyze_attack_surface(max_paths=max_paths)
+
+        # Display results
+        console.print("\n[bold]Attack Surface Analysis Results:[/bold]")
+        console.print(f"  Total Risk Score: [red]{attack_surface.total_risk_score:.1f}/100[/red]")
+        console.print(f"\n  Entry Points: {len(attack_surface.entry_points)}")
+        console.print(f"  High-Value Targets: {len(attack_surface.high_value_targets)}")
+        console.print(f"  Attack Paths: {len(attack_surface.attack_paths)}")
+        console.print(f"  Privilege Escalations: {len(attack_surface.privilege_escalations)}")
+        console.print(f"  Lateral Movements: {len(attack_surface.lateral_movements)}")
+
+        # Show threat distribution
+        if attack_surface.attack_paths:
+            console.print("\n[bold]Threat Distribution:[/bold]")
+            threat_counts = {}
+            for path in attack_surface.attack_paths:
+                threat_counts[path.threat_level.value] = threat_counts.get(path.threat_level.value, 0) + 1
+
+            for level in ["critical", "high", "medium", "low"]:
+                count = threat_counts.get(level, 0)
+                if count > 0:
+                    color = {
+                        "critical": "red",
+                        "high": "bright_red",
+                        "medium": "yellow",
+                        "low": "blue",
+                    }.get(level, "white")
+                    console.print(f"  [{color}]{level.upper()}[/{color}]: {count} paths")
+
+        # Show recommendations
+        if attack_surface.recommendations:
+            console.print("\n[bold]Security Recommendations:[/bold]")
+            for i, rec in enumerate(attack_surface.recommendations[:10], 1):
+                console.print(f"  {i}. {rec}")
+
+        # Save to JSON
+        if output:
+            surface_data = {
+                "total_risk_score": attack_surface.total_risk_score,
+                "entry_points": attack_surface.entry_points,
+                "high_value_targets": attack_surface.high_value_targets,
+                "attack_paths": [
+                    {
+                        "path_id": p.path_id,
+                        "threat_level": p.threat_level.value,
+                        "total_cvss": p.total_cvss,
+                        "path_length": p.path_length,
+                        "exploitability": p.exploitability,
+                        "entry_point": p.entry_point,
+                        "target": p.target,
+                    }
+                    for p in attack_surface.attack_paths
+                ],
+                "privilege_escalations": [
+                    {
+                        "from_privilege": e.from_privilege,
+                        "to_privilege": e.to_privilege,
+                        "difficulty": e.difficulty,
+                        "vulnerabilities": e.vulnerabilities,
+                    }
+                    for e in attack_surface.privilege_escalations
+                ],
+                "lateral_movements": [
+                    {
+                        "from_asset": m.from_asset,
+                        "to_asset": m.to_asset,
+                        "movement_type": m.movement_type,
+                        "detection_difficulty": m.detection_difficulty,
+                    }
+                    for m in attack_surface.lateral_movements
+                ],
+                "recommendations": attack_surface.recommendations,
+            }
+
+            with open(output, "w") as f:
+                json.dump(surface_data, f, indent=2)
+
+            console.print(f"\n[green]✓[/green] Saved complete analysis to: {output}")
+
+    except Exception as e:
+        console.print(f"[red]✗[/red] Error analyzing attack surface: {e}")
+        logger.exception("Error analyzing attack surface")
+        raise typer.Exit(code=1)
+
+
 if __name__ == "__main__":
     app()
