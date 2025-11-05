@@ -4,6 +4,19 @@ from .models import GraphNode, GraphEdge, NodeType, EdgeType, GraphMetadata
 from .graph_client import GraphClient, NetworkXClient
 from .builders import GraphBuilder
 from .queries import GraphAnalyzer
+from .analytics import GraphAnalytics
+from .analytics_models import (
+    CentralityMetric,
+    CentralityResult,
+    NodeCentrality,
+    CommunityAlgorithm,
+    CommunityDetectionResult,
+    Community,
+    PropagationReport,
+    PropagationStep,
+    GraphMetrics,
+    AnalyticsSummary,
+)
 from .exceptions import (
     GraphAnalysisError,
     GraphTraversalError,
@@ -25,6 +38,17 @@ __all__ = [
     "NetworkXClient",
     "GraphBuilder",
     "GraphAnalyzer",
+    "GraphAnalytics",
+    "CentralityMetric",
+    "CentralityResult",
+    "NodeCentrality",
+    "CommunityAlgorithm",
+    "CommunityDetectionResult",
+    "Community",
+    "PropagationReport",
+    "PropagationStep",
+    "GraphMetrics",
+    "AnalyticsSummary",
     "GraphAnalysisError",
     "GraphTraversalError",
     "MalformedGraphError",

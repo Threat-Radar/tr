@@ -10,7 +10,14 @@ from rich.console import Console
 from rich.table import Table
 from rich import print as rprint
 
-from ..graph import NetworkXClient, GraphBuilder, GraphAnalyzer
+from ..graph import (
+    NetworkXClient,
+    GraphBuilder,
+    GraphAnalyzer,
+    GraphAnalytics,
+    CentralityMetric,
+    CommunityAlgorithm,
+)
 from ..core import GrypeScanResult, GrypeVulnerability
 from ..core.container_analyzer import ContainerAnalyzer, ContainerAnalysis
 from ..utils.graph_storage import GraphStorageManager
@@ -924,6 +931,538 @@ def attack_surface(
     except Exception as e:
         console.print(f"[red]✗[/red] Error analyzing attack surface: {e}")
         logger.exception("Error analyzing attack surface")
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def centrality(
+    graph_file: Path = typer.Argument(
+        ...,
+        help="Path to graph file (.graphml)",
+        exists=True,
+    ),
+    metric: str = typer.Option(
+        "betweenness",
+        "--metric",
+        "-m",
+        help="Centrality metric (degree, betweenness, closeness, pagerank, eigenvector)",
+    ),
+    top: int = typer.Option(
+        10,
+        "--top",
+        "-n",
+        help="Show top N nodes",
+    ),
+    node_type: Optional[str] = typer.Option(
+        None,
+        "--node-type",
+        help="Filter by node type (package, vulnerability, container)",
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "-o",
+        "--output",
+        help="Save results to JSON file",
+    ),
+):
+    """
+    Calculate centrality metrics to identify critical nodes.
+
+    Centrality metrics identify the most important or influential nodes
+    in the vulnerability graph based on their position and connections.
+    """
+    console.print(f"[cyan]Loading graph: {graph_file}[/cyan]")
+
+    try:
+        # Load graph
+        client = NetworkXClient()
+        client.load(str(graph_file))
+
+        # Initialize analytics engine
+        analytics = GraphAnalytics(client)
+
+        # Parse metric
+        try:
+            centrality_metric = CentralityMetric(metric.lower())
+        except ValueError:
+            console.print(f"[red]✗[/red] Invalid metric: {metric}")
+            console.print("[yellow]Valid metrics:[/yellow] degree, betweenness, closeness, pagerank, eigenvector")
+            raise typer.Exit(code=1)
+
+        # Calculate centrality
+        with console.status(f"[bold green]Calculating {metric} centrality..."):
+            result = analytics.calculate_centrality(
+                metric=centrality_metric,
+                top_n=top,
+                node_type_filter=node_type,
+            )
+
+        # Display results
+        console.print(f"\n[bold]Top {len(result.nodes)} Nodes by {metric.capitalize()} Centrality:[/bold]")
+        console.print(f"[dim]Total nodes analyzed: {result.total_nodes}[/dim]")
+        console.print(f"[dim]Average score: {result.avg_score:.4f}[/dim]\n")
+
+        table = Table(show_header=True, header_style="bold cyan")
+        table.add_column("Rank", justify="right", style="dim")
+        table.add_column("Node ID", style="yellow")
+        table.add_column("Type", style="cyan")
+        table.add_column("Score", justify="right", style="green")
+        table.add_column("Details", style="dim")
+
+        for node in result.nodes:
+            # Extract useful details
+            details_parts = []
+            if node.node_type == "package":
+                name = node.properties.get("name", "")
+                version = node.properties.get("version", "")
+                if name:
+                    details_parts.append(f"{name}@{version}")
+            elif node.node_type == "vulnerability":
+                severity = node.properties.get("severity", "")
+                cvss = node.properties.get("cvss_score")
+                if severity:
+                    details_parts.append(f"{severity.upper()}")
+                if cvss:
+                    details_parts.append(f"CVSS: {cvss}")
+
+            details = " | ".join(details_parts) if details_parts else "-"
+
+            table.add_row(
+                str(node.rank),
+                node.node_id,
+                node.node_type,
+                f"{node.score:.4f}",
+                details,
+            )
+
+        console.print(table)
+
+        # Show interpretation
+        console.print("\n[bold]Interpretation:[/bold]")
+        if centrality_metric == CentralityMetric.BETWEENNESS:
+            console.print("  • High betweenness = critical 'bridge' nodes")
+            console.print("  • Vulnerabilities here have wide blast radius")
+        elif centrality_metric == CentralityMetric.DEGREE:
+            console.print("  • High degree = highly connected nodes")
+            console.print("  • Widely used packages or multi-package CVEs")
+        elif centrality_metric == CentralityMetric.CLOSENESS:
+            console.print("  • High closeness = can quickly reach other nodes")
+            console.print("  • Vulnerabilities that spread rapidly")
+        elif centrality_metric == CentralityMetric.PAGERANK:
+            console.print("  • High PageRank = important based on connections' importance")
+            console.print("  • Critical nodes in dependency chains")
+
+        # Save to JSON if requested
+        if output:
+            output_data = {
+                "metric": metric,
+                "total_nodes": result.total_nodes,
+                "avg_score": result.avg_score,
+                "max_score": result.max_score,
+                "min_score": result.min_score,
+                "top_nodes": [
+                    {
+                        "rank": node.rank,
+                        "node_id": node.node_id,
+                        "node_type": node.node_type,
+                        "score": node.score,
+                        "properties": node.properties,
+                    }
+                    for node in result.nodes
+                ],
+            }
+
+            with open(output, "w") as f:
+                json.dump(output_data, f, indent=2)
+
+            console.print(f"\n[green]✓[/green] Saved results to: {output}")
+
+    except Exception as e:
+        console.print(f"[red]✗[/red] Error calculating centrality: {e}")
+        logger.exception("Error calculating centrality")
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def communities(
+    graph_file: Path = typer.Argument(
+        ...,
+        help="Path to graph file (.graphml)",
+        exists=True,
+    ),
+    algorithm: str = typer.Option(
+        "greedy_modularity",
+        "--algorithm",
+        "-a",
+        help="Community detection algorithm (greedy_modularity, label_propagation, louvain)",
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "-o",
+        "--output",
+        help="Save results to JSON file",
+    ),
+    top: int = typer.Option(
+        10,
+        "--top",
+        "-n",
+        help="Show top N largest communities",
+    ),
+):
+    """
+    Detect communities (clusters) of related nodes.
+
+    Community detection identifies groups of nodes that are more densely
+    connected to each other than to the rest of the graph.
+    """
+    console.print(f"[cyan]Loading graph: {graph_file}[/cyan]")
+
+    try:
+        # Load graph
+        client = NetworkXClient()
+        client.load(str(graph_file))
+
+        # Initialize analytics engine
+        analytics = GraphAnalytics(client)
+
+        # Parse algorithm
+        try:
+            community_algorithm = CommunityAlgorithm(algorithm.lower())
+        except ValueError:
+            console.print(f"[red]✗[/red] Invalid algorithm: {algorithm}")
+            console.print("[yellow]Valid algorithms:[/yellow] greedy_modularity, label_propagation, louvain")
+            raise typer.Exit(code=1)
+
+        # Detect communities
+        with console.status(f"[bold green]Detecting communities using {algorithm}..."):
+            result = analytics.detect_communities(algorithm=community_algorithm)
+
+        # Display results
+        console.print(f"\n[bold]Detected {result.total_communities} Communities:[/bold]")
+        console.print(f"[dim]Modularity score: {result.modularity:.3f}[/dim]")
+        console.print(f"[dim]Coverage: {result.coverage:.1%}[/dim]\n")
+
+        # Show top N communities
+        top_communities = result.get_largest_communities(n=top)
+
+        table = Table(show_header=True, header_style="bold cyan")
+        table.add_column("ID", justify="right", style="cyan")
+        table.add_column("Size", justify="right", style="yellow")
+        table.add_column("Density", justify="right", style="green")
+        table.add_column("Description", style="white")
+        table.add_column("Avg CVSS", justify="right", style="red")
+        table.add_column("Node Types", style="dim")
+
+        for comm in top_communities:
+            avg_cvss_str = f"{comm.avg_cvss:.1f}" if comm.avg_cvss else "N/A"
+
+            # Format node types
+            node_types_str = ", ".join(
+                f"{k}: {v}" for k, v in sorted(comm.node_types.items(), key=lambda x: x[1], reverse=True)
+            )
+
+            table.add_row(
+                str(comm.community_id),
+                str(comm.size),
+                f"{comm.density:.2f}",
+                comm.description,
+                avg_cvss_str,
+                node_types_str,
+            )
+
+        console.print(table)
+
+        # Show interpretation
+        console.print("\n[bold]Interpretation:[/bold]")
+        console.print("  • Communities represent tightly coupled asset groups")
+        console.print("  • High-risk communities have high avg CVSS scores")
+        console.print("  • Vulnerabilities in same community spread easily")
+        console.print("  • Fix entire communities together for maximum impact")
+
+        # Save to JSON if requested
+        if output:
+            output_data = {
+                "algorithm": algorithm,
+                "total_communities": result.total_communities,
+                "modularity": result.modularity,
+                "coverage": result.coverage,
+                "communities": [
+                    {
+                        "community_id": comm.community_id,
+                        "size": comm.size,
+                        "density": comm.density,
+                        "description": comm.description,
+                        "avg_cvss": comm.avg_cvss,
+                        "node_types": comm.node_types,
+                        "nodes": list(comm.nodes),
+                    }
+                    for comm in result.communities
+                ],
+            }
+
+            with open(output, "w") as f:
+                json.dump(output_data, f, indent=2)
+
+            console.print(f"\n[green]✓[/green] Saved {len(result.communities)} communities to: {output}")
+
+    except Exception as e:
+        console.print(f"[red]✗[/red] Error detecting communities: {e}")
+        logger.exception("Error detecting communities")
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def propagation(
+    graph_file: Path = typer.Argument(
+        ...,
+        help="Path to graph file (.graphml)",
+        exists=True,
+    ),
+    cve: str = typer.Option(
+        ...,
+        "--cve",
+        help="CVE ID to analyze (e.g., CVE-2023-1234)",
+    ),
+    max_depth: int = typer.Option(
+        10,
+        "--max-depth",
+        help="Maximum propagation depth to trace",
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "-o",
+        "--output",
+        help="Save results to JSON file",
+    ),
+):
+    """
+    Analyze how a vulnerability propagates through dependencies.
+
+    Traces vulnerability propagation paths from the source CVE through
+    affected packages and containers, showing the full infection chain.
+    """
+    console.print(f"[cyan]Loading graph: {graph_file}[/cyan]")
+
+    try:
+        # Load graph
+        client = NetworkXClient()
+        client.load(str(graph_file))
+
+        # Initialize analytics engine
+        analytics = GraphAnalytics(client)
+
+        # Analyze propagation
+        with console.status(f"[bold green]Tracing propagation for {cve}..."):
+            result = analytics.analyze_vulnerability_propagation(cve, max_depth=max_depth)
+
+        # Display results
+        console.print(f"\n[bold]Vulnerability Propagation Analysis: {cve}[/bold]\n")
+
+        # Summary stats
+        stats_table = Table(show_header=False, box=None)
+        stats_table.add_column("Metric", style="cyan")
+        stats_table.add_column("Value", style="yellow")
+
+        stats_table.add_row("Total Affected Nodes", str(result.total_affected_nodes))
+        stats_table.add_row("Affected Packages", str(len(result.affected_packages)))
+        stats_table.add_row("Affected Containers", str(len(result.affected_containers)))
+        stats_table.add_row("Max Propagation Depth", str(result.max_depth))
+        stats_table.add_row("Infection Score", f"{result.infection_score:.1f}/100")
+
+        console.print(stats_table)
+
+        # Show direct vs transitive impact
+        console.print(f"\n[bold]Impact Breakdown:[/bold]")
+        console.print(f"  • Direct impact: {result.get_direct_impact()} packages")
+        console.print(f"  • Transitive impact: {result.get_transitive_impact()} downstream nodes")
+
+        # Show critical path if found
+        if result.critical_path:
+            console.print(f"\n[bold]Critical Propagation Path:[/bold]")
+            for step in result.critical_path[:5]:  # Show first 5 steps
+                depth_prefix = "  " * step.depth
+                cvss_str = f" (CVSS: {step.cvss_score})" if step.cvss_score else ""
+                console.print(f"{depth_prefix}→ {step.node_type}: {step.node_id}{cvss_str}")
+
+        # Show sample propagation paths
+        if result.propagation_paths:
+            console.print(f"\n[bold]Sample Propagation Paths ({len(result.propagation_paths)} total):[/bold]")
+            for i, path in enumerate(result.propagation_paths[:3], 1):
+                console.print(f"\n  Path {i} ({len(path)} steps):")
+                for step in path[:4]:  # Show first 4 steps of each path
+                    console.print(f"    {step.depth}. {step.node_type}: {step.node_id}")
+                if len(path) > 4:
+                    console.print(f"    ... ({len(path) - 4} more steps)")
+
+        # Risk assessment
+        console.print(f"\n[bold]Risk Assessment:[/bold]")
+        if result.infection_score > 75:
+            console.print("  [red]CRITICAL[/red] - Very high propagation risk")
+        elif result.infection_score > 50:
+            console.print("  [bright_red]HIGH[/bright_red] - Significant propagation risk")
+        elif result.infection_score > 25:
+            console.print("  [yellow]MEDIUM[/yellow] - Moderate propagation risk")
+        else:
+            console.print("  [blue]LOW[/blue] - Limited propagation risk")
+
+        # Save to JSON if requested
+        if output:
+            output_data = {
+                "cve_id": result.cve_id,
+                "total_affected_nodes": result.total_affected_nodes,
+                "affected_packages": result.affected_packages,
+                "affected_containers": result.affected_containers,
+                "max_depth": result.max_depth,
+                "infection_score": result.infection_score,
+                "direct_impact": result.get_direct_impact(),
+                "transitive_impact": result.get_transitive_impact(),
+                "propagation_paths": [
+                    [
+                        {
+                            "node_id": step.node_id,
+                            "node_type": step.node_type,
+                            "depth": step.depth,
+                            "cvss_score": step.cvss_score,
+                        }
+                        for step in path
+                    ]
+                    for path in result.propagation_paths
+                ],
+            }
+
+            with open(output, "w") as f:
+                json.dump(output_data, f, indent=2)
+
+            console.print(f"\n[green]✓[/green] Saved propagation analysis to: {output}")
+
+    except ValueError as e:
+        console.print(f"[red]✗[/red] {e}")
+        raise typer.Exit(code=1)
+    except Exception as e:
+        console.print(f"[red]✗[/red] Error analyzing propagation: {e}")
+        logger.exception("Error analyzing propagation")
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def metrics(
+    graph_file: Path = typer.Argument(
+        ...,
+        help="Path to graph file (.graphml)",
+        exists=True,
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "-o",
+        "--output",
+        help="Save results to JSON file",
+    ),
+):
+    """
+    Calculate comprehensive graph topology and health metrics.
+
+    Provides overall security posture assessment through various
+    graph theory metrics and vulnerability distribution analysis.
+    """
+    console.print(f"[cyan]Loading graph: {graph_file}[/cyan]")
+
+    try:
+        # Load graph
+        client = NetworkXClient()
+        client.load(str(graph_file))
+
+        # Initialize analytics engine
+        analytics = GraphAnalytics(client)
+
+        # Calculate metrics
+        with console.status("[bold green]Calculating graph metrics..."):
+            result = analytics.calculate_graph_metrics()
+
+        # Display results
+        console.print("\n[bold]Graph Topology Metrics:[/bold]\n")
+
+        # Basic structure
+        structure_table = Table(title="Graph Structure", show_header=True, header_style="bold cyan")
+        structure_table.add_column("Metric", style="cyan")
+        structure_table.add_column("Value", justify="right", style="yellow")
+
+        structure_table.add_row("Total Nodes", str(result.total_nodes))
+        structure_table.add_row("Total Edges", str(result.total_edges))
+        structure_table.add_row("Graph Density", f"{result.density:.3f}")
+        structure_table.add_row("Avg Node Degree", f"{result.avg_degree:.2f}")
+        structure_table.add_row("Avg Clustering", f"{result.avg_clustering:.3f}")
+
+        console.print(structure_table)
+
+        # Connectivity
+        console.print()
+        connectivity_table = Table(title="Connectivity", show_header=True, header_style="bold cyan")
+        connectivity_table.add_column("Metric", style="cyan")
+        connectivity_table.add_column("Value", justify="right", style="yellow")
+
+        connectivity_table.add_row("Connected Components", str(result.connected_components))
+        connectivity_table.add_row("Largest Component Size", str(result.largest_component_size))
+        connectivity_table.add_row("Avg Path Length", f"{result.avg_path_length:.2f}")
+        connectivity_table.add_row("Graph Diameter", str(result.diameter))
+
+        console.print(connectivity_table)
+
+        # Security metrics
+        console.print()
+        security_table = Table(title="Security Metrics", show_header=True, header_style="bold cyan")
+        security_table.add_column("Metric", style="cyan")
+        security_table.add_column("Value", justify="right", style="yellow")
+
+        security_table.add_row("Vulnerability Concentration", f"{result.vulnerability_concentration:.3f}")
+        security_table.add_row("Critical Node Count", str(result.critical_node_count))
+        security_table.add_row("Security Score", f"[bold]{result.security_score:.1f}/100[/bold]")
+
+        console.print(security_table)
+
+        # Interpretation
+        console.print("\n[bold]Interpretation:[/bold]")
+
+        # Density interpretation
+        if result.density > 0.5:
+            console.print("  • [yellow]High density[/yellow] - Highly interconnected (vulnerabilities spread easily)")
+        elif result.density > 0.2:
+            console.print("  • [blue]Moderate density[/blue] - Balanced connectivity")
+        else:
+            console.print("  • [green]Low density[/green] - Sparse connections (better isolation)")
+
+        # Clustering interpretation
+        if result.avg_clustering > 0.5:
+            console.print("  • [yellow]High clustering[/yellow] - Assets form tight groups")
+        else:
+            console.print("  • [green]Low clustering[/green] - Assets are well distributed")
+
+        # Security score interpretation
+        if result.security_score >= 70:
+            console.print("  • [green]Good security posture[/green] - Low risk of widespread impact")
+        elif result.security_score >= 50:
+            console.print("  • [yellow]Moderate security posture[/yellow] - Some isolation concerns")
+        else:
+            console.print("  • [red]Poor security posture[/red] - High risk of cascading failures")
+
+        # Recommendations
+        console.print("\n[bold]Recommendations:[/bold]")
+        if result.density > 0.5:
+            console.print("  • Consider breaking tight dependencies")
+        if result.critical_node_count > result.total_nodes * 0.1:
+            console.print("  • Focus on securing critical bottleneck nodes")
+        if result.vulnerability_concentration > 0.7:
+            console.print("  • Vulnerabilities are concentrated - target high-risk packages")
+
+        # Save to JSON if requested
+        if output:
+            with open(output, "w") as f:
+                json.dump(result.to_dict(), f, indent=2)
+
+            console.print(f"\n[green]✓[/green] Saved metrics to: {output}")
+
+    except Exception as e:
+        console.print(f"[red]✗[/red] Error calculating metrics: {e}")
+        logger.exception("Error calculating metrics")
         raise typer.Exit(code=1)
 
 
