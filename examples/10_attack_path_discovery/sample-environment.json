@@ -1,0 +1,322 @@
+{
+  "environment": {
+    "name": "demo-ecommerce",
+    "type": "production",
+    "cloud_provider": "aws",
+    "region": "us-east-1",
+    "compliance_requirements": ["pci-dss", "gdpr"],
+    "owner": "security-team@example.com",
+    "tags": {
+      "project": "ecommerce-demo",
+      "environment": "demo"
+    }
+  },
+
+  "global_business_context": {
+    "industry": "ecommerce",
+    "company_size": "medium",
+    "risk_tolerance": "low",
+    "incident_cost_estimates": {
+      "data_breach_per_record": 150.0,
+      "downtime_per_hour": 25000.0,
+      "reputation_damage": 500000.0,
+      "regulatory_fine_range": [50000.0, 1000000.0]
+    }
+  },
+
+  "assets": [
+    {
+      "id": "asset-dmz-web",
+      "name": "DMZ Web Server",
+      "type": "container",
+      "host": "web-dmz.example.com",
+      "software": {
+        "image": "nginx:1.21-alpine",
+        "os": "Alpine Linux 3.18",
+        "packages": [
+          {"name": "nginx", "version": "1.21.0", "ecosystem": "apk"},
+          {"name": "openssl", "version": "1.1.1q", "ecosystem": "apk"}
+        ]
+      },
+      "network": {
+        "internal_ip": "10.0.1.10",
+        "public_ip": "54.123.45.67",
+        "zone": "dmz",
+        "exposed_ports": [
+          {
+            "port": 443,
+            "protocol": "https",
+            "public": true,
+            "description": "Public HTTPS"
+          },
+          {
+            "port": 80,
+            "protocol": "http",
+            "public": true,
+            "description": "HTTP redirect"
+          }
+        ]
+      },
+      "business_context": {
+        "criticality": "medium",
+        "criticality_score": 60,
+        "function": "web-frontend",
+        "data_classification": "public",
+        "revenue_impact": "medium",
+        "customer_facing": true,
+        "sla_tier": "tier-2",
+        "mttr_target": 4,
+        "owner_team": "frontend-team"
+      },
+      "metadata": {
+        "internet_facing": true,
+        "has_public_port": true
+      }
+    },
+
+    {
+      "id": "asset-dmz-api",
+      "name": "DMZ API Gateway",
+      "type": "container",
+      "host": "api-dmz.example.com",
+      "software": {
+        "image": "api-gateway:2.0",
+        "os": "Ubuntu 22.04",
+        "packages": [
+          {"name": "nodejs", "version": "18.12.0", "ecosystem": "deb"}
+        ]
+      },
+      "network": {
+        "internal_ip": "10.0.1.20",
+        "public_ip": "54.123.45.68",
+        "zone": "dmz",
+        "exposed_ports": [
+          {
+            "port": 8443,
+            "protocol": "https",
+            "public": true,
+            "description": "API endpoint"
+          }
+        ]
+      },
+      "business_context": {
+        "criticality": "medium",
+        "criticality_score": 65,
+        "function": "api-gateway",
+        "data_classification": "internal",
+        "revenue_impact": "medium",
+        "customer_facing": true,
+        "sla_tier": "tier-2",
+        "mttr_target": 4,
+        "owner_team": "api-team"
+      },
+      "metadata": {
+        "internet_facing": true,
+        "has_public_port": true
+      }
+    },
+
+    {
+      "id": "asset-internal-app",
+      "name": "Internal Application Server",
+      "type": "container",
+      "host": "app-internal.example.com",
+      "software": {
+        "image": "app-server:3.5",
+        "os": "Alpine Linux 3.18",
+        "packages": [
+          {"name": "python3", "version": "3.11.0", "ecosystem": "apk"},
+          {"name": "postgresql-libs", "version": "15.1", "ecosystem": "apk"}
+        ]
+      },
+      "network": {
+        "internal_ip": "10.0.2.10",
+        "zone": "internal",
+        "exposed_ports": [
+          {
+            "port": 5000,
+            "protocol": "http",
+            "public": false,
+            "description": "Internal API"
+          }
+        ]
+      },
+      "business_context": {
+        "criticality": "high",
+        "criticality_score": 85,
+        "function": "application-server",
+        "data_classification": "internal",
+        "revenue_impact": "high",
+        "customer_facing": false,
+        "sla_tier": "tier-1",
+        "mttr_target": 2,
+        "owner_team": "backend-team"
+      }
+    },
+
+    {
+      "id": "asset-payment-processor",
+      "name": "Payment Processing Service",
+      "type": "container",
+      "host": "payment-internal.example.com",
+      "software": {
+        "image": "payment-processor:1.0",
+        "os": "Ubuntu 22.04",
+        "packages": [
+          {"name": "java", "version": "17.0.5", "ecosystem": "deb"}
+        ]
+      },
+      "network": {
+        "internal_ip": "10.0.2.20",
+        "zone": "internal",
+        "exposed_ports": [
+          {
+            "port": 8080,
+            "protocol": "https",
+            "public": false,
+            "description": "Payment API"
+          }
+        ]
+      },
+      "business_context": {
+        "criticality": "critical",
+        "criticality_score": 95,
+        "function": "payment-processing",
+        "data_classification": "pci",
+        "revenue_impact": "critical",
+        "customer_facing": false,
+        "pci_scope": true,
+        "sla_tier": "tier-1",
+        "mttr_target": 1,
+        "owner_team": "payments-team"
+      }
+    },
+
+    {
+      "id": "asset-database",
+      "name": "Customer Database",
+      "type": "database",
+      "host": "db-internal.example.com",
+      "software": {
+        "image": "postgres:15",
+        "os": "Debian 11",
+        "packages": [
+          {"name": "postgresql", "version": "15.1", "ecosystem": "deb"}
+        ]
+      },
+      "network": {
+        "internal_ip": "10.0.2.30",
+        "zone": "internal",
+        "exposed_ports": [
+          {
+            "port": 5432,
+            "protocol": "postgresql",
+            "public": false,
+            "description": "Database"
+          }
+        ]
+      },
+      "business_context": {
+        "criticality": "critical",
+        "criticality_score": 98,
+        "function": "database",
+        "data_classification": "pci",
+        "revenue_impact": "critical",
+        "customer_facing": false,
+        "pci_scope": true,
+        "hipaa_scope": false,
+        "sla_tier": "tier-1",
+        "mttr_target": 1,
+        "owner_team": "database-team"
+      }
+    }
+  ],
+
+  "dependencies": [
+    {
+      "source": "asset-dmz-web",
+      "target": "asset-internal-app",
+      "type": "communicates_with",
+      "protocol": "https",
+      "critical": true,
+      "description": "Web server calls internal API"
+    },
+    {
+      "source": "asset-dmz-api",
+      "target": "asset-internal-app",
+      "type": "communicates_with",
+      "protocol": "https",
+      "critical": true,
+      "description": "API gateway routes to internal app"
+    },
+    {
+      "source": "asset-internal-app",
+      "target": "asset-payment-processor",
+      "type": "communicates_with",
+      "protocol": "https",
+      "critical": true,
+      "description": "App calls payment processor"
+    },
+    {
+      "source": "asset-internal-app",
+      "target": "asset-database",
+      "type": "depends_on",
+      "protocol": "postgresql",
+      "critical": true,
+      "description": "App queries database"
+    },
+    {
+      "source": "asset-payment-processor",
+      "target": "asset-database",
+      "type": "writes_to",
+      "protocol": "postgresql",
+      "critical": true,
+      "description": "Payment processor stores transactions"
+    },
+    {
+      "source": "asset-dmz-web",
+      "target": "asset-dmz-api",
+      "type": "communicates_with",
+      "protocol": "https",
+      "critical": false,
+      "description": "Web server may call API directly"
+    }
+  ],
+
+  "network_topology": {
+    "zones": [
+      {
+        "id": "zone-dmz",
+        "name": "dmz",
+        "trust_level": "low",
+        "internet_facing": true,
+        "description": "Demilitarized zone for public-facing services"
+      },
+      {
+        "id": "zone-internal",
+        "name": "internal",
+        "trust_level": "high",
+        "internet_facing": false,
+        "description": "Internal trusted zone for application and data"
+      }
+    ],
+    "segmentation_rules": [
+      {
+        "from_zone": "dmz",
+        "to_zone": "internal",
+        "allowed": true,
+        "ports": [5000, 8080, 5432],
+        "protocols": ["https", "postgresql"],
+        "description": "DMZ can access internal services"
+      },
+      {
+        "from_zone": "internal",
+        "to_zone": "dmz",
+        "allowed": false,
+        "ports": [],
+        "protocols": [],
+        "description": "Internal cannot initiate connections to DMZ"
+      }
+    ]
+  }
+}

@@ -1,0 +1,218 @@
+{
+  "total_escalations": 6,
+  "by_difficulty": {
+    "easy": 6,
+    "medium": 0,
+    "hard": 0
+  },
+  "escalations": [
+    {
+      "from_privilege": "dmz",
+      "to_privilege": "internal",
+      "difficulty": "easy",
+      "vulnerabilities": [],
+      "mitigation": [
+        "Deploy monitoring and detection for this attack pattern"
+      ],
+      "path": {
+        "entry_point": "asset:asset-dmz-web",
+        "target": "asset:asset-internal-app",
+        "length": 2,
+        "total_cvss": 0.0,
+        "threat_level": "low",
+        "steps": [
+          {
+            "node_id": "asset:asset-dmz-web",
+            "type": "entry_point",
+            "description": "Gain initial access via DMZ Web Server (container)",
+            "vulnerabilities": []
+          },
+          {
+            "node_id": "asset:asset-internal-app",
+            "type": "target_access",
+            "description": "Gain access to target: Internal Application Server",
+            "vulnerabilities": []
+          }
+        ]
+      }
+    },
+    {
+      "from_privilege": "dmz",
+      "to_privilege": "internal",
+      "difficulty": "easy",
+      "vulnerabilities": [],
+      "mitigation": [
+        "Implement principle of least privilege and restrict privilege escalation vectors",
+        "Deploy monitoring and detection for this attack pattern"
+      ],
+      "path": {
+        "entry_point": "asset:asset-dmz-web",
+        "target": "asset:asset-payment-processor",
+        "length": 3,
+        "total_cvss": 0.0,
+        "threat_level": "low",
+        "steps": [
+          {
+            "node_id": "asset:asset-dmz-web",
+            "type": "entry_point",
+            "description": "Gain initial access via DMZ Web Server (container)",
+            "vulnerabilities": []
+          },
+          {
+            "node_id": "asset:asset-internal-app",
+            "type": "privilege_escalation",
+            "description": "Escalate privileges through Internal Application Server",
+            "vulnerabilities": []
+          },
+          {
+            "node_id": "asset:asset-payment-processor",
+            "type": "target_access",
+            "description": "Gain access to target: Payment Processing Service",
+            "vulnerabilities": []
+          }
+        ]
+      }
+    },
+    {
+      "from_privilege": "dmz",
+      "to_privilege": "internal",
+      "difficulty": "easy",
+      "vulnerabilities": [],
+      "mitigation": [
+        "Implement principle of least privilege and restrict privilege escalation vectors",
+        "Deploy monitoring and detection for this attack pattern"
+      ],
+      "path": {
+        "entry_point": "asset:asset-dmz-web",
+        "target": "asset:asset-database",
+        "length": 3,
+        "total_cvss": 0.0,
+        "threat_level": "low",
+        "steps": [
+          {
+            "node_id": "asset:asset-dmz-web",
+            "type": "entry_point",
+            "description": "Gain initial access via DMZ Web Server (container)",
+            "vulnerabilities": []
+          },
+          {
+            "node_id": "asset:asset-internal-app",
+            "type": "privilege_escalation",
+            "description": "Escalate privileges through Internal Application Server",
+            "vulnerabilities": []
+          },
+          {
+            "node_id": "asset:asset-database",
+            "type": "target_access",
+            "description": "Gain access to target: Customer Database",
+            "vulnerabilities": []
+          }
+        ]
+      }
+    },
+    {
+      "from_privilege": "dmz",
+      "to_privilege": "internal",
+      "difficulty": "easy",
+      "vulnerabilities": [],
+      "mitigation": [
+        "Deploy monitoring and detection for this attack pattern"
+      ],
+      "path": {
+        "entry_point": "asset:asset-dmz-api",
+        "target": "asset:asset-internal-app",
+        "length": 2,
+        "total_cvss": 0.0,
+        "threat_level": "low",
+        "steps": [
+          {
+            "node_id": "asset:asset-dmz-api",
+            "type": "entry_point",
+            "description": "Gain initial access via DMZ API Gateway (container)",
+            "vulnerabilities": []
+          },
+          {
+            "node_id": "asset:asset-internal-app",
+            "type": "target_access",
+            "description": "Gain access to target: Internal Application Server",
+            "vulnerabilities": []
+          }
+        ]
+      }
+    },
+    {
+      "from_privilege": "dmz",
+      "to_privilege": "internal",
+      "difficulty": "easy",
+      "vulnerabilities": [],
+      "mitigation": [
+        "Implement principle of least privilege and restrict privilege escalation vectors",
+        "Deploy monitoring and detection for this attack pattern"
+      ],
+      "path": {
+        "entry_point": "asset:asset-dmz-api",
+        "target": "asset:asset-payment-processor",
+        "length": 3,
+        "total_cvss": 0.0,
+        "threat_level": "low",
+        "steps": [
+          {
+            "node_id": "asset:asset-dmz-api",
+            "type": "entry_point",
+            "description": "Gain initial access via DMZ API Gateway (container)",
+            "vulnerabilities": []
+          },
+          {
+            "node_id": "asset:asset-internal-app",
+            "type": "privilege_escalation",
+            "description": "Escalate privileges through Internal Application Server",
+            "vulnerabilities": []
+          },
+          {
+            "node_id": "asset:asset-payment-processor",
+            "type": "target_access",
+            "description": "Gain access to target: Payment Processing Service",
+            "vulnerabilities": []
+          }
+        ]
+      }
+    },
+    {
+      "from_privilege": "dmz",
+      "to_privilege": "internal",
+      "difficulty": "easy",
+      "vulnerabilities": [],
+      "mitigation": [
+        "Implement principle of least privilege and restrict privilege escalation vectors",
+        "Deploy monitoring and detection for this attack pattern"
+      ],
+      "path": {
+        "entry_point": "asset:asset-dmz-api",
+        "target": "asset:asset-database",
+        "length": 3,
+        "total_cvss": 0.0,
+        "threat_level": "low",
+        "steps": [
+          {
+            "node_id": "asset:asset-dmz-api",
+            "type": "entry_point",
+            "description": "Gain initial access via DMZ API Gateway (container)",
+            "vulnerabilities": []
+          },
+          {
+            "node_id": "asset:asset-internal-app",
+            "type": "privilege_escalation",
+            "description": "Escalate privileges through Internal Application Server",
+            "vulnerabilities": []
+          },
+          {
+            "node_id": "asset:asset-database",
+            "type": "target_access",
+            "description": "Gain access to target: Customer Database",
+            "vulnerabilities": []
+          }
+        ]
+      }
+    }
+  ]
+}
