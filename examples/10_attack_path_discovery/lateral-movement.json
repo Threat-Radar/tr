@@ -1,0 +1,90 @@
+{
+  "total_movements": 4,
+  "by_zone": {
+    "dmz": 1,
+    "internal": 3
+  },
+  "by_difficulty": {
+    "easy": 4,
+    "medium": 0,
+    "hard": 0
+  },
+  "movements": [
+    {
+      "from_asset": "asset:asset-dmz-web",
+      "to_asset": "asset:asset-dmz-api",
+      "movement_type": "network",
+      "detection_difficulty": "easy",
+      "vulnerabilities": [],
+      "network_requirements": [
+        "Access to dmz zone"
+      ],
+      "prerequisites": [
+        "Compromise of DMZ Web Server"
+      ],
+      "path": {
+        "entry_point": "asset:asset-dmz-web",
+        "target": "asset:asset-dmz-api",
+        "length": 2,
+        "total_cvss": 0.0
+      }
+    },
+    {
+      "from_asset": "asset:asset-internal-app",
+      "to_asset": "asset:asset-payment-processor",
+      "movement_type": "network",
+      "detection_difficulty": "easy",
+      "vulnerabilities": [],
+      "network_requirements": [
+        "Access to internal zone"
+      ],
+      "prerequisites": [
+        "Compromise of Internal Application Server"
+      ],
+      "path": {
+        "entry_point": "asset:asset-internal-app",
+        "target": "asset:asset-payment-processor",
+        "length": 2,
+        "total_cvss": 0.0
+      }
+    },
+    {
+      "from_asset": "asset:asset-internal-app",
+      "to_asset": "asset:asset-database",
+      "movement_type": "vulnerability",
+      "detection_difficulty": "easy",
+      "vulnerabilities": [],
+      "network_requirements": [
+        "Access to internal zone"
+      ],
+      "prerequisites": [
+        "Compromise of Internal Application Server"
+      ],
+      "path": {
+        "entry_point": "asset:asset-internal-app",
+        "target": "asset:asset-database",
+        "length": 2,
+        "total_cvss": 0.0
+      }
+    },
+    {
+      "from_asset": "asset:asset-payment-processor",
+      "to_asset": "asset:asset-database",
+      "movement_type": "vulnerability",
+      "detection_difficulty": "easy",
+      "vulnerabilities": [],
+      "network_requirements": [
+        "Access to internal zone"
+      ],
+      "prerequisites": [
+        "Compromise of Payment Processing Service"
+      ],
+      "path": {
+        "entry_point": "asset:asset-payment-processor",
+        "target": "asset:asset-database",
+        "length": 2,
+        "total_cvss": 0.0
+      }
+    }
+  ]
+}
