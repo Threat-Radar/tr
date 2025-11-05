@@ -53,26 +53,76 @@ def build(
         with open(scan_results) as f:
             scan_data = json.load(f)
 
+        # Detect format
+        is_grype_raw_format = "matches" in scan_data
+        is_threat_radar_format = "vulnerabilities" in scan_data and "target" in scan_data
+
         # Convert to GrypeScanResult
         vulnerabilities = []
-        for vuln_data in scan_data.get("matches", []):
-            vuln = GrypeVulnerability(
-                id=vuln_data["vulnerability"]["id"],
-                severity=vuln_data["vulnerability"].get("severity", "unknown"),
-                package_name=vuln_data["artifact"]["name"],
-                package_version=vuln_data["artifact"]["version"],
-                package_type=vuln_data["artifact"].get("type", "unknown"),
-                fixed_in_version=vuln_data["vulnerability"].get("fix", {}).get("versions", [None])[0],
-                description=vuln_data["vulnerability"].get("description"),
-                cvss_score=vuln_data["vulnerability"].get("cvss", [{}])[0].get("metrics", {}).get("baseScore"),
-                urls=vuln_data["vulnerability"].get("urls", []),
-                data_source=vuln_data["vulnerability"].get("dataSource"),
-                namespace=vuln_data["vulnerability"].get("namespace"),
-            )
-            vulnerabilities.append(vuln)
+
+        if is_grype_raw_format:
+            # Parse raw Grype format (nested structure)
+            for vuln_data in scan_data.get("matches", []):
+                vuln = GrypeVulnerability(
+                    id=vuln_data["vulnerability"]["id"],
+                    severity=vuln_data["vulnerability"].get("severity", "unknown"),
+                    package_name=vuln_data["artifact"]["name"],
+                    package_version=vuln_data["artifact"]["version"],
+                    package_type=vuln_data["artifact"].get("type", "unknown"),
+                    fixed_in_version=vuln_data["vulnerability"].get("fix", {}).get("versions", [None])[0],
+                    description=vuln_data["vulnerability"].get("description"),
+                    cvss_score=vuln_data["vulnerability"].get("cvss", [{}])[0].get("metrics", {}).get("baseScore"),
+                    urls=vuln_data["vulnerability"].get("urls", []),
+                    data_source=vuln_data["vulnerability"].get("dataSource"),
+                    namespace=vuln_data["vulnerability"].get("namespace"),
+                )
+                vulnerabilities.append(vuln)
+
+        elif is_threat_radar_format:
+            # Parse Threat Radar simplified format (flat structure)
+            for vuln_data in scan_data.get("vulnerabilities", []):
+                # Extract package name and version from "package" field
+                # Format: "git@1:2.39.5-0+deb12u2" or "openssl@1.1.1"
+                package_full = vuln_data.get("package", "unknown@unknown")
+                if "@" in package_full:
+                    package_name, package_version = package_full.split("@", 1)
+                else:
+                    package_name = package_full
+                    package_version = "unknown"
+
+                vuln = GrypeVulnerability(
+                    id=vuln_data.get("id", "UNKNOWN"),
+                    severity=vuln_data.get("severity", "unknown"),
+                    package_name=package_name,
+                    package_version=package_version,
+                    package_type=vuln_data.get("package_type", "unknown"),
+                    fixed_in_version=vuln_data.get("fixed_in"),
+                    description=vuln_data.get("description"),
+                    cvss_score=vuln_data.get("cvss_score"),
+                    urls=vuln_data.get("urls", []),
+                    data_source=vuln_data.get("data_source"),
+                    namespace=vuln_data.get("namespace"),
+                )
+                vulnerabilities.append(vuln)
+
+        else:
+            # Unsupported format
+            console.print("[red]✗[/red] Unsupported scan result format")
+            console.print("[yellow]Expected either:[/yellow]")
+            console.print("  • Raw Grype format (with 'matches' key)")
+            console.print("  • Threat Radar format (with 'vulnerabilities' and 'target' keys)")
+            raise typer.Exit(code=1)
+
+        # Extract target based on format
+        if is_grype_raw_format:
+            target = scan_data.get("source", {}).get("target", "unknown")
+        elif is_threat_radar_format:
+            target = scan_data.get("target", "unknown")
+        else:
+            target = "unknown"
 
         scan_result = GrypeScanResult(
-            target=scan_data.get("source", {}).get("target", "unknown"),
+            target=target,
             vulnerabilities=vulnerabilities,
         )
 
@@ -87,6 +137,15 @@ def build(
         # Get metadata
         metadata = client.get_metadata()
 
+        # Show detected format
+        if is_grype_raw_format:
+            format_name = "Grype raw format"
+        elif is_threat_radar_format:
+            format_name = "Threat Radar format"
+        else:
+            format_name = "Unknown format"
+
+        console.print(f"[dim]Format detected: {format_name}[/dim]")
         console.print("[green]✓[/green] Graph built successfully")
         console.print(f"  • Nodes: {metadata.node_count}")
         console.print(f"  • Edges: {metadata.edge_count}")
