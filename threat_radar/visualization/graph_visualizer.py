@@ -19,7 +19,32 @@ logger = logging.getLogger(__name__)
 
 
 class NetworkGraphVisualizer:
-    """Interactive graph visualizer using Plotly."""
+    """
+    Interactive graph visualizer using Plotly.
+
+    Provides interactive web-based visualizations of vulnerability graphs with
+    customizable layouts, colors, and styling. Supports both 2D and 3D visualizations.
+
+    Color Schemes:
+        - Node colors by type: Container (blue), Package (green), Vulnerability (red), etc.
+        - Severity colors: Critical (dark red) → Negligible (light green)
+        - Edge colors by relationship type
+
+    Supported Layout Algorithms:
+        - spring: Force-directed layout (default, good for general graphs)
+        - kamada_kawai: Energy-based layout (balanced node distribution)
+        - circular: Circular layout (shows connections clearly)
+        - spectral: Spectral layout (based on graph eigenvalues)
+        - shell: Shell layout
+        - hierarchical: Custom layered layout (vulnerabilities → packages → containers)
+
+    Example:
+        >>> client = NetworkXClient()
+        >>> client.load("vulnerability_graph.graphml")
+        >>> visualizer = NetworkGraphVisualizer(client)
+        >>> fig = visualizer.visualize(layout="hierarchical", color_by="severity")
+        >>> visualizer.save_html(fig, "output.html", auto_open=True)
+    """
 
     # Color schemes
     NODE_COLORS = {
@@ -536,6 +561,7 @@ class NetworkGraphVisualizer:
         fig: go.Figure,
         output_path: Path,
         auto_open: bool = False,
+        include_plotlyjs: str = 'inline',
     ) -> None:
         """
         Save figure as standalone HTML file.
@@ -544,14 +570,26 @@ class NetworkGraphVisualizer:
             fig: Plotly figure to save
             output_path: Output file path
             auto_open: Whether to open in browser after saving
+            include_plotlyjs: How to include plotly.js library.
+                'inline' (default): Embed full library in HTML (larger file, more secure, works offline)
+                'cdn': Use CDN link (smaller file, requires internet, potential security risk)
+                'directory': Save to separate file (advanced use)
         """
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
+        # Validate include_plotlyjs value
+        valid_options = ['inline', 'cdn', 'directory', True, False]
+        if include_plotlyjs not in valid_options:
+            logger.warning(
+                f"Invalid include_plotlyjs value '{include_plotlyjs}', using 'inline'"
+            )
+            include_plotlyjs = 'inline'
+
         fig.write_html(
             str(output_path),
             auto_open=auto_open,
-            include_plotlyjs='cdn',  # Use CDN for smaller file size
+            include_plotlyjs=include_plotlyjs,
         )
 
         logger.info(f"Saved visualization to {output_path}")

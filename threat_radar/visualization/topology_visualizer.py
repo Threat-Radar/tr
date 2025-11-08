@@ -18,7 +18,55 @@ logger = logging.getLogger(__name__)
 
 
 class NetworkTopologyVisualizer(NetworkGraphVisualizer):
-    """Visualizer for network topology with security context."""
+    """
+    Visualizer for network topology with security context overlays.
+
+    Extends NetworkGraphVisualizer to provide infrastructure topology visualization
+    with security zone boundaries, compliance scope markers, and criticality levels.
+
+    Features:
+        - Security zone visualization with color-coded boundaries
+        - Compliance scope highlighting (PCI-DSS, HIPAA, SOX, GDPR)
+        - Criticality-based node coloring
+        - Internet-facing asset identification
+        - Zone-optimized layouts
+
+    Security Zones:
+        - DMZ: Demilitarized zone (red) - exposed services
+        - Public: Public-facing zone (orange)
+        - Internal: Internal application zone (teal)
+        - Trusted: Trusted secure zone (sky blue)
+        - Database: Database zone (purple)
+
+    Criticality Levels:
+        - Critical: Mission-critical assets (dark red)
+        - High: High-importance assets (red)
+        - Medium: Standard assets (orange)
+        - Low: Low-priority assets (blue)
+
+    Compliance Types:
+        - PCI-DSS: Payment card industry data security (🔐)
+        - HIPAA: Healthcare information protection (🏥)
+        - SOX: Sarbanes-Oxley financial controls (📊)
+        - GDPR: European data protection (🇪🇺)
+
+    Example:
+        >>> client = NetworkXClient()
+        >>> client.load("production_environment.graphml")
+        >>> visualizer = NetworkTopologyVisualizer(client)
+        >>>
+        >>> # Full topology view
+        >>> fig = visualizer.visualize_topology(color_by="zone", show_zones=True)
+        >>> visualizer.save_html(fig, "topology.html")
+        >>>
+        >>> # Security zones focus
+        >>> zones_fig = visualizer.visualize_security_zones()
+        >>> visualizer.save_html(zones_fig, "security_zones.html")
+        >>>
+        >>> # Compliance scope (PCI-DSS only)
+        >>> pci_fig = visualizer.visualize_compliance_scope(compliance_type="pci")
+        >>> visualizer.save_html(pci_fig, "pci_scope.html")
+    """
 
     # Zone colors
     ZONE_COLORS = {

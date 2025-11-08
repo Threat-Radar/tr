@@ -17,14 +17,59 @@ logger = logging.getLogger(__name__)
 
 
 class GraphExporter:
-    """Export graph visualizations and data."""
+    """
+    Export graph visualizations and data to multiple formats.
+
+    Provides comprehensive export functionality for vulnerability graphs, supporting
+    various output formats for different use cases including web visualization,
+    static images, data exchange, and integration with external tools.
+
+    Supported Export Formats:
+        - HTML: Interactive web visualization (standalone, works offline with 'inline' mode)
+        - PNG: High-resolution static image (requires kaleido)
+        - SVG: Scalable vector graphics (requires kaleido)
+        - PDF: PDF document for reports (requires kaleido)
+        - JSON: Graph data with optional pre-calculated positions
+        - DOT: Graphviz format (requires pydot)
+        - Cytoscape: Cytoscape.js JSON format for web applications
+        - GEXF: Gephi format for advanced graph analysis
+
+    Use Cases:
+        - HTML: Shareable interactive reports, documentation
+        - PNG/SVG/PDF: Presentations, printed reports, documentation
+        - JSON: Custom web dashboards, data processing
+        - DOT: Graphviz rendering, custom layouts
+        - Cytoscape: Web-based graph applications
+        - GEXF: Advanced analysis in Gephi
+
+    Example:
+        >>> client = NetworkXClient()
+        >>> client.load("vulnerability_graph.graphml")
+        >>> exporter = GraphExporter(client)
+        >>>
+        >>> # Create visualization
+        >>> visualizer = NetworkGraphVisualizer(client)
+        >>> fig = visualizer.visualize(layout="hierarchical")
+        >>>
+        >>> # Export to multiple formats
+        >>> outputs = exporter.export_all_formats(
+        ...     fig=fig,
+        ...     base_path="reports/vulnerability-graph",
+        ...     formats=["html", "png", "json"]
+        ... )
+        >>> print(outputs)  # {'html': 'reports/vulnerability-graph.html', ...}
+        >>>
+        >>> # Export single format
+        >>> exporter.export_html(fig, "viz.html", include_plotlyjs="inline")
+        >>> exporter.export_image(fig, "viz.png", format="png", scale=2.0)
+    """
 
     def __init__(self, client: NetworkXClient):
         """
         Initialize exporter.
 
         Args:
-            client: NetworkXClient instance
+            client: NetworkXClient instance with loaded graph
         """
         self.client = client
         self.graph = client.graph
@@ -35,7 +80,7 @@ class GraphExporter:
         fig: go.Figure,
         output_path: Path,
         auto_open: bool = False,
-        include_plotlyjs: str = 'cdn',
+        include_plotlyjs: str = 'inline',
     ) -> None:
         """
         Export figure as standalone HTML file.
@@ -44,13 +89,24 @@ class GraphExporter:
             fig: Plotly figure to export
             output_path: Output file path
             auto_open: Open in browser after saving
-            include_plotlyjs: How to include plotly.js ('cdn', 'inline', 'directory')
+            include_plotlyjs: How to include plotly.js library.
+                'inline' (default): Embed full library in HTML (larger file, more secure, works offline)
+                'cdn': Use CDN link (smaller file, requires internet, potential security risk)
+                'directory': Save to separate file (advanced use)
         """
         if not PLOTLY_AVAILABLE:
             raise ImportError("Plotly is required for HTML export")
 
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Validate include_plotlyjs value
+        valid_options = ['inline', 'cdn', 'directory', True, False]
+        if include_plotlyjs not in valid_options:
+            logger.warning(
+                f"Invalid include_plotlyjs value '{include_plotlyjs}', using 'inline'"
+            )
+            include_plotlyjs = 'inline'
 
         fig.write_html(
             str(output_path),
@@ -112,10 +168,28 @@ class GraphExporter:
         """
         Export graph as JSON for web visualization.
 
+        Creates a JSON representation of the graph suitable for custom web applications
+        and JavaScript visualization libraries. Optionally includes pre-calculated node
+        positions for consistent layout.
+
         Args:
             output_path: Output file path
-            include_positions: Include pre-calculated node positions
-            layout_algorithm: Layout algorithm for positions
+            include_positions: Include pre-calculated node positions in JSON.
+                If True, adds 'x' and 'y' coordinates to each node.
+            layout_algorithm: Layout algorithm for position calculation.
+                Options: 'spring', 'kamada_kawai', 'circular', 'spectral'
+
+        Output Format:
+            - nodes: List of node objects with id, attributes, and optional positions
+            - links: List of edge objects with source, target, and attributes
+
+        Example:
+            >>> exporter = GraphExporter(client)
+            >>> exporter.export_json(
+            ...     "graph_data.json",
+            ...     include_positions=True,
+            ...     layout_algorithm="hierarchical"
+            ... )
         """
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -191,8 +265,27 @@ class GraphExporter:
         """
         Export graph in Cytoscape.js JSON format.
 
+        Creates a JSON file compatible with Cytoscape.js for web-based graph visualization.
+        Cytoscape.js is a popular JavaScript library for interactive graph visualization.
+
         Args:
             output_path: Output file path
+
+        Output Format:
+            - elements.nodes: Array of node objects with data properties
+            - elements.edges: Array of edge objects with source/target references
+
+        Use Cases:
+            - Custom web dashboards
+            - Interactive network visualization applications
+            - Integration with React/Vue/Angular applications
+
+        Example:
+            >>> exporter = GraphExporter(client)
+            >>> exporter.export_cytoscape("graph.cytoscape.json")
+
+        More Info:
+            https://js.cytoscape.org/
         """
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -239,8 +332,30 @@ class GraphExporter:
         """
         Export graph as GEXF format (Gephi).
 
+        Creates a GEXF (Graph Exchange XML Format) file for use with Gephi,
+        a powerful open-source network analysis and visualization platform.
+
         Args:
             output_path: Output file path
+
+        Features:
+            - Full node and edge attribute preservation
+            - Compatible with Gephi 0.9+
+            - Supports dynamic graph attributes
+
+        Use Cases:
+            - Advanced graph analysis in Gephi
+            - Community detection and clustering
+            - Large-scale network visualization
+            - Statistical analysis and metrics calculation
+
+        Example:
+            >>> exporter = GraphExporter(client)
+            >>> exporter.export_gexf("vulnerability_network.gexf")
+            # Open in Gephi for advanced analysis
+
+        More Info:
+            https://gephi.org/
         """
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
