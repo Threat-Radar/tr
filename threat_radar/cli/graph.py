@@ -281,8 +281,8 @@ def query(
         raise typer.Exit(code=1)
 
 
-@app.command()
-def list(
+@app.command(name="list")
+def list_graphs(
     limit: Optional[int] = typer.Option(
         None,
         "--limit",
