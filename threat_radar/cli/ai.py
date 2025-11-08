@@ -294,6 +294,26 @@ def prioritize_vulnerabilities(
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Save prioritized list to JSON file"),
     auto_save: bool = typer.Option(False, "--auto-save", "--as", help="Auto-save to storage/ai_analysis/"),
     top_n: int = typer.Option(10, "--top", "-n", help="Show top N priorities"),
+    batch_mode: str = typer.Option(
+        "auto",
+        "--batch-mode",
+        help="Batch processing mode: auto (default), enabled, disabled"
+    ),
+    batch_size: int = typer.Option(
+        25,
+        "--batch-size",
+        help="Vulnerabilities per batch (default: 25)"
+    ),
+    show_progress: bool = typer.Option(
+        True,
+        "--progress/--no-progress",
+        help="Show progress bar for batch processing"
+    ),
+    severity: Optional[str] = typer.Option(
+        None,
+        "--severity",
+        help="Filter to minimum severity: critical, high, medium, low"
+    ),
 ):
     """
     Generate AI-powered prioritized vulnerability remediation list.
@@ -304,35 +324,117 @@ def prioritize_vulnerabilities(
     - Business impact assessment
     - Availability of patches
 
+    BATCH PROCESSING:
+    - Automatically handles large scans (>30 CVEs) via batch processing
+    - Use --batch-mode to control: auto (default), enabled, disabled
+    - Adjust --batch-size for optimal performance (default: 25)
+
     Examples:
         threat-radar ai prioritize cve-results.json
         threat-radar ai prioritize results.json --top 20
         threat-radar ai prioritize scan.json -o priorities.json
+        threat-radar ai prioritize scan.json --severity high --batch-size 20
     """
     with handle_cli_error("prioritizing vulnerabilities", console):
         # Load and analyze
-        scan_result = load_cve_results(cve_results)
-
-        if scan_result.total_count == 0:
-            console.print("[yellow]No vulnerabilities found in scan results.[/yellow]")
-            return
-
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
             console=console,
         ) as progress:
-            # Analyze first
-            task1 = progress.add_task("Analyzing vulnerabilities...", total=None)
-            analyzer = VulnerabilityAnalyzer(provider=provider, model=model)
-            analysis = analyzer.analyze_scan_result(scan_result)
-            progress.update(task1, completed=True)
+            task = progress.add_task("Loading CVE results...", total=None)
+            scan_result = load_cve_results(cve_results)
+            progress.update(task, completed=True, description=f"Loaded {scan_result.total_count} vulnerabilities")
 
-            # Prioritize
-            task2 = progress.add_task("Generating priority list...", total=None)
+        if scan_result.total_count == 0:
+            console.print("[yellow]No vulnerabilities found in scan results.[/yellow]")
+            return
+
+        # Validate batch_mode
+        if batch_mode not in ["auto", "enabled", "disabled"]:
+            console.print(f"[red]Invalid --batch-mode: {batch_mode}. Use: auto, enabled, or disabled[/red]")
+            return
+
+        # Create analyzer with batch configuration
+        analyzer = VulnerabilityAnalyzer(
+            provider=provider,
+            model=model,
+            batch_size=batch_size,
+            auto_batch_threshold=30,
+        )
+
+        # Apply severity filter if specified
+        original_count = scan_result.total_count
+        if severity:
+            try:
+                scan_result = analyzer.filter_by_severity(scan_result, severity)
+                if scan_result.total_count == 0:
+                    console.print(f"[yellow]No vulnerabilities found at {severity.upper()} severity or above.[/yellow]")
+                    console.print(f"[dim]Original scan had {original_count} vulnerabilities[/dim]")
+                    return
+                console.print(f"[cyan]Filtered to {scan_result.total_count} vulnerabilities (>= {severity.upper()}) from {original_count} total[/cyan]")
+            except ValueError as e:
+                console.print(f"[red]Error: {str(e)}[/red]")
+                return
+
+        # Analyze with AI - with batch progress tracking
+        # Use analyzer's auto_batch_threshold to ensure consistency
+        if show_progress and (batch_mode == "enabled" or (batch_mode == "auto" and scan_result.total_count > analyzer.auto_batch_threshold)):
+            # Use batch progress display
+            from rich.progress import BarColumn, TimeRemainingColumn
+
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+                TimeRemainingColumn(),
+                console=console,
+            ) as progress:
+                total_batches = (scan_result.total_count + batch_size - 1) // batch_size
+                task = progress.add_task(
+                    f"Analyzing {scan_result.total_count} vulnerabilities...",
+                    total=total_batches
+                )
+
+                def progress_callback(batch_num, total_batches, analyzed_count):
+                    progress.update(
+                        task,
+                        completed=batch_num,
+                        description=f"Batch {batch_num}/{total_batches} - {analyzed_count} analyzed"
+                    )
+
+                analysis = analyzer.analyze_scan_result(
+                    scan_result,
+                    batch_mode=batch_mode,
+                    progress_callback=progress_callback,
+                )
+
+                progress.update(task, completed=total_batches, description="Analysis complete!")
+        else:
+            # Simple progress for single-pass analysis
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=console,
+            ) as progress:
+                task = progress.add_task("Analyzing vulnerabilities...", total=None)
+                analysis = analyzer.analyze_scan_result(
+                    scan_result,
+                    batch_mode=batch_mode,
+                )
+                progress.update(task, completed=True)
+
+        # Prioritize
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Generating priority list...", total=None)
             engine = PrioritizationEngine(provider=provider, model=model)
             prioritized = engine.prioritize_vulnerabilities(analysis)
-            progress.update(task2, completed=True)
+            progress.update(task, completed=True)
 
         # Display results
         console.print("\n")
@@ -400,6 +502,26 @@ def generate_remediation(
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Save remediation plan to JSON file"),
     auto_save: bool = typer.Option(False, "--auto-save", "--as", help="Auto-save to storage/ai_analysis/"),
     show_commands: bool = typer.Option(True, "--show-commands/--no-commands", help="Display upgrade commands"),
+    batch_mode: str = typer.Option(
+        "auto",
+        "--batch-mode",
+        help="Batch processing mode: auto (default), enabled, disabled"
+    ),
+    batch_size: int = typer.Option(
+        25,
+        "--batch-size",
+        help="Vulnerabilities per batch (default: 25)"
+    ),
+    show_progress: bool = typer.Option(
+        True,
+        "--progress/--no-progress",
+        help="Show progress bar for batch processing"
+    ),
+    severity: Optional[str] = typer.Option(
+        None,
+        "--severity",
+        help="Filter to minimum severity: critical, high, medium, low"
+    ),
 ):
     """
     Generate AI-powered remediation plan with actionable steps.
@@ -411,29 +533,108 @@ def generate_remediation(
     - Testing steps to verify fixes
     - Reference links to advisories
 
+    BATCH PROCESSING:
+    - Automatically handles large scans (>30 CVEs) via batch processing
+    - Use --batch-mode to control: auto (default), enabled, disabled
+    - Adjust --batch-size for optimal performance (default: 25)
+
     Examples:
         threat-radar ai remediate cve-results.json
         threat-radar ai remediate results.json -o remediation.json
         threat-radar ai remediate scan.json --provider ollama
+        threat-radar ai remediate scan.json --severity critical --batch-size 20
     """
     with handle_cli_error("generating remediation plan", console):
-        scan_result = load_cve_results(cve_results)
-
-        if scan_result.total_count == 0:
-            console.print("[yellow]No vulnerabilities found in scan results.[/yellow]")
-            return
-
+        # Load scan results
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
             console=console,
         ) as progress:
-            task = progress.add_task("Generating remediation plan...", total=None)
+            task = progress.add_task("Loading CVE results...", total=None)
+            scan_result = load_cve_results(cve_results)
+            progress.update(task, completed=True, description=f"Loaded {scan_result.total_count} vulnerabilities")
 
-            generator = RemediationGenerator(provider=provider, model=model)
-            remediation = generator.generate_remediation_plan(scan_result)
+        if scan_result.total_count == 0:
+            console.print("[yellow]No vulnerabilities found in scan results.[/yellow]")
+            return
 
-            progress.update(task, completed=True)
+        # Validate batch_mode
+        if batch_mode not in ["auto", "enabled", "disabled"]:
+            console.print(f"[red]Invalid --batch-mode: {batch_mode}. Use: auto, enabled, or disabled[/red]")
+            return
+
+        # Create generator with batch configuration
+        generator = RemediationGenerator(
+            provider=provider,
+            model=model,
+            batch_size=batch_size,
+            auto_batch_threshold=30,
+        )
+
+        # Apply severity filter if specified
+        original_count = scan_result.total_count
+        if severity:
+            try:
+                from threat_radar.ai.vulnerability_analyzer import VulnerabilityAnalyzer
+                analyzer = VulnerabilityAnalyzer()
+                scan_result = analyzer.filter_by_severity(scan_result, severity)
+                if scan_result.total_count == 0:
+                    console.print(f"[yellow]No vulnerabilities found at {severity.upper()} severity or above.[/yellow]")
+                    console.print(f"[dim]Original scan had {original_count} vulnerabilities[/dim]")
+                    return
+                console.print(f"[cyan]Filtered to {scan_result.total_count} vulnerabilities (>= {severity.upper()}) from {original_count} total[/cyan]")
+            except ValueError as e:
+                console.print(f"[red]Error: {str(e)}[/red]")
+                return
+
+        # Generate remediation plan - with batch progress tracking
+        # Use generator's auto_batch_threshold to ensure consistency
+        if show_progress and (batch_mode == "enabled" or (batch_mode == "auto" and scan_result.total_count > generator.auto_batch_threshold)):
+            # Use batch progress display
+            from rich.progress import BarColumn, TimeRemainingColumn
+
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+                TimeRemainingColumn(),
+                console=console,
+            ) as progress:
+                total_batches = (scan_result.total_count + batch_size - 1) // batch_size
+                task = progress.add_task(
+                    f"Generating remediation for {scan_result.total_count} vulnerabilities...",
+                    total=total_batches
+                )
+
+                def progress_callback(batch_num, total_batches, processed_count):
+                    progress.update(
+                        task,
+                        completed=batch_num,
+                        description=f"Batch {batch_num}/{total_batches} - {processed_count} remediation plans"
+                    )
+
+                remediation = generator.generate_remediation_plan(
+                    scan_result,
+                    batch_mode=batch_mode,
+                    progress_callback=progress_callback,
+                )
+
+                progress.update(task, completed=total_batches, description="Remediation plan complete!")
+        else:
+            # Simple progress for single-pass generation
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=console,
+            ) as progress:
+                task = progress.add_task("Generating remediation plan...", total=None)
+                remediation = generator.generate_remediation_plan(
+                    scan_result,
+                    batch_mode=batch_mode,
+                )
+                progress.update(task, completed=True)
 
         # Display results
         console.print("\n")
