@@ -12,3 +12,7 @@ networkx>=3.0
 # AI features
 openai>=1.0.0
 tenacity>=8.2.0
+
+# Visualization
+plotly>=5.18.0
+kaleido>=0.2.1  # For static image export (PNG, SVG, PDF)

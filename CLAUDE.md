@@ -2718,6 +2718,564 @@ For more troubleshooting help, see `examples/TROUBLESHOOTING.md`
 
 ---
 
+## Interactive Graph Visualization
+
+### Overview
+
+Threat Radar provides powerful interactive visualization capabilities for vulnerability graphs, attack paths, and network topology. Visualizations are web-based (Plotly), interactive, and can be exported to multiple formats.
+
+**Key Features:**
+- **Interactive Exploration**: Zoom, pan, hover for details, click to explore
+- **Multiple Layouts**: Spring, hierarchical, circular, spectral algorithms
+- **Attack Path Highlighting**: Visual representation of attack routes with threat levels
+- **Network Topology Views**: Security zones, compliance scope overlays
+- **Advanced Filtering**: Focus on specific severities, packages, zones, or CVEs
+- **Multi-Format Export**: HTML, PNG, SVG, PDF, JSON, DOT, GEXF, Cytoscape
+
+### Installation
+
+Visualization features require Plotly:
+
+```bash
+# Install visualization dependencies
+pip install plotly kaleido
+
+# Or use requirements.txt (already includes visualization libs)
+pip install -r requirements.txt
+```
+
+### Visualization Commands Reference
+
+#### Basic Graph Visualization
+
+Create interactive vulnerability graph visualizations:
+
+```bash
+# Create basic interactive graph
+threat-radar visualize graph graph.graphml -o visualization.html
+
+# Open visualization in browser automatically
+threat-radar visualize graph graph.graphml -o viz.html --open
+
+# Use different layout algorithm
+threat-radar visualize graph graph.graphml -o viz.html \
+  --layout hierarchical
+
+# Color by severity instead of node type
+threat-radar visualize graph graph.graphml -o viz.html \
+  --color-by severity
+
+# Create 3D visualization
+threat-radar visualize graph graph.graphml -o viz.html --3d
+
+# Custom dimensions
+threat-radar visualize graph graph.graphml -o viz.html \
+  --width 1600 --height 1000
+
+# Hide node labels for cleaner view
+threat-radar visualize graph graph.graphml -o viz.html --no-labels
+```
+
+**Layout algorithms:**
+- `spring` - Force-directed layout (default, good for general graphs)
+- `hierarchical` - Layered layout (great for vulnerability chains)
+- `kamada_kawai` - Energy-based layout (balanced node distribution)
+- `circular` - Circular layout (shows connections clearly)
+- `spectral` - Spectral layout (based on graph eigenvalues)
+
+**Color schemes:**
+- `node_type` - Color by node type (container, package, vulnerability)
+- `severity` - Color by vulnerability severity
+
+#### Attack Path Visualization
+
+Visualize attack paths with highlighted routes:
+
+```bash
+# Visualize attack paths from graph analysis
+threat-radar visualize attack-paths graph.graphml -o attack-paths.html
+
+# Use pre-calculated attack paths JSON
+threat-radar visualize attack-paths graph.graphml -o paths.html \
+  --paths attack-paths.json
+
+# Show only top 10 most critical paths
+threat-radar visualize attack-paths graph.graphml -o paths.html \
+  --max-paths 10
+
+# Hierarchical layout for clearer attack flows
+threat-radar visualize attack-paths graph.graphml -o paths.html \
+  --layout hierarchical
+
+# Custom dimensions for presentation
+threat-radar visualize attack-paths graph.graphml -o paths.html \
+  --width 1920 --height 1080 --open
+```
+
+**Attack path features:**
+- Threat level color-coding (critical: red, high: orange, medium: yellow, low: blue)
+- Step-by-step attack progression visualization
+- Hover for detailed CVE information
+- Entry points and targets highlighted
+- Exploitability and CVSS scores displayed
+
+#### Network Topology Visualization
+
+Visualize network topology with security context:
+
+```bash
+# Basic topology visualization
+threat-radar visualize topology graph.graphml -o topology.html
+
+# Security zones view
+threat-radar visualize topology graph.graphml -o zones.html \
+  --view zones
+
+# Compliance scope view
+threat-radar visualize topology graph.graphml -o compliance.html \
+  --view compliance
+
+# Specific compliance type (PCI-DSS)
+threat-radar visualize topology graph.graphml -o pci.html \
+  --view compliance --compliance pci
+
+# Color by criticality
+threat-radar visualize topology graph.graphml -o topology.html \
+  --color-by criticality
+
+# Color by compliance scope
+threat-radar visualize topology graph.graphml -o topology.html \
+  --color-by compliance
+```
+
+**View types:**
+- `topology` - Full network topology with all security context
+- `zones` - Focus on security zone boundaries and segregation
+- `compliance` - Highlight compliance scope (PCI, HIPAA, SOX, GDPR)
+
+**Color schemes:**
+- `zone` - Color by security zone (DMZ, internal, trusted, etc.)
+- `criticality` - Color by asset criticality (critical, high, medium, low)
+- `compliance` - Color by compliance scope
+
+#### Filtered Visualization
+
+Apply filters to focus on specific graph subsets:
+
+```bash
+# Filter by severity (show only HIGH+ vulnerabilities)
+threat-radar visualize filter graph.graphml -o filtered.html \
+  --type severity --value high
+
+# Filter by node type (show only vulnerabilities and packages)
+threat-radar visualize filter graph.graphml -o filtered.html \
+  --type node_type --values vulnerability package
+
+# Filter by specific CVE
+threat-radar visualize filter graph.graphml -o filtered.html \
+  --type cve --values CVE-2023-1234 CVE-2023-5678
+
+# Filter by package name
+threat-radar visualize filter graph.graphml -o filtered.html \
+  --type package --values openssl curl
+
+# Filter by security zone
+threat-radar visualize filter graph.graphml -o filtered.html \
+  --type zone --values dmz internal
+
+# Filter by criticality
+threat-radar visualize filter graph.graphml -o filtered.html \
+  --type criticality --value critical
+
+# Filter by compliance scope
+threat-radar visualize filter graph.graphml -o filtered.html \
+  --type compliance --values pci hipaa
+
+# Filter internet-facing assets only
+threat-radar visualize filter graph.graphml -o filtered.html \
+  --type internet_facing
+
+# Search for specific terms
+threat-radar visualize filter graph.graphml -o filtered.html \
+  --type search --value "openssl"
+
+# Exclude related nodes (show only filtered nodes)
+threat-radar visualize filter graph.graphml -o filtered.html \
+  --type severity --value critical --no-related
+```
+
+**Filter types:**
+- `severity` - Filter by vulnerability severity
+- `node_type` - Filter by node type(s)
+- `cve` - Filter by specific CVE ID(s)
+- `package` - Filter by package name(s)
+- `zone` - Filter by security zone(s)
+- `criticality` - Filter by asset criticality
+- `compliance` - Filter by compliance scope(s)
+- `internet_facing` - Show only internet-facing assets
+- `search` - Search node properties
+
+#### Export Multiple Formats
+
+Export visualizations to various formats:
+
+```bash
+# Export as HTML only
+threat-radar visualize export graph.graphml -o viz \
+  --format html
+
+# Export as PNG image
+threat-radar visualize export graph.graphml -o viz \
+  --format png
+
+# Export as high-resolution SVG
+threat-radar visualize export graph.graphml -o viz \
+  --format svg
+
+# Export as PDF for reports
+threat-radar visualize export graph.graphml -o viz \
+  --format pdf
+
+# Export as JSON for web applications
+threat-radar visualize export graph.graphml -o viz \
+  --format json
+
+# Export as DOT for Graphviz
+threat-radar visualize export graph.graphml -o viz \
+  --format dot
+
+# Export as Cytoscape.js format
+threat-radar visualize export graph.graphml -o viz \
+  --format cytoscape
+
+# Export as GEXF for Gephi
+threat-radar visualize export graph.graphml -o viz \
+  --format gexf
+
+# Export multiple formats at once
+threat-radar visualize export graph.graphml -o viz \
+  --format html --format png --format json
+
+# Custom layout for exported visualizations
+threat-radar visualize export graph.graphml -o viz \
+  --format html --format png --layout hierarchical
+```
+
+**Export formats:**
+- `html` - Interactive web visualization (standalone, no dependencies)
+- `png` - Static PNG image (requires kaleido)
+- `svg` - Scalable vector graphics (requires kaleido)
+- `pdf` - PDF document (requires kaleido)
+- `json` - JSON graph data with positions (for custom web apps)
+- `dot` - Graphviz DOT format (requires pydot)
+- `cytoscape` - Cytoscape.js JSON format
+- `gexf` - GEXF format for Gephi
+
+#### View Filter Statistics
+
+See available filter values before filtering:
+
+```bash
+# Show all available filter values
+threat-radar visualize stats graph.graphml
+```
+
+**Output includes:**
+- Total nodes and edges
+- Node type counts
+- Severity distribution
+- Security zones list
+- Criticality levels
+- Compliance scope counts
+- Internet-facing asset count
+
+### Complete Visualization Workflows
+
+#### Security Analysis Workflow
+
+```bash
+#!/bin/bash
+# complete-viz-workflow.sh
+
+IMAGE="myapp:production"
+
+# 1. Scan image for vulnerabilities
+threat-radar cve scan-image $IMAGE --auto-save -o scan.json
+
+# 2. Build vulnerability graph
+threat-radar graph build scan.json --auto-save -o vuln.graphml
+
+# 3. Create basic interactive visualization
+threat-radar visualize graph vuln.graphml -o viz-overview.html \
+  --layout hierarchical --open
+
+# 4. Analyze attack paths
+threat-radar graph attack-paths vuln.graphml \
+  --max-paths 20 -o attack-paths.json
+
+# 5. Visualize attack paths
+threat-radar visualize attack-paths vuln.graphml -o viz-attack-paths.html \
+  --paths attack-paths.json --max-paths 10
+
+# 6. Create filtered view of critical issues
+threat-radar visualize filter vuln.graphml -o viz-critical.html \
+  --type severity --value critical
+
+# 7. Export to multiple formats for reporting
+threat-radar visualize export vuln.graphml -o reports/vuln-graph \
+  --format html --format png --format pdf
+
+echo "✅ Visualization workflow complete!"
+echo "   - Overview: viz-overview.html"
+echo "   - Attack Paths: viz-attack-paths.html"
+echo "   - Critical Issues: viz-critical.html"
+echo "   - Reports: reports/vuln-graph.*"
+```
+
+#### Environment Topology Workflow
+
+```bash
+#!/bin/bash
+# topology-viz-workflow.sh
+
+ENV_FILE="production-environment.json"
+
+# 1. Build environment graph with vulnerability data
+threat-radar env build-graph $ENV_FILE \
+  --merge-scan scan1.json \
+  --merge-scan scan2.json \
+  --auto-save -o env-graph.graphml
+
+# 2. Create full topology view
+threat-radar visualize topology env-graph.graphml -o topology-full.html \
+  --view topology --color-by zone
+
+# 3. Create security zones view
+threat-radar visualize topology env-graph.graphml -o topology-zones.html \
+  --view zones
+
+# 4. Create compliance scope view (PCI-DSS)
+threat-radar visualize topology env-graph.graphml -o topology-pci.html \
+  --view compliance --compliance pci
+
+# 5. Filter to show only internet-facing assets
+threat-radar visualize filter env-graph.graphml -o topology-external.html \
+  --type internet_facing
+
+# 6. Analyze attack paths in environment
+threat-radar graph attack-paths env-graph.graphml \
+  --max-paths 50 -o env-attack-paths.json
+
+threat-radar visualize attack-paths env-graph.graphml \
+  -o topology-attacks.html --paths env-attack-paths.json
+
+echo "✅ Topology visualization complete!"
+```
+
+#### Compliance Reporting Workflow
+
+```bash
+#!/bin/bash
+# compliance-viz-workflow.sh
+
+GRAPH_FILE="production-graph.graphml"
+
+# Show filter statistics
+threat-radar visualize stats $GRAPH_FILE
+
+# Create PCI-DSS compliance view
+threat-radar visualize topology $GRAPH_FILE -o compliance-pci.html \
+  --view compliance --compliance pci
+
+threat-radar visualize filter $GRAPH_FILE -o compliance-pci-critical.html \
+  --type compliance --values pci \
+  | threat-radar visualize filter - -o compliance-pci-critical.html \
+    --type severity --value critical
+
+# Create HIPAA compliance view
+threat-radar visualize topology $GRAPH_FILE -o compliance-hipaa.html \
+  --view compliance --compliance hipaa
+
+# Export compliance reports
+for compliance in pci hipaa sox gdpr; do
+  threat-radar visualize export $GRAPH_FILE \
+    -o reports/compliance-${compliance} \
+    --format html --format pdf
+done
+
+echo "✅ Compliance visualizations ready!"
+```
+
+### Visualization Architecture
+
+#### Core Components
+
+The visualization system is built on:
+- **Plotly** - Interactive web-based visualizations
+- **NetworkX** - Graph layout algorithms
+- **Rich** - CLI output formatting
+
+#### Python API Usage
+
+Use visualization programmatically:
+
+```python
+from threat_radar.graph import NetworkXClient
+from threat_radar.visualization import (
+    NetworkGraphVisualizer,
+    AttackPathVisualizer,
+    NetworkTopologyVisualizer,
+    GraphFilter,
+    GraphExporter,
+)
+
+# Load graph
+client = NetworkXClient()
+client.load("graph.graphml")
+
+# Create basic visualization
+visualizer = NetworkGraphVisualizer(client)
+fig = visualizer.visualize(
+    layout="hierarchical",
+    title="My Vulnerability Graph",
+    width=1400,
+    height=900,
+    color_by="severity",
+)
+
+# Save as HTML
+visualizer.save_html(fig, "output.html", auto_open=True)
+
+# Filter graph
+graph_filter = GraphFilter(client)
+filtered_client = graph_filter.filter_by_severity("high", include_related=True)
+
+# Visualize filtered graph
+filtered_viz = NetworkGraphVisualizer(filtered_client)
+filtered_fig = filtered_viz.visualize(layout="spring")
+
+# Export to multiple formats
+exporter = GraphExporter(client)
+outputs = exporter.export_all_formats(
+    fig=fig,
+    base_path="my-viz",
+    formats=["html", "png", "json"],
+)
+
+print(f"Exported to: {outputs}")
+```
+
+#### Attack Path Visualization API
+
+```python
+from threat_radar.visualization import AttackPathVisualizer
+from threat_radar.graph import GraphAnalyzer
+
+# Load graph
+client = NetworkXClient()
+client.load("graph.graphml")
+
+# Find attack paths
+analyzer = GraphAnalyzer(client)
+attack_paths = analyzer.find_shortest_attack_paths(max_paths=20)
+
+# Visualize attack paths
+path_visualizer = AttackPathVisualizer(client)
+
+# Multiple paths
+fig = path_visualizer.visualize_attack_paths(
+    attack_paths=attack_paths,
+    layout="hierarchical",
+    max_paths_display=10,
+)
+
+# Single path detail
+single_fig = path_visualizer.visualize_single_path(
+    attack_path=attack_paths[0],
+    show_step_details=True,
+)
+
+path_visualizer.save_html(fig, "attack-paths.html")
+```
+
+#### Network Topology Visualization API
+
+```python
+from threat_radar.visualization import NetworkTopologyVisualizer
+
+# Load graph with environment data
+client = NetworkXClient()
+client.load("environment-graph.graphml")
+
+# Create topology visualizer
+topo_viz = NetworkTopologyVisualizer(client)
+
+# Full topology view
+fig = topo_viz.visualize_topology(
+    layout="hierarchical",
+    color_by="zone",
+    show_zones=True,
+    show_compliance=True,
+)
+
+# Security zones view
+zones_fig = topo_viz.visualize_security_zones()
+
+# Compliance scope view
+compliance_fig = topo_viz.visualize_compliance_scope(
+    compliance_type="pci",
+)
+
+topo_viz.save_html(fig, "topology.html")
+```
+
+### Troubleshooting Visualizations
+
+#### Plotly Not Installed
+
+```bash
+# Error: "Plotly is required for visualization"
+
+# Solution: Install plotly
+pip install plotly
+
+# For image export support
+pip install kaleido
+```
+
+#### Large Graphs Performance
+
+For graphs with thousands of nodes:
+
+```bash
+# Use filtering to reduce graph size
+threat-radar visualize filter graph.graphml -o filtered.html \
+  --type severity --value high --no-related
+
+# Or use simpler layout algorithms
+threat-radar visualize graph graph.graphml -o viz.html \
+  --layout circular --no-labels
+
+# Export as JSON for custom web rendering
+threat-radar visualize export graph.graphml -o data.json \
+  --format json
+```
+
+#### Image Export Fails
+
+```bash
+# Error: "Image export failed" or "kaleido not found"
+
+# Solution: Install kaleido
+pip install kaleido
+
+# If still failing, try reinstalling
+pip uninstall kaleido
+pip install kaleido --force-reinstall
+```
+
+---
+
 ## Documentation Resources
 
 ### User Documentation
