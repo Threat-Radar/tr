@@ -22,6 +22,85 @@ logger = logging.getLogger(__name__)
 console = Console()
 app = typer.Typer(help="Interactive graph visualization commands")
 
+# Valid parameter values for input validation
+VALID_LAYOUTS = ["spring", "kamada_kawai", "circular", "spectral", "shell", "hierarchical"]
+VALID_COLOR_BY = ["node_type", "severity", "zone", "criticality", "compliance"]
+VALID_VIEW_TYPES = ["topology", "zones", "compliance"]
+VALID_COMPLIANCE_TYPES = ["pci", "hipaa", "sox", "gdpr"]
+VALID_FILTER_TYPES = [
+    "severity", "node_type", "cve", "package", "zone",
+    "criticality", "compliance", "internet_facing", "search"
+]
+VALID_EXPORT_FORMATS = ["html", "png", "svg", "pdf", "json", "dot", "cytoscape", "gexf"]
+
+
+def validate_path(path: Path, must_exist: bool = False) -> Path:
+    """
+    Validate and sanitize file path to prevent directory traversal.
+
+    Args:
+        path: Path to validate
+        must_exist: Whether the path must already exist
+
+    Returns:
+        Validated absolute path
+
+    Raises:
+        typer.BadParameter: If path is invalid or contains directory traversal
+    """
+    try:
+        # Convert to absolute path
+        abs_path = path.resolve()
+
+        # Check for directory traversal attempts
+        if ".." in str(path):
+            raise typer.BadParameter(
+                f"Invalid path '{path}': directory traversal not allowed"
+            )
+
+        # Check if parent directory exists (for output files)
+        if not must_exist and not abs_path.parent.exists():
+            raise typer.BadParameter(
+                f"Invalid path '{path}': parent directory does not exist"
+            )
+
+        # Check if file exists (for input files)
+        if must_exist and not abs_path.exists():
+            raise typer.BadParameter(
+                f"File not found: {path}"
+            )
+
+        return abs_path
+
+    except Exception as e:
+        if isinstance(e, typer.BadParameter):
+            raise
+        raise typer.BadParameter(f"Invalid path '{path}': {e}")
+
+
+def validate_enum_value(value: str, valid_values: List[str], param_name: str) -> str:
+    """
+    Validate that a parameter value is in the allowed set.
+
+    Args:
+        value: Value to validate
+        valid_values: List of valid values
+        param_name: Parameter name for error messages
+
+    Returns:
+        Validated value (lowercase)
+
+    Raises:
+        typer.BadParameter: If value is not valid
+    """
+    value_lower = value.lower()
+    if value_lower not in valid_values:
+        valid_str = ", ".join(valid_values)
+        raise typer.BadParameter(
+            f"Invalid {param_name}: '{value}'. Must be one of: {valid_str}"
+        )
+    return value_lower
+
 
 @app.command()
 def graph(
@@ -79,6 +158,15 @@ def graph(
     Generates an interactive HTML visualization of the vulnerability graph
     with customizable layout, colors, and styling.
     """
+    # Validate inputs
+    graph_file = validate_path(graph_file, must_exist=True)
+    output = validate_path(output, must_exist=False)
+    layout = validate_enum_value(layout, VALID_LAYOUTS, "layout")
+    color_by = validate_enum_value(color_by, VALID_COLOR_BY, "color_by")
+
+    if width <= 0 or height <= 0:
+        raise typer.BadParameter("Width and height must be positive integers")
+
     console.print(f"[cyan]Loading graph: {graph_file}[/cyan]")
 
     try:
@@ -177,6 +265,20 @@ def visualize_attack_paths(
     Creates an interactive visualization showing potential attack paths
     through the infrastructure with threat level highlighting.
     """
+    # Validate inputs
+    graph_file = validate_path(graph_file, must_exist=True)
+    output = validate_path(output, must_exist=False)
+    layout = validate_enum_value(layout, VALID_LAYOUTS, "layout")
+
+    if attack_paths_file:
+        attack_paths_file = validate_path(attack_paths_file, must_exist=True)
+
+    if max_paths <= 0:
+        raise typer.BadParameter("max_paths must be a positive integer")
+
+    if width <= 0 or height <= 0:
+        raise typer.BadParameter("Width and height must be positive integers")
+
     console.print(f"[cyan]Loading graph: {graph_file}[/cyan]")
 
     try:
@@ -321,6 +423,21 @@ def topology(
     Creates visualization showing security zones, compliance scope,
     and network architecture with security context.
     """
+    # Validate inputs
+    graph_file = validate_path(graph_file, must_exist=True)
+    output = validate_path(output, must_exist=False)
+    view = validate_enum_value(view, VALID_VIEW_TYPES, "view")
+    color_by = validate_enum_value(color_by, VALID_COLOR_BY, "color_by")
+    layout = validate_enum_value(layout, VALID_LAYOUTS, "layout")
+
+    if compliance_type:
+        compliance_type = validate_enum_value(
+            compliance_type, VALID_COMPLIANCE_TYPES, "compliance_type"
+        )
+
+    if width <= 0 or height <= 0:
+        raise typer.BadParameter("Width and height must be positive integers")
+
     console.print(f"[cyan]Loading graph: {graph_file}[/cyan]")
 
     try:
@@ -405,6 +522,19 @@ def export(
     - cytoscape: Cytoscape.js format
     - gexf: Gephi format
     """
+    # Validate inputs
+    graph_file = validate_path(graph_file, must_exist=True)
+    output = validate_path(output, must_exist=False)
+    layout = validate_enum_value(layout, VALID_LAYOUTS, "layout")
+
+    # Validate formats
+    for fmt in formats:
+        if fmt.lower() not in VALID_EXPORT_FORMATS:
+            valid_str = ", ".join(VALID_EXPORT_FORMATS)
+            raise typer.BadParameter(
+                f"Invalid format: '{fmt}'. Must be one of: {valid_str}"
+            )
+
     console.print(f"[cyan]Loading graph: {graph_file}[/cyan]")
 
     try:
@@ -509,6 +639,12 @@ def filter(
     Apply filters to focus on specific aspects of the vulnerability graph,
     such as high-severity issues, specific packages, or security zones.
     """
+    # Validate inputs
+    graph_file = validate_path(graph_file, must_exist=True)
+    output = validate_path(output, must_exist=False)
+    filter_type = validate_enum_value(filter_type, VALID_FILTER_TYPES, "filter_type")
+    layout = validate_enum_value(layout, VALID_LAYOUTS, "layout")
+
     console.print(f"[cyan]Loading graph: {graph_file}[/cyan]")
 
     try:
@@ -618,6 +754,9 @@ def stats(
     Displays available filter values and counts to help
     construct effective visualization filters.
     """
+    # Validate input
+    graph_file = validate_path(graph_file, must_exist=True)
+
     console.print(f"[cyan]Loading graph: {graph_file}[/cyan]")
 
     try:

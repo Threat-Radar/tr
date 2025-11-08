@@ -11,14 +11,51 @@ logger = logging.getLogger(__name__)
 
 
 class GraphFilter:
-    """Filter graph for focused visualization."""
+    """
+    Graph filtering utilities for focused visualization.
+
+    Provides methods to filter vulnerability graphs based on various criteria
+    such as severity, node type, CVE ID, security zone, compliance scope, and more.
+    Filtered graphs can be used for targeted analysis and visualization.
+
+    Filter Types:
+        - Severity: Filter by vulnerability severity (critical, high, medium, low)
+        - Node Type: Filter by node types (container, package, vulnerability, etc.)
+        - CVE: Filter by specific CVE identifiers
+        - Package: Filter by package names
+        - Security Zone: Filter by network zones (DMZ, internal, trusted, etc.)
+        - Criticality: Filter by asset criticality levels
+        - Compliance: Filter by compliance scope (PCI, HIPAA, SOX, GDPR)
+        - Internet-Facing: Filter to show only internet-exposed assets
+        - Search: Text search across node properties
+
+    Example:
+        >>> client = NetworkXClient()
+        >>> client.load("vulnerability_graph.graphml")
+        >>> graph_filter = GraphFilter(client)
+        >>>
+        >>> # Filter to show only CRITICAL vulnerabilities
+        >>> critical_client = graph_filter.filter_by_severity("critical")
+        >>> visualizer = NetworkGraphVisualizer(critical_client)
+        >>> fig = visualizer.visualize()
+        >>>
+        >>> # Filter to show PCI-scoped assets
+        >>> pci_client = graph_filter.filter_by_compliance(["pci"])
+        >>>
+        >>> # Filter to show specific CVE blast radius
+        >>> cve_client = graph_filter.filter_by_cve(["CVE-2023-1234"], include_blast_radius=True)
+        >>>
+        >>> # Get available filter values
+        >>> stats = graph_filter.get_filter_statistics()
+        >>> print(stats["severities"])  # Show severity distribution
+    """
 
     def __init__(self, client: NetworkXClient):
         """
         Initialize graph filter.
 
         Args:
-            client: NetworkXClient instance
+            client: NetworkXClient instance with loaded graph
         """
         self.client = client
         self.graph = client.graph
