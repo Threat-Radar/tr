@@ -18,7 +18,39 @@ logger = logging.getLogger(__name__)
 
 
 class AttackPathVisualizer(NetworkGraphVisualizer):
-    """Specialized visualizer for attack paths."""
+    """
+    Specialized visualizer for attack paths with threat level highlighting.
+
+    Extends NetworkGraphVisualizer to provide focused visualization of attack paths
+    through infrastructure, highlighting entry points, targets, and intermediate steps
+    with color-coded threat levels.
+
+    Features:
+        - Threat level color coding (Critical: dark red, High: crimson, Medium: orange, Low: blue)
+        - Step-by-step attack progression visualization
+        - Entry point and target highlighting
+        - Exploitability and CVSS score display
+        - Path comparison across multiple routes
+
+    Threat Levels:
+        - CRITICAL: Immediate, high-impact threats requiring urgent action
+        - HIGH: Serious threats with significant potential impact
+        - MEDIUM: Moderate threats requiring attention
+        - LOW: Minor threats with limited impact
+
+    Example:
+        >>> client = NetworkXClient()
+        >>> client.load("environment_graph.graphml")
+        >>> analyzer = GraphAnalyzer(client)
+        >>> attack_paths = analyzer.find_shortest_attack_paths(max_paths=10)
+        >>> visualizer = AttackPathVisualizer(client)
+        >>> fig = visualizer.visualize_attack_paths(attack_paths, max_paths_display=5)
+        >>> visualizer.save_html(fig, "attack_paths.html")
+
+        # For single path detail
+        >>> single_fig = visualizer.visualize_single_path(attack_paths[0])
+        >>> visualizer.save_html(single_fig, "critical_path.html")
+    """
 
     THREAT_LEVEL_COLORS = {
         ThreatLevel.CRITICAL: "#8b0000",  # Dark red
