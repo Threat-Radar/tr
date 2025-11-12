@@ -891,3 +891,217 @@ def analyze_with_business_context(
             storage = get_ai_storage()
             saved_path = storage.save_analysis(scan_result.target, output_data, "business_context_analysis")
             console.print(f"[green]Analysis auto-saved to {saved_path}[/green]")
+
+
+@app.command("threat-model")
+def threat_model(
+    graph_file: str = typer.Argument(..., help="Path to vulnerability graph file (.graphml)"),
+    threat_actor: Optional[str] = typer.Option(
+        None,
+        "--threat-actor", "-t",
+        help="Threat actor type: apt28, ransomware, script-kiddie, insider, nation-state"
+    ),
+    max_scenarios: int = typer.Option(
+        10,
+        "--scenarios", "-s",
+        help="Maximum number of scenarios to generate"
+    ),
+    environment: Optional[str] = typer.Option(
+        None,
+        "--environment", "-e",
+        help="Path to environment configuration JSON (for business context)"
+    ),
+    provider: Optional[str] = typer.Option(
+        None,
+        "--provider", "-p",
+        help="AI provider (openai, anthropic, ollama)"
+    ),
+    model: Optional[str] = typer.Option(
+        None,
+        "--model", "-m",
+        help="Model name (e.g., gpt-4o, claude-3-5-sonnet-20241022, llama2)"
+    ),
+    output: Optional[str] = typer.Option(
+        None,
+        "--output", "-o",
+        help="Save threat model report to JSON file"
+    ),
+    auto_save: bool = typer.Option(
+        False,
+        "--auto-save", "--as",
+        help="Auto-save report to storage/ai_analysis/"
+    ),
+    temperature: float = typer.Option(
+        0.4,
+        "--temperature",
+        help="LLM temperature for scenario generation (0.0-1.0, lower = more focused)"
+    )
+):
+    """
+    Generate AI-powered threat model with realistic attack scenarios.
+
+    This command performs comprehensive threat modeling by:
+    - Analyzing attack paths from the vulnerability graph
+    - Applying threat actor personas (APT groups, ransomware, script kiddies, etc.)
+    - Generating realistic attack scenarios with AI
+    - Mapping attacks to MITRE ATT&CK framework
+    - Assessing business impact and compliance risks
+
+    Examples:
+
+        # Basic threat modeling (auto-selects relevant threat actors)
+        threat-radar ai threat-model graph.graphml
+
+        # Analyze specific threat actor
+        threat-radar ai threat-model graph.graphml -t apt28 -s 15
+
+        # With business context for better impact assessment
+        threat-radar ai threat-model graph.graphml \\
+            -e production-env.json -t ransomware --auto-save
+
+        # Compare multiple threat actors
+        threat-radar ai threat-model graph.graphml -t apt28 -o apt28-model.json
+        threat-radar ai threat-model graph.graphml -t script-kiddie -o scriptkiddie-model.json
+    """
+    try:
+        # Validate graph file exists
+        graph_path = Path(graph_file)
+        if not graph_path.exists():
+            console.print(f"[red]Error: Graph file not found: {graph_file}[/red]")
+            raise typer.Exit(1)
+
+        if not str(graph_file).endswith('.graphml'):
+            console.print("[yellow]Warning: Graph file should have .graphml extension[/yellow]")
+
+        # Load environment config if provided
+        environment_config = None
+        if environment:
+            env_path = Path(environment)
+            if not env_path.exists():
+                console.print(f"[red]Error: Environment file not found: {environment}[/red]")
+                raise typer.Exit(1)
+
+            with open(env_path, 'r') as f:
+                environment_config = json.load(f)
+
+            console.print(f"[green]✓[/green] Loaded environment configuration")
+
+        # Display configuration
+        console.print("\n[bold cyan]Threat Modeling Configuration:[/bold cyan]")
+        console.print(f"  Graph File: {graph_file}")
+        console.print(f"  Threat Actor: {threat_actor or 'Auto-detect (top 3 relevant)'}")
+        console.print(f"  Max Scenarios: {max_scenarios}")
+        console.print(f"  AI Provider: {provider or 'Default from environment'}")
+        if model:
+            console.print(f"  AI Model: {model}")
+        if environment_config:
+            console.print(f"  Business Context: Enabled")
+
+        console.print()
+
+        # Initialize threat analyzer
+        from ..ai.structured_threat_analyzer import StructuredThreatAnalyzer
+
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            # Phase 1: Initialize
+            task = progress.add_task("Initializing threat analyzer...", total=None)
+            analyzer = StructuredThreatAnalyzer(provider=provider, model=model)
+            progress.update(task, description="✓ Threat analyzer initialized")
+
+            # Phase 2: Load graph and discover attack paths
+            task = progress.add_task("Loading graph and discovering attack paths...", total=None)
+            progress.update(task, description="✓ Attack paths discovered")
+
+            # Phase 3: Generate threat model
+            task = progress.add_task(f"Generating threat model (0/{max_scenarios} scenarios)...", total=None)
+
+            report = analyzer.analyze_threat_model(
+                graph_file=str(graph_file),
+                threat_actor_type=threat_actor,
+                max_scenarios=max_scenarios,
+                environment_config=environment_config,
+                temperature=temperature
+            )
+
+            progress.update(task, description=f"✓ Generated {len(report.all_scenarios)} scenarios")
+
+        # Display results
+        console.print("\n")
+        console.print(Panel(
+            f"[bold]Threat Model Report[/bold]\n\n"
+            f"Environment: {report.target_environment}\n"
+            f"Threat Actors: {', '.join(report.threat_actors_analyzed)}\n"
+            f"Attack Paths: {report.total_attack_paths}\n"
+            f"Scenarios Generated: {report.scenarios_generated}\n"
+            f"Critical Scenarios: {len(report.critical_scenarios)}\n"
+            f"High Priority Scenarios: {len(report.high_priority_scenarios)}",
+            border_style="blue"
+        ))
+
+        # Executive Summary
+        console.print(f"\n[bold cyan]Executive Summary:[/bold cyan]")
+        console.print(report.executive_summary)
+
+        # Show critical scenarios
+        if report.critical_scenarios:
+            console.print(f"\n[bold red]Critical Scenarios ({len(report.critical_scenarios)}):[/bold red]\n")
+
+            for i, scenario in enumerate(report.critical_scenarios[:3], 1):
+                console.print(f"[bold]{i}. {scenario.threat_actor}[/bold]")
+                console.print(f"   Confidence: {scenario.confidence_score:.0%}")
+                console.print(f"   Attack Path: {scenario.attack_path_id}")
+                console.print(f"   Timeline: {len(scenario.timeline)} phases")
+
+                # Show business impact
+                impact = scenario.business_impact
+                console.print(f"   [red]Impact:[/red] {impact.estimated_cost}, {impact.reputation_damage} reputation damage")
+
+                if impact.compliance_violations:
+                    console.print(f"   [yellow]Compliance:[/yellow] {', '.join(impact.compliance_violations[:2])}")
+
+                console.print()
+
+            if len(report.critical_scenarios) > 3:
+                console.print(f"[dim]... and {len(report.critical_scenarios) - 3} more critical scenarios[/dim]\n")
+
+        # Show recommendations
+        if report.recommendations:
+            console.print(f"[bold cyan]Strategic Recommendations:[/bold cyan]")
+            for i, rec in enumerate(report.recommendations[:5], 1):
+                console.print(f"  {i}. {rec}")
+
+            if len(report.recommendations) > 5:
+                console.print(f"  [dim]... and {len(report.recommendations) - 5} more recommendations[/dim]")
+
+        # Save results
+        output_data = report.to_dict()
+
+        if output:
+            save_json(output_data, output)
+            console.print(f"\n[green]✓ Threat model saved to {output}[/green]")
+
+        if auto_save:
+            storage = get_ai_storage()
+            saved_path = storage.save_analysis(
+                report.target_environment,
+                output_data,
+                "threat_model"
+            )
+            console.print(f"[green]✓ Threat model auto-saved to {saved_path}[/green]")
+
+        console.print(f"\n[bold green]✓ Threat modeling complete![/bold green]")
+
+    except FileNotFoundError as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+    except ValueError as e:
+        console.print(f"[red]Error: {e}[/red]")
+        console.print("\n[yellow]Available threat actor types:[/yellow]")
+        console.print("  - apt28, ransomware, script-kiddie, insider, nation-state")
+        raise typer.Exit(1)
+    except Exception as e:
+        handle_cli_error(e, "threat modeling")
