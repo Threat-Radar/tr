@@ -1,0 +1,20 @@
+# Ignore generated test data
+real-world-data/
+my-test-data/
+test-dataset/
+
+# Ignore any other custom output directories
+*-data/
+
+# Ignore generated graph and visualization files
+*.graphml
+*.html
+*.json
+*.png
+*.svg
+*.pdf
+
+# But keep the example scripts
+!generate_real_world_data.py
+!README.md
+!QUICKSTART.md

@@ -1,0 +1,40 @@
+Analyzing environment: full-demo-results/environment.json
+
+Environment: ecommerce-production
+  Type: production
+  Provider: aws
+  Region: us-east-1
+
+Assets:
+  Total: 7
+  • api-gateway: 1
+  • container: 3
+  • database: 2
+  • load-balancer: 1
+
+Criticality Breakdown:
+  🔴 Critical: 3
+  🟠 High: 2
+  🟡 Medium: 1
+  🟢 Low: 1
+
+Exposure Analysis:
+  Internet-facing assets: 1
+
+  Exposed assets:
+    🔴 Public Load Balancer (load-balancer)
+
+Compliance Scope:
+  • PCI-DSS
+  • GDPR
+  • SOX
+
+  PCI-DSS scope assets: 1
+
+Risk Assessment:
+  Average criticality: 3.00/4.0
+  High-risk percentage: 42.9%
+
+Business Context:
+  Organization: Acme E-Commerce Inc.
+  Risk tolerance: low

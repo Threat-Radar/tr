@@ -204,6 +204,57 @@ def build_graph(
 
                 # Merge into existing graph
                 vuln_builder.build_from_scan(scan_result)
+
+                # Link packages to assets by matching scan target to asset image
+                scan_target = scan_result.target
+                matched_assets = []
+
+                for asset in env.assets:
+                    if asset.software and asset.software.image:
+                        # Match by exact image name or normalized target
+                        asset_image = asset.software.image
+
+                        # Normalize both for comparison (handle docker.io prefix, tags, etc.)
+                        def normalize_image(img: str) -> str:
+                            # Remove docker.io/ prefix
+                            img = img.replace("docker.io/", "")
+                            # Remove library/ prefix for official images
+                            img = img.replace("library/", "")
+                            return img.lower()
+
+                        if normalize_image(asset_image) == normalize_image(scan_target):
+                            matched_assets.append(asset)
+
+                # Create CONTAINS edges from matched assets to packages
+                if matched_assets:
+                    for asset in matched_assets:
+                        asset_node_id = f"asset:{asset.id}"
+
+                        # Link asset to all packages from this scan
+                        for vuln in vulnerabilities:
+                            pkg_node_id = f"package:{vuln.package_name}@{vuln.package_version}"
+
+                            # Check if package node exists
+                            if client.get_node(pkg_node_id):
+                                # Check if edge doesn't already exist
+                                existing_edge = None
+                                try:
+                                    # Try to get existing edge (NetworkX specific)
+                                    if hasattr(client.graph, 'get_edge_data'):
+                                        existing_edge = client.graph.get_edge_data(asset_node_id, pkg_node_id)
+                                except:
+                                    pass
+
+                                if not existing_edge:
+                                    from ..graph import GraphEdge, EdgeType
+                                    client.add_edge(GraphEdge(
+                                        source_id=asset_node_id,
+                                        target_id=pkg_node_id,
+                                        edge_type=EdgeType.CONTAINS,
+                                    ))
+
+                    console.print(f"    [green]✓[/green] Linked to {len(matched_assets)} asset(s)")
+
                 console.print(f"    [green]✓[/green] Merged {len(vulnerabilities)} vulnerabilities")
 
         # Calculate risk scores

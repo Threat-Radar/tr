@@ -1,0 +1,341 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d43" for="edge" attr.name="sensitive_data" attr.type="boolean" />
+  <key id="d42" for="edge" attr.name="data_flow" attr.type="string" />
+  <key id="d41" for="edge" attr.name="criticality" attr.type="string" />
+  <key id="d40" for="edge" attr.name="encrypted" attr.type="boolean" />
+  <key id="d39" for="edge" attr.name="port" attr.type="long" />
+  <key id="d38" for="edge" attr.name="protocol" attr.type="string" />
+  <key id="d37" for="edge" attr.name="dependency_type" attr.type="string" />
+  <key id="d36" for="edge" attr.name="edge_type" attr.type="string" />
+  <key id="d35" for="node" attr.name="hipaa_scope" attr.type="boolean" />
+  <key id="d34" for="node" attr.name="pci_scope" attr.type="boolean" />
+  <key id="d33" for="node" attr.name="compliance_scope" attr.type="string" />
+  <key id="d32" for="node" attr.name="runtime" attr.type="string" />
+  <key id="d31" for="node" attr.name="tags" attr.type="string" />
+  <key id="d30" for="node" attr.name="last_patched" attr.type="string" />
+  <key id="d29" for="node" attr.name="last_scanned" attr.type="string" />
+  <key id="d28" for="node" attr.name="os" attr.type="string" />
+  <key id="d27" for="node" attr.name="software_image" attr.type="string" />
+  <key id="d26" for="node" attr.name="data_classification" attr.type="string" />
+  <key id="d25" for="node" attr.name="zone_internet_accessible" attr.type="boolean" />
+  <key id="d24" for="node" attr.name="zone_trust_level" attr.type="string" />
+  <key id="d23" for="node" attr.name="network_zone" attr.type="string" />
+  <key id="d22" for="node" attr.name="has_public_port" attr.type="boolean" />
+  <key id="d21" for="node" attr.name="internet_facing" attr.type="boolean" />
+  <key id="d20" for="node" attr.name="internet_accessible" attr.type="boolean" />
+  <key id="d19" for="node" attr.name="zone" attr.type="string" />
+  <key id="d18" for="node" attr.name="public_ip" attr.type="string" />
+  <key id="d17" for="node" attr.name="internal_ip" attr.type="string" />
+  <key id="d16" for="node" attr.name="region" attr.type="string" />
+  <key id="d15" for="node" attr.name="cloud_provider" attr.type="string" />
+  <key id="d14" for="node" attr.name="environment_type" attr.type="string" />
+  <key id="d13" for="node" attr.name="environment" attr.type="string" />
+  <key id="d12" for="node" attr.name="owner_team" attr.type="string" />
+  <key id="d11" for="node" attr.name="mttr_target" attr.type="long" />
+  <key id="d10" for="node" attr.name="sla_tier" attr.type="string" />
+  <key id="d9" for="node" attr.name="customer_facing" attr.type="boolean" />
+  <key id="d8" for="node" attr.name="revenue_impact" attr.type="string" />
+  <key id="d7" for="node" attr.name="function" attr.type="string" />
+  <key id="d6" for="node" attr.name="criticality_score" attr.type="long" />
+  <key id="d5" for="node" attr.name="criticality" attr.type="string" />
+  <key id="d4" for="node" attr.name="host" attr.type="string" />
+  <key id="d3" for="node" attr.name="asset_type" attr.type="string" />
+  <key id="d2" for="node" attr.name="name" attr.type="string" />
+  <key id="d1" for="node" attr.name="asset_id" attr.type="string" />
+  <key id="d0" for="node" attr.name="node_type" attr.type="string" />
+  <graph edgedefault="directed">
+    <node id="asset:asset-frontend-lb">
+      <data key="d0">service</data>
+      <data key="d1">asset-frontend-lb</data>
+      <data key="d2">Public Load Balancer</data>
+      <data key="d3">load-balancer</data>
+      <data key="d4">lb.acme.com</data>
+      <data key="d5">critical</data>
+      <data key="d6">95</data>
+      <data key="d7">public-entry-point</data>
+      <data key="d8">critical</data>
+      <data key="d9">True</data>
+      <data key="d10">tier-1</data>
+      <data key="d11">1</data>
+      <data key="d12">platform-team</data>
+      <data key="d13">ecommerce-production</data>
+      <data key="d14">production</data>
+      <data key="d15">aws</data>
+      <data key="d16">us-east-1</data>
+      <data key="d17">10.0.1.10</data>
+      <data key="d18">54.123.45.67</data>
+      <data key="d19">DMZ</data>
+      <data key="d20">True</data>
+      <data key="d21">True</data>
+      <data key="d22">True</data>
+      <data key="d23">DMZ</data>
+      <data key="d24">untrusted</data>
+      <data key="d25">True</data>
+    </node>
+    <node id="asset:asset-frontend-web">
+      <data key="d0">container</data>
+      <data key="d1">asset-frontend-web</data>
+      <data key="d2">Frontend Web Server</data>
+      <data key="d3">container</data>
+      <data key="d4">10.0.1.50</data>
+      <data key="d5">high</data>
+      <data key="d6">85</data>
+      <data key="d7">web-frontend</data>
+      <data key="d26">public</data>
+      <data key="d8">high</data>
+      <data key="d9">True</data>
+      <data key="d10">tier-1</data>
+      <data key="d11">2</data>
+      <data key="d12">frontend-team</data>
+      <data key="d13">ecommerce-production</data>
+      <data key="d14">production</data>
+      <data key="d15">aws</data>
+      <data key="d16">us-east-1</data>
+      <data key="d27">nginx:1.21-alpine</data>
+      <data key="d28">Alpine Linux 3.18</data>
+      <data key="d17">10.0.1.50</data>
+      <data key="d19">Web Tier</data>
+      <data key="d20">False</data>
+      <data key="d21">False</data>
+      <data key="d22">False</data>
+      <data key="d29">2025-01-09T14:30:00+00:00</data>
+      <data key="d30">2025-01-05T10:00:00+00:00</data>
+      <data key="d31">{"component": "frontend", "version": "v2.1.0"}</data>
+      <data key="d23">Web Tier</data>
+      <data key="d24">low</data>
+      <data key="d25">False</data>
+    </node>
+    <node id="asset:asset-payment-api">
+      <data key="d0">container</data>
+      <data key="d1">asset-payment-api</data>
+      <data key="d2">Payment Processing API</data>
+      <data key="d3">container</data>
+      <data key="d4">10.0.2.100</data>
+      <data key="d5">critical</data>
+      <data key="d6">100</data>
+      <data key="d7">payment-processing</data>
+      <data key="d26">pci</data>
+      <data key="d8">critical</data>
+      <data key="d9">True</data>
+      <data key="d10">tier-1</data>
+      <data key="d11">1</data>
+      <data key="d12">payments-team</data>
+      <data key="d13">ecommerce-production</data>
+      <data key="d14">production</data>
+      <data key="d15">aws</data>
+      <data key="d16">us-east-1</data>
+      <data key="d27">payment-api:v1.5.2</data>
+      <data key="d28">Ubuntu 22.04</data>
+      <data key="d32">python:3.11</data>
+      <data key="d17">10.0.2.100</data>
+      <data key="d19">Application Tier</data>
+      <data key="d20">False</data>
+      <data key="d21">False</data>
+      <data key="d22">False</data>
+      <data key="d33">["pci-dss"]</data>
+      <data key="d34">True</data>
+      <data key="d35">False</data>
+      <data key="d29">2025-01-09T14:30:00+00:00</data>
+      <data key="d30">2025-01-08T09:00:00+00:00</data>
+      <data key="d31">{"component": "payment", "pci-scope": "true"}</data>
+      <data key="d23">Application Tier</data>
+      <data key="d24">medium</data>
+      <data key="d25">False</data>
+    </node>
+    <node id="asset:asset-api-gateway">
+      <data key="d0">service</data>
+      <data key="d1">asset-api-gateway</data>
+      <data key="d2">API Gateway</data>
+      <data key="d3">api-gateway</data>
+      <data key="d4">10.0.2.10</data>
+      <data key="d5">high</data>
+      <data key="d6">90</data>
+      <data key="d7">api-routing</data>
+      <data key="d26">confidential</data>
+      <data key="d8">high</data>
+      <data key="d9">True</data>
+      <data key="d10">tier-1</data>
+      <data key="d11">2</data>
+      <data key="d12">platform-team</data>
+      <data key="d13">ecommerce-production</data>
+      <data key="d14">production</data>
+      <data key="d15">aws</data>
+      <data key="d16">us-east-1</data>
+      <data key="d27">kong:3.4-alpine</data>
+      <data key="d28">Alpine Linux 3.18</data>
+      <data key="d17">10.0.2.10</data>
+      <data key="d19">Web Tier</data>
+      <data key="d20">False</data>
+      <data key="d21">False</data>
+      <data key="d22">False</data>
+      <data key="d23">Web Tier</data>
+      <data key="d24">low</data>
+      <data key="d25">False</data>
+    </node>
+    <node id="asset:asset-user-db">
+      <data key="d0">container</data>
+      <data key="d1">asset-user-db</data>
+      <data key="d2">User Database</data>
+      <data key="d3">database</data>
+      <data key="d4">10.0.3.50</data>
+      <data key="d5">critical</data>
+      <data key="d6">98</data>
+      <data key="d7">user-data-storage</data>
+      <data key="d26">pii</data>
+      <data key="d8">critical</data>
+      <data key="d9">False</data>
+      <data key="d10">tier-1</data>
+      <data key="d11">1</data>
+      <data key="d12">data-team</data>
+      <data key="d13">ecommerce-production</data>
+      <data key="d14">production</data>
+      <data key="d15">aws</data>
+      <data key="d16">us-east-1</data>
+      <data key="d27">postgres:15.3</data>
+      <data key="d28">Debian 11</data>
+      <data key="d17">10.0.3.50</data>
+      <data key="d19">Data Tier</data>
+      <data key="d20">False</data>
+      <data key="d21">False</data>
+      <data key="d22">False</data>
+      <data key="d33">["gdpr", "sox"]</data>
+      <data key="d34">False</data>
+      <data key="d35">False</data>
+      <data key="d29">2025-01-09T14:30:00+00:00</data>
+      <data key="d30">2025-01-07T08:00:00+00:00</data>
+      <data key="d31">{"component": "database", "backup": "daily", "encryption": "at-rest"}</data>
+      <data key="d23">Data Tier</data>
+      <data key="d24">high</data>
+      <data key="d25">False</data>
+    </node>
+    <node id="asset:asset-redis-cache">
+      <data key="d0">container</data>
+      <data key="d1">asset-redis-cache</data>
+      <data key="d2">Session Cache</data>
+      <data key="d3">database</data>
+      <data key="d4">10.0.3.60</data>
+      <data key="d5">medium</data>
+      <data key="d6">60</data>
+      <data key="d7">session-caching</data>
+      <data key="d26">internal</data>
+      <data key="d8">medium</data>
+      <data key="d9">False</data>
+      <data key="d10">tier-2</data>
+      <data key="d11">4</data>
+      <data key="d12">platform-team</data>
+      <data key="d13">ecommerce-production</data>
+      <data key="d14">production</data>
+      <data key="d15">aws</data>
+      <data key="d16">us-east-1</data>
+      <data key="d27">redis:7.0-alpine</data>
+      <data key="d28">Alpine Linux 3.18</data>
+      <data key="d17">10.0.3.60</data>
+      <data key="d19">Data Tier</data>
+      <data key="d20">False</data>
+      <data key="d21">False</data>
+      <data key="d22">False</data>
+      <data key="d23">Data Tier</data>
+      <data key="d24">high</data>
+      <data key="d25">False</data>
+    </node>
+    <node id="asset:asset-analytics-service">
+      <data key="d0">container</data>
+      <data key="d1">asset-analytics-service</data>
+      <data key="d2">Analytics Processing Service</data>
+      <data key="d3">container</data>
+      <data key="d4">10.0.4.10</data>
+      <data key="d5">low</data>
+      <data key="d6">40</data>
+      <data key="d7">data-analytics</data>
+      <data key="d26">internal</data>
+      <data key="d8">low</data>
+      <data key="d9">False</data>
+      <data key="d10">tier-3</data>
+      <data key="d11">24</data>
+      <data key="d12">analytics-team</data>
+      <data key="d13">ecommerce-production</data>
+      <data key="d14">production</data>
+      <data key="d15">aws</data>
+      <data key="d16">us-east-1</data>
+      <data key="d27">analytics:v2.0.1</data>
+      <data key="d32">node:18</data>
+      <data key="d17">10.0.4.10</data>
+      <data key="d19">Analytics Tier</data>
+      <data key="d20">False</data>
+      <data key="d21">False</data>
+      <data key="d22">False</data>
+      <data key="d23">Analytics Tier</data>
+      <data key="d24">medium</data>
+      <data key="d25">False</data>
+    </node>
+    <edge source="asset:asset-frontend-lb" target="asset:asset-frontend-web">
+      <data key="d36">DEPENDS_ON</data>
+      <data key="d37">depends_on</data>
+      <data key="d38">http</data>
+      <data key="d39">8080</data>
+      <data key="d40">True</data>
+      <data key="d41">critical</data>
+    </edge>
+    <edge source="asset:asset-frontend-web" target="asset:asset-api-gateway">
+      <data key="d36">COMMUNICATES_WITH</data>
+      <data key="d37">communicates_with</data>
+      <data key="d38">https</data>
+      <data key="d39">8000</data>
+      <data key="d40">True</data>
+      <data key="d41">high</data>
+      <data key="d42">public</data>
+      <data key="d43">True</data>
+    </edge>
+    <edge source="asset:asset-payment-api" target="asset:asset-user-db">
+      <data key="d36">DEPENDS_ON</data>
+      <data key="d37">reads_from</data>
+      <data key="d38">postgresql</data>
+      <data key="d39">5432</data>
+      <data key="d40">True</data>
+      <data key="d41">critical</data>
+      <data key="d42">pii</data>
+      <data key="d43">True</data>
+    </edge>
+    <edge source="asset:asset-api-gateway" target="asset:asset-payment-api">
+      <data key="d36">DEPENDS_ON</data>
+      <data key="d37">depends_on</data>
+      <data key="d38">https</data>
+      <data key="d39">5000</data>
+      <data key="d40">True</data>
+      <data key="d41">critical</data>
+      <data key="d42">pci</data>
+      <data key="d43">True</data>
+    </edge>
+    <edge source="asset:asset-api-gateway" target="asset:asset-user-db">
+      <data key="d36">DEPENDS_ON</data>
+      <data key="d37">reads_from</data>
+      <data key="d38">postgresql</data>
+      <data key="d39">5432</data>
+      <data key="d40">True</data>
+      <data key="d41">high</data>
+      <data key="d42">pii</data>
+      <data key="d43">True</data>
+    </edge>
+    <edge source="asset:asset-api-gateway" target="asset:asset-redis-cache">
+      <data key="d36">DEPENDS_ON</data>
+      <data key="d37">reads_from</data>
+      <data key="d38">redis</data>
+      <data key="d39">6379</data>
+      <data key="d40">False</data>
+      <data key="d41">medium</data>
+      <data key="d42">internal</data>
+      <data key="d43">True</data>
+    </edge>
+    <edge source="asset:asset-analytics-service" target="asset:asset-user-db">
+      <data key="d36">DEPENDS_ON</data>
+      <data key="d37">reads_from</data>
+      <data key="d38">postgresql</data>
+      <data key="d39">5432</data>
+      <data key="d40">True</data>
+      <data key="d41">low</data>
+      <data key="d42">internal</data>
+      <data key="d43">True</data>
+    </edge>
+  </graph>
+</graphml>
