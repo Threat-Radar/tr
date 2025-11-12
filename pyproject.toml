@@ -54,6 +54,10 @@ dependencies = [
     "anchore-syft>=1.18.0",
     "openai>=1.0.0",
     "tenacity>=8.2.0",
+    "plotly",
+    "kaleido",
+    "networkx",
+    "numpy"
 ]
 
 [project.optional-dependencies]

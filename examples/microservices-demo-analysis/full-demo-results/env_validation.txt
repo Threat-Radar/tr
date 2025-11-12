@@ -1,0 +1,13 @@
+Validating environment file: full-demo-results/environment.json
+✓ Validation successful!
+
+Environment: ecommerce-production
+  Type: production
+  Assets: 7
+  Dependencies: 7
+
+Risk Summary:
+  Critical assets: 3
+  Internet-facing: 1
+  PCI scope: 1
+  Risk level: 3.0/4.0
