@@ -1,0 +1,15 @@
+Loading graph: full-demo-results/05-graphs/main-graph.graphml
+
+Vulnerability Statistics:
+┏━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┓
+┃ Metric                ┃ Value ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━┩
+│ Total Vulnerabilities │    63 │
+│ Critical              │     6 │
+│ High                  │    18 │
+│ Medium                │    28 │
+│ Low                   │    11 │
+│ With Fixes            │    50 │
+│ Without Fixes         │    13 │
+│ Avg CVSS Score        │  6.38 │
+└───────────────────────┴───────┘

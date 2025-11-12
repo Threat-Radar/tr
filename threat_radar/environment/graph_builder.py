@@ -45,6 +45,26 @@ class EnvironmentGraphBuilder:
         self.client = client
         self._asset_to_node_map: Dict[str, str] = {}
 
+    def _find_asset_zone(self, asset_id: str, environment: Environment) -> Optional[str]:
+        """
+        Find the network zone for an asset.
+
+        Args:
+            asset_id: Asset ID to look up
+            environment: Environment configuration
+
+        Returns:
+            Zone name if found, None otherwise
+        """
+        if not environment.network_topology or not environment.network_topology.zones:
+            return None
+
+        for zone in environment.network_topology.zones:
+            if asset_id in zone.assets:
+                return zone.name
+
+        return None
+
     def build_from_environment(self, environment: Environment) -> None:
         """
         Build complete graph from environment configuration.
@@ -142,10 +162,13 @@ class EnvironmentGraphBuilder:
                 port.public for port in asset.network.exposed_ports
             ) if asset.network.exposed_ports else False
 
+            # Find asset's network zone from topology
+            asset_zone = self._find_asset_zone(asset.id, environment)
+
             properties.update({
                 "internal_ip": asset.network.internal_ip,
                 "public_ip": asset.network.public_ip,
-                "zone": asset.network.zone,
+                "zone": asset_zone,
                 "internet_accessible": bool(asset.network.public_ip),
                 "internet_facing": bool(asset.network.public_ip) or has_public_port,
                 "has_public_port": has_public_port,

@@ -1,0 +1,30 @@
+Loading graph: full-demo-results/05-graphs/main-graph.graphml
+
+Graph Information:
+┏━━━━━━━━━━━━━┳━━━━━━━┓
+┃ Metric      ┃ Value ┃
+┡━━━━━━━━━━━━━╇━━━━━━━┩
+│ Total Nodes │   149 │
+│ Total Edges │   156 │
+└─────────────┴───────┘
+
+Node Types:
+┏━━━━━━━━━━━━━━━┳━━━━━━━┓
+┃ Type          ┃ Count ┃
+┡━━━━━━━━━━━━━━━╇━━━━━━━┩
+│ container     │     5 │
+│ package       │    73 │
+│ scan_result   │     6 │
+│ service       │     2 │
+│ vulnerability │    63 │
+└───────────────┴───────┘
+
+Edge Types:
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━┓
+┃ Type              ┃ Count ┃
+┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━┩
+│ COMMUNICATES_WITH │     1 │
+│ DEPENDS_ON        │     6 │
+│ FIXED_BY          │    66 │
+│ HAS_VULNERABILITY │    83 │
+└───────────────────┴───────┘

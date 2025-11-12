@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cytoscape Graph Viewer</title>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        #header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        #controls {
+            background: #ecf0f1;
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            border-bottom: 1px solid #bdc3c7;
+        }
+
+        #cy {
+            flex: 1;
+            background: #f8f9fa;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        input[type="file"] {
+            padding: 8px;
+        }
+
+        #info {
+            background: #fff;
+            padding: 15px;
+            border-top: 1px solid #bdc3c7;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .node-info {
+            margin: 5px 0;
+            padding: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+        }
+
+        .node-info strong {
+            color: #2c3e50;
+        }
+    </style>
+    <!-- Cytoscape.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+</head>
+<body>
+    <div id="header">
+        <h1>🔍 Cytoscape Graph Viewer</h1>
+        <p>Interactive visualization for Cytoscape JSON files</p>
+    </div>
+
+    <div id="controls">
+        <input type="file" id="fileInput" accept=".json,.cyjs" />
+        <button onclick="loadSample()">Load Sample</button>
+        <button onclick="resetView()">Reset View</button>
+        <button onclick="fitGraph()">Fit Graph</button>
+        <button onclick="exportPNG()">Export PNG</button>
+        <select id="layoutSelect" onchange="changeLayout()">
+            <option value="cose">Cose (Force-Directed)</option>
+            <option value="circle">Circle</option>
+            <option value="grid">Grid</option>
+            <option value="breadthfirst">Breadth First</option>
+            <option value="concentric">Concentric</option>
+            <option value="random">Random</option>
+        </select>
+    </div>
+
+    <div id="cy"></div>
+
+    <div id="info">
+        <strong>Instructions:</strong>
+        <ul>
+            <li>📁 Click "Choose File" to load your Cytoscape JSON file</li>
+            <li>🖱️ Click nodes to see details</li>
+            <li>🔍 Scroll to zoom, drag to pan</li>
+            <li>📊 Use layout dropdown to change visualization</li>
+        </ul>
+        <div id="nodeDetails"></div>
+    </div>
+
+    <script>
+        let cy;
+
+        // Initialize Cytoscape
+        function initCytoscape(elements) {
+            if (cy) {
+                cy.destroy();
+            }
+
+            cy = cytoscape({
+                container: document.getElementById('cy'),
+
+                elements: elements,
+
+                style: [
+                    {
+                        selector: 'node',
+                        style: {
+                            'background-color': function(ele) {
+                                const type = ele.data('type') || ele.data('node_type');
+                                const colors = {
+                                    'container': '#3498db',
+                                    'package': '#2ecc71',
+                                    'vulnerability': '#e74c3c',
+                                    'asset': '#9b59b6',
+                                    'zone': '#f39c12',
+                                    'default': '#95a5a6'
+                                };
+                                return colors[type] || colors['default'];
+                            },
+                            'label': 'data(label)',
+                            'width': function(ele) {
+                                const severity = ele.data('severity');
+                                if (severity === 'Critical') return 60;
+                                if (severity === 'High') return 50;
+                                if (severity === 'Medium') return 40;
+                                return 30;
+                            },
+                            'height': function(ele) {
+                                const severity = ele.data('severity');
+                                if (severity === 'Critical') return 60;
+                                if (severity === 'High') return 50;
+                                if (severity === 'Medium') return 40;
+                                return 30;
+                            },
+                            'color': '#fff',
+                            'text-valign': 'center',
+                            'text-halign': 'center',
+                            'font-size': '12px',
+                            'text-wrap': 'wrap',
+                            'text-max-width': '100px'
+                        }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 2,
+                            'line-color': '#95a5a6',
+                            'target-arrow-color': '#95a5a6',
+                            'target-arrow-shape': 'triangle',
+                            'curve-style': 'bezier',
+                            'label': 'data(label)',
+                            'font-size': '10px',
+                            'text-rotation': 'autorotate'
+                        }
+                    },
+                    {
+                        selector: ':selected',
+                        style: {
+                            'border-width': 3,
+                            'border-color': '#f39c12',
+                            'background-color': '#f39c12'
+                        }
+                    }
+                ],
+
+                layout: {
+                    name: 'cose',
+                    animate: true,
+                    animationDuration: 500
+                }
+            });
+
+            // Node click handler
+            cy.on('tap', 'node', function(evt) {
+                const node = evt.target;
+                const data = node.data();
+
+                let html = '<div class="node-info"><strong>Node Details:</strong><br>';
+                html += `ID: ${data.id}<br>`;
+
+                // Display all data attributes
+                for (let key in data) {
+                    if (key !== 'id' && data[key]) {
+                        html += `${key}: ${JSON.stringify(data[key])}<br>`;
+                    }
+                }
+                html += '</div>';
+
+                document.getElementById('nodeDetails').innerHTML = html;
+            });
+
+            // Edge click handler
+            cy.on('tap', 'edge', function(evt) {
+                const edge = evt.target;
+                const data = edge.data();
+
+                let html = '<div class="node-info"><strong>Edge Details:</strong><br>';
+                html += `From: ${data.source}<br>`;
+                html += `To: ${data.target}<br>`;
+                html += `Type: ${data.type || 'N/A'}<br>`;
+                html += '</div>';
+
+                document.getElementById('nodeDetails').innerHTML = html;
+            });
+        }
+
+        // File input handler
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    initCytoscape(data.elements || data);
+                    document.getElementById('info').innerHTML =
+                        `<strong>✅ Loaded:</strong> ${file.name}<br>` +
+                        `Nodes: ${cy.nodes().length}, Edges: ${cy.edges().length}` +
+                        '<div id="nodeDetails"></div>';
+                } catch (err) {
+                    alert('Error loading file: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        function resetView() {
+            if (cy) {
+                cy.fit();
+                cy.center();
+            }
+        }
+
+        function fitGraph() {
+            if (cy) {
+                cy.fit();
+            }
+        }
+
+        function changeLayout() {
+            if (!cy) return;
+
+            const layoutName = document.getElementById('layoutSelect').value;
+            cy.layout({
+                name: layoutName,
+                animate: true,
+                animationDuration: 500
+            }).run();
+        }
+
+        function exportPNG() {
+            if (!cy) return;
+
+            const png = cy.png({
+                output: 'blob',
+                bg: '#f8f9fa',
+                full: true,
+                scale: 2
+            });
+
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(png);
+            link.download = 'graph.png';
+            link.click();
+        }
+
+        function loadSample() {
+            // Sample graph data
+            const sampleData = {
+                elements: {
+                    nodes: [
+                        { data: { id: 'n1', label: 'Container\nweb-frontend', type: 'container' } },
+                        { data: { id: 'n2', label: 'Package\nopenssl', type: 'package' } },
+                        { data: { id: 'n3', label: 'CVE-2023-1234', type: 'vulnerability', severity: 'Critical' } },
+                        { data: { id: 'n4', label: 'Container\ndatabase', type: 'container' } },
+                        { data: { id: 'n5', label: 'Package\npostgresql', type: 'package' } }
+                    ],
+                    edges: [
+                        { data: { source: 'n1', target: 'n2', label: 'contains' } },
+                        { data: { source: 'n2', target: 'n3', label: 'has_vuln' } },
+                        { data: { source: 'n4', target: 'n5', label: 'contains' } },
+                        { data: { source: 'n1', target: 'n4', label: 'depends_on' } }
+                    ]
+                }
+            };
+
+            initCytoscape(sampleData.elements);
+            document.getElementById('info').innerHTML =
+                '<strong>✅ Loaded sample graph</strong><div id="nodeDetails"></div>';
+        }
+
+        // Load sample on page load
+        window.addEventListener('load', loadSample);
+    </script>
+</body>
+</html>

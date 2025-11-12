@@ -581,7 +581,7 @@ def attack_paths(
                     "steps": [
                         {
                             "node_id": s.node_id,
-                            "type": s.step_type.value,
+                            "step_type": s.step_type.value,
                             "description": s.description,
                             "vulnerabilities": s.vulnerabilities,
                             "cvss_score": s.cvss_score,
