@@ -256,7 +256,7 @@ class StructuredThreatAnalyzer:
         client = NetworkXClient()
         client.load(graph_file)
 
-        logger.info(f"Loaded graph: {client.node_count()} nodes, {client.edge_count()} edges")
+        logger.info(f"Loaded graph: {client.graph.number_of_nodes()} nodes, {client.graph.number_of_edges()} edges")
 
         # Extract attack paths
         analyzer = GraphAnalyzer(client)
