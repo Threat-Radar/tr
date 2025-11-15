@@ -3,8 +3,8 @@
 A comprehensive threat assessment and vulnerability analysis platform for Docker containers and software dependencies.
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![Tests Passing](https://img.shields.io/badge/tests-passing-brightgreen.svg)](docs/validation/EXAMPLES_TEST_RESULTS.md)
-[![CVE Precision](https://img.shields.io/badge/CVE%20precision-100%25-brightgreen.svg)](docs/validation/DEBIAN8_VALIDATION_REPORT.md)
+[![Tests Passing](https://img.shields.io/badge/tests-passing-brightgreen.svg)](#-testing)
+[![CVE Precision](https://img.shields.io/badge/CVE%20precision-100%25-brightgreen.svg)](#-key-features)
 
 ---
 
@@ -193,12 +193,7 @@ threat-radar docker python-sbom python:3.11 -o sbom.json
 
 ### Development
 - **[Developer Guide](CLAUDE.md)** - Architecture and development
-- **[Code Review](docs/development/CODE_REVIEW_REPORT.md)** - Code quality
-- **[Project Overview](PROJECT_SUMMARY.md)** - Stakeholder documentation
-
-### Validation & Reports
-- **[Test Results](docs/validation/EXAMPLES_TEST_RESULTS.md)** - 15/15 examples passing
-- **[Validation Reports](docs/validation/)** - Precision metrics (100%)
+- **[Code Review](docs/development/CODE_REVIEW_REPORT.md)** - Code quality analysis
 
 ---
 
@@ -386,7 +381,6 @@ tr-nvd/
 │   ├── 04_testing/           # Test scripts
 │   └── 05_reporting/         # Reporting examples
 ├── docs/                      # Documentation
-│   ├── validation/           # Test results
 │   ├── reports/              # Analysis reports
 │   └── development/          # Dev docs
 ├── tests/                     # Unit tests
