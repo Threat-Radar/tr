@@ -97,7 +97,7 @@ full-demo-results/
 
 ### Attack Paths Identified
 
-- **Total Attack Paths**: 4
+- **Total Attack Paths**: 6
 - **Critical Threat Paths**: 0
 
 

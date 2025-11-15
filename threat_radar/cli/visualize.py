@@ -300,7 +300,7 @@ def visualize_attack_paths(
                 steps = [
                     AttackStep(
                         node_id=step["node_id"],
-                        step_type=AttackStepType(step["step_type"]),
+                        step_type=AttackStepType(step.get("step_type", step.get("type", "lateral_movement"))),
                         description=step["description"],
                         vulnerabilities=step.get("vulnerabilities", []),
                         cvss_score=step.get("cvss_score"),
@@ -395,6 +395,11 @@ def topology(
         "--compliance",
         help="Specific compliance type to highlight (pci, hipaa, sox, gdpr)",
     ),
+    attack_paths_file: Optional[Path] = typer.Option(
+        None,
+        "--attack-paths",
+        help="Path to attack paths JSON file (overlays attack paths on zones view)",
+    ),
     layout: str = typer.Option(
         "hierarchical",
         "--layout",
@@ -422,6 +427,8 @@ def topology(
 
     Creates visualization showing security zones, compliance scope,
     and network architecture with security context.
+
+    Can overlay attack paths on zones view using --attack-paths option.
     """
     # Validate inputs
     graph_file = validate_path(graph_file, must_exist=True)
@@ -435,6 +442,9 @@ def topology(
             compliance_type, VALID_COMPLIANCE_TYPES, "compliance_type"
         )
 
+    if attack_paths_file:
+        attack_paths_file = validate_path(attack_paths_file, must_exist=True)
+
     if width <= 0 or height <= 0:
         raise typer.BadParameter("Width and height must be positive integers")
 
@@ -444,6 +454,46 @@ def topology(
         # Load graph
         client = NetworkXClient()
         client.load(str(graph_file))
+
+        # Load attack paths if provided
+        attack_paths = None
+        if attack_paths_file:
+            console.print(f"[cyan]Loading attack paths: {attack_paths_file}[/cyan]")
+            with open(attack_paths_file) as f:
+                paths_data = json.load(f)
+
+            # Convert JSON to AttackPath objects
+            from ..graph.models import AttackPath, AttackStep, AttackStepType, ThreatLevel
+
+            attack_paths = []
+            for path_data in paths_data.get("attack_paths", []):
+                steps = [
+                    AttackStep(
+                        node_id=step["node_id"],
+                        step_type=AttackStepType(step.get("step_type", step.get("type", "lateral_movement"))),
+                        description=step["description"],
+                        vulnerabilities=step.get("vulnerabilities", []),
+                        cvss_score=step.get("cvss_score"),
+                        prerequisites=step.get("prerequisites", []),
+                        impact=step.get("impact"),
+                    )
+                    for step in path_data["steps"]
+                ]
+
+                attack_path = AttackPath(
+                    path_id=path_data["path_id"],
+                    entry_point=path_data["entry_point"],
+                    target=path_data["target"],
+                    steps=steps,
+                    total_cvss=path_data["total_cvss"],
+                    threat_level=ThreatLevel(path_data["threat_level"]),
+                    exploitability=path_data.get("exploitability", 0.5),
+                    requires_privileges=path_data.get("requires_privileges", False),
+                    description=path_data.get("description", ""),
+                )
+                attack_paths.append(attack_path)
+
+            console.print(f"[green]✓[/green] Loaded {len(attack_paths)} attack paths")
 
         # Create visualizer
         visualizer = NetworkTopologyVisualizer(client)
@@ -455,6 +505,7 @@ def topology(
                     title=f"Security Zones - {graph_file.stem}",
                     width=width,
                     height=height,
+                    attack_paths=attack_paths,
                 )
             elif view == "compliance":
                 fig = visualizer.visualize_compliance_scope(
@@ -477,6 +528,8 @@ def topology(
 
         console.print("[green]✓[/green] Topology visualization created")
         console.print(f"  • View: {view}")
+        if attack_paths:
+            console.print(f"  • Attack paths overlaid: {len(attack_paths)}")
         console.print(f"  • Output: {output}")
 
     except Exception as e:

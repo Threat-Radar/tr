@@ -11,7 +11,7 @@ except ImportError:
     PLOTLY_AVAILABLE = False
 
 from ..graph.graph_client import NetworkXClient
-from ..graph.models import NodeType
+from ..graph.models import NodeType, AttackPath, ThreatLevel
 from .graph_visualizer import NetworkGraphVisualizer
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,8 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
     Visualizer for network topology with security context overlays.
 
     Extends NetworkGraphVisualizer to provide infrastructure topology visualization
-    with security zone boundaries, compliance scope markers, and criticality levels.
+    with security zone boundaries, compliance scope markers, criticality levels,
+    and attack path overlays.
 
     Features:
         - Security zone visualization with color-coded boundaries
@@ -30,6 +31,7 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
         - Criticality-based node coloring
         - Internet-facing asset identification
         - Zone-optimized layouts
+        - Attack path overlays on zone visualizations
 
     Security Zones:
         - DMZ: Demilitarized zone (red) - exposed services
@@ -62,6 +64,14 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
         >>> # Security zones focus
         >>> zones_fig = visualizer.visualize_security_zones()
         >>> visualizer.save_html(zones_fig, "security_zones.html")
+        >>>
+        >>> # Security zones with attack paths overlaid
+        >>> analyzer = GraphAnalyzer(client)
+        >>> attack_paths = analyzer.find_shortest_attack_paths(max_paths=10)
+        >>> zones_with_paths = visualizer.visualize_security_zones(
+        ...     attack_paths=attack_paths
+        ... )
+        >>> visualizer.save_html(zones_with_paths, "zones_attack_paths.html")
         >>>
         >>> # Compliance scope (PCI-DSS only)
         >>> pci_fig = visualizer.visualize_compliance_scope(compliance_type="pci")
@@ -162,6 +172,7 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
         title: str = "Security Zone Map",
         width: int = 1400,
         height: int = 900,
+        attack_paths: Optional[List] = None,
     ) -> go.Figure:
         """
         Create zone-focused visualization with clear boundaries.
@@ -170,6 +181,7 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
             title: Figure title
             width: Figure width
             height: Figure height
+            attack_paths: Optional list of AttackPath objects to overlay
 
         Returns:
             Plotly figure showing security zones
@@ -183,13 +195,25 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
         pos = self._create_zone_layout(zones)
 
         # Create figure with zone emphasis
-        fig = self._create_zone_figure(
-            pos=pos,
-            zones=zones,
-            title=title,
-            width=width,
-            height=height,
-        )
+        if attack_paths:
+            # Create combined zone + attack path visualization
+            fig = self._create_zone_with_attack_paths_figure(
+                pos=pos,
+                zones=zones,
+                attack_paths=attack_paths,
+                title=title,
+                width=width,
+                height=height,
+            )
+        else:
+            # Standard zone visualization
+            fig = self._create_zone_figure(
+                pos=pos,
+                zones=zones,
+                title=title,
+                width=width,
+                height=height,
+            )
 
         return fig
 
@@ -919,3 +943,235 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
             )
 
         fig.update_layout(annotations=annotations)
+
+    def _create_zone_with_attack_paths_figure(
+        self,
+        pos: Dict[str, Tuple[float, float]],
+        zones: Dict[str, List[str]],
+        attack_paths: List[AttackPath],
+        title: str,
+        width: int,
+        height: int,
+    ) -> go.Figure:
+        """Create zone-focused figure with attack paths overlaid."""
+        # Threat level colors (matching AttackPathVisualizer)
+        THREAT_LEVEL_COLORS = {
+            ThreatLevel.CRITICAL: "#8b0000",  # Dark red
+            ThreatLevel.HIGH: "#dc143c",      # Crimson
+            ThreatLevel.MEDIUM: "#ffa500",    # Orange
+            ThreatLevel.LOW: "#4682b4",       # Steel blue
+        }
+
+        data = []
+
+        # Create zone shapes (backgrounds)
+        zone_shapes = self._create_zone_shapes(pos, zones, emphasize=True)
+
+        # Create base zone edges (dimmed)
+        base_edge_trace = self._create_dimmed_edge_trace(pos)
+        data.append(base_edge_trace)
+
+        # Create attack path edges (highlighted)
+        path_edges_by_threat = {}
+        for path in attack_paths:
+            if path.threat_level not in path_edges_by_threat:
+                path_edges_by_threat[path.threat_level] = []
+
+            # Extract edges from attack path steps
+            for i in range(len(path.steps) - 1):
+                u = path.steps[i].node_id
+                v = path.steps[i + 1].node_id
+                if u in pos and v in pos:
+                    path_edges_by_threat[path.threat_level].append((u, v))
+
+        # Create one trace per threat level for attack path edges
+        for threat_level, edges in path_edges_by_threat.items():
+            if not edges:
+                continue
+
+            x_coords = []
+            y_coords = []
+
+            for u, v in edges:
+                x_coords.extend([pos[u][0], pos[v][0], None])
+                y_coords.extend([pos[u][1], pos[v][1], None])
+
+            color = THREAT_LEVEL_COLORS[threat_level]
+
+            edge_trace = go.Scatter(
+                x=x_coords,
+                y=y_coords,
+                mode='lines',
+                line=dict(color=color, width=5),
+                hoverinfo='text',
+                text=f"Attack Path: {threat_level.value.upper()}",
+                name=f"Attack Path ({threat_level.value.upper()})",
+            )
+            data.append(edge_trace)
+
+        # Collect all nodes involved in attack paths
+        attack_path_nodes = set()
+        node_to_threat = {}
+        for path in attack_paths:
+            for step in path.steps:
+                attack_path_nodes.add(step.node_id)
+                # Track highest threat level for each node
+                if step.node_id not in node_to_threat:
+                    node_to_threat[step.node_id] = path.threat_level
+                elif path.threat_level == ThreatLevel.CRITICAL:
+                    node_to_threat[step.node_id] = path.threat_level
+
+        # Create node traces per zone (regular zone nodes)
+        for zone_name, zone_nodes in zones.items():
+            # Filter out attack path nodes from regular zone display
+            regular_zone_nodes = [n for n in zone_nodes if n not in attack_path_nodes]
+
+            if regular_zone_nodes:
+                zone_trace = self._create_zone_node_trace(pos, zone_name, regular_zone_nodes)
+                data.append(zone_trace)
+
+        # Create highlighted attack path nodes
+        for threat_level in [ThreatLevel.CRITICAL, ThreatLevel.HIGH, ThreatLevel.MEDIUM, ThreatLevel.LOW]:
+            threat_nodes = [
+                node for node, level in node_to_threat.items()
+                if level == threat_level
+            ]
+
+            if not threat_nodes:
+                continue
+
+            x_coords = []
+            y_coords = []
+            hover_texts = []
+
+            for node in threat_nodes:
+                if node not in pos:
+                    continue
+
+                node_data = self.graph.nodes[node]
+                x_coords.append(pos[node][0])
+                y_coords.append(pos[node][1])
+
+                # Create enhanced hover text
+                hover_lines = [f"<b>{node}</b>"]
+                hover_lines.append(f"⚡ Attack Path Node")
+                hover_lines.append(f"Threat: {threat_level.value.upper()}")
+
+                # Add zone info
+                zone = node_data.get("zone", "unknown")
+                hover_lines.append(f"Zone: {zone}")
+
+                # Add criticality if present
+                if "criticality" in node_data:
+                    hover_lines.append(f"Criticality: {node_data['criticality']}")
+
+                hover_texts.append("<br>".join(hover_lines))
+
+            color = THREAT_LEVEL_COLORS[threat_level]
+
+            attack_node_trace = go.Scatter(
+                x=x_coords,
+                y=y_coords,
+                mode='markers',
+                marker=dict(
+                    size=20,
+                    color=color,
+                    line=dict(width=3, color='white'),
+                    symbol='star',
+                ),
+                text=hover_texts,
+                hoverinfo='text',
+                name=f"Attack Node ({threat_level.value.upper()})",
+            )
+            data.append(attack_node_trace)
+
+        # Layout
+        layout = go.Layout(
+            title=dict(text=title, font=dict(size=20)),
+            width=width,
+            height=height,
+            showlegend=True,
+            hovermode='closest',
+            margin=dict(b=50, l=50, r=50, t=100),
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            plot_bgcolor='#ffffff',
+            shapes=zone_shapes,
+        )
+
+        fig = go.Figure(data=data, layout=layout)
+
+        # Add zone labels
+        self._add_zone_labels(fig, pos, zones)
+
+        # Add attack path summary
+        self._add_attack_path_summary(fig, attack_paths)
+
+        return fig
+
+    def _add_attack_path_summary(
+        self,
+        fig: go.Figure,
+        attack_paths: List[AttackPath],
+    ) -> None:
+        """Add summary box for attack paths."""
+        # Count paths by threat level
+        threat_counts = {}
+        for path in attack_paths:
+            level = path.threat_level.value
+            threat_counts[level] = threat_counts.get(level, 0) + 1
+
+        # Count zone crossings
+        zone_crossings = set()
+        for path in attack_paths:
+            zones_in_path = []
+            for step in path.steps:
+                node_data = self.graph.nodes.get(step.node_id, {})
+                zone = node_data.get("zone", "unknown")
+                if zone not in zones_in_path:
+                    zones_in_path.append(zone)
+
+            # Record zone transitions
+            for i in range(len(zones_in_path) - 1):
+                zone_crossings.add(f"{zones_in_path[i]} → {zones_in_path[i+1]}")
+
+        # Create summary text
+        summary_lines = [
+            "<b>Attack Path Summary:</b>",
+            f"Total Paths: {len(attack_paths)}",
+            ""
+        ]
+
+        if threat_counts.get('critical', 0) > 0:
+            summary_lines.append(f"🔴 Critical: {threat_counts['critical']}")
+        if threat_counts.get('high', 0) > 0:
+            summary_lines.append(f"🟠 High: {threat_counts['high']}")
+        if threat_counts.get('medium', 0) > 0:
+            summary_lines.append(f"🟡 Medium: {threat_counts['medium']}")
+        if threat_counts.get('low', 0) > 0:
+            summary_lines.append(f"🔵 Low: {threat_counts['low']}")
+
+        if zone_crossings:
+            summary_lines.append("")
+            summary_lines.append("<b>Zone Crossings:</b>")
+            for crossing in sorted(zone_crossings)[:5]:  # Show first 5
+                summary_lines.append(f"  {crossing}")
+
+        summary_text = "<br>".join(summary_lines)
+
+        fig.add_annotation(
+            xref="paper",
+            yref="paper",
+            x=0.02,
+            y=0.98,
+            text=summary_text,
+            showarrow=False,
+            font=dict(size=11, color='#333'),
+            align='left',
+            bgcolor='rgba(255,255,255,0.95)',
+            bordercolor='#333',
+            borderwidth=2,
+            borderpad=10,
+            xanchor='left',
+            yanchor='top',
+        )
