@@ -4,8 +4,8 @@ Graph Information:
 ┏━━━━━━━━━━━━━┳━━━━━━━┓
 ┃ Metric      ┃ Value ┃
 ┡━━━━━━━━━━━━━╇━━━━━━━┩
-│ Total Nodes │   149 │
-│ Total Edges │   156 │
+│ Total Nodes │   147 │
+│ Total Edges │   155 │
 └─────────────┴───────┘
 
 Node Types:
@@ -15,7 +15,6 @@ Node Types:
 │ container     │     5 │
 │ package       │    73 │
 │ scan_result   │     6 │
-│ service       │     2 │
 │ vulnerability │    63 │
 └───────────────┴───────┘
 
@@ -23,8 +22,8 @@ Edge Types:
 ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━┓
 ┃ Type              ┃ Count ┃
 ┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━┩
-│ COMMUNICATES_WITH │     1 │
-│ DEPENDS_ON        │     6 │
+│ COMMUNICATES_WITH │     4 │
+│ DEPENDS_ON        │     2 │
 │ FIXED_BY          │    66 │
 │ HAS_VULNERABILITY │    83 │
 └───────────────────┴───────┘
