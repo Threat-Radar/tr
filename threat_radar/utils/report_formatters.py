@@ -1,9 +1,12 @@
-"""Report formatters for different output formats (JSON, Markdown, HTML)."""
+"""Report formatters for different output formats (JSON, Markdown, HTML, PDF)."""
 import json
 from typing import Any, Dict
 from datetime import datetime
+import logging
 
 from .report_templates import ComprehensiveReport, ReportLevel
+
+logger = logging.getLogger(__name__)
 
 
 class ReportFormatter:
@@ -123,6 +126,56 @@ class MarkdownFormatter(ReportFormatter):
                     f"{severity_icon} {pkg.highest_severity.upper()} | `{recommended}` |"
                 )
             md.append("")
+
+        # Attack Surface Analysis (if present)
+        if report.attack_surface_data:
+            md.append("## Attack Surface Analysis\n")
+            attack_data = report.attack_surface_data
+
+            md.append("### Overview\n")
+            md.append("| Metric | Value |")
+            md.append("|--------|-------|")
+            md.append(f"| Total Attack Paths | {attack_data.total_attack_paths} |")
+            md.append(f"| Critical Paths | 🔴 {attack_data.critical_paths} |")
+            md.append(f"| High Paths | 🟠 {attack_data.high_paths} |")
+            md.append(f"| Entry Points | {attack_data.entry_points_count} |")
+            md.append(f"| High-Value Targets | {attack_data.high_value_targets_count} |")
+            md.append(f"| Privilege Escalation Opportunities | {attack_data.privilege_escalation_opportunities} |")
+            md.append(f"| Lateral Movement Opportunities | {attack_data.lateral_movement_opportunities} |")
+            md.append(f"| Total Risk Score | {attack_data.total_risk_score:.2f}/100 |")
+            md.append("")
+
+            # Critical/High Attack Paths
+            critical_paths = [ap for ap in attack_data.attack_paths if ap.threat_level in ['critical', 'high']][:10]
+            if critical_paths:
+                md.append("### Critical & High Threat Paths\n")
+                for path in critical_paths:
+                    threat_icon = '🔴' if path.threat_level == 'critical' else '🟠'
+                    md.append(f"#### {threat_icon} {path.path_id}\n")
+                    md.append(f"**Threat Level:** {path.threat_level.upper()}")
+                    md.append(f"**Entry Point:** `{path.entry_point}`")
+                    md.append(f"**Target:** `{path.target}`")
+                    md.append(f"**Path Length:** {path.path_length} steps")
+                    md.append(f"**Total CVSS:** {path.total_cvss:.1f}")
+                    md.append(f"**Exploitability:** {path.exploitability * 100:.0f}%")
+                    md.append(f"**Requires Privileges:** {'Yes' if path.requires_privileges else 'No'}")
+                    md.append(f"\n**Description:** {path.description}\n")
+
+                    if path.vulnerabilities_exploited:
+                        md.append(f"**CVEs Exploited:** {', '.join(path.vulnerabilities_exploited[:10])}\n")
+
+                    if path.steps_summary:
+                        md.append("**Attack Steps:**")
+                        for i, step in enumerate(path.steps_summary, 1):
+                            md.append(f"{i}. {step}")
+                        md.append("")
+
+            # Security Recommendations
+            if attack_data.recommendations:
+                md.append("### Security Recommendations\n")
+                for i, rec in enumerate(attack_data.recommendations, 1):
+                    md.append(f"{i}. {rec}")
+                md.append("")
 
         # Critical/High Findings
         critical_high = [f for f in report.findings if f.severity in ['critical', 'high']]
@@ -514,6 +567,83 @@ class HTMLFormatter(ReportFormatter):
         </table>
 """)
 
+        # Attack Surface Analysis (if present)
+        if report.attack_surface_data:
+            attack_data = report.attack_surface_data
+            html.append("""
+        <h2>🎯 Attack Surface Analysis</h2>
+
+        <h3>Overview</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+""")
+            html.append(f"""
+                <tr><td>Total Attack Paths</td><td>{attack_data.total_attack_paths}</td></tr>
+                <tr><td>Critical Paths</td><td><span class="badge badge-critical">{attack_data.critical_paths}</span></td></tr>
+                <tr><td>High Paths</td><td><span class="badge badge-high">{attack_data.high_paths}</span></td></tr>
+                <tr><td>Entry Points</td><td>{attack_data.entry_points_count}</td></tr>
+                <tr><td>High-Value Targets</td><td>{attack_data.high_value_targets_count}</td></tr>
+                <tr><td>Privilege Escalation Opportunities</td><td>{attack_data.privilege_escalation_opportunities}</td></tr>
+                <tr><td>Lateral Movement Opportunities</td><td>{attack_data.lateral_movement_opportunities}</td></tr>
+                <tr><td>Total Risk Score</td><td>{attack_data.total_risk_score:.2f}/100</td></tr>
+""")
+            html.append("""
+            </tbody>
+        </table>
+""")
+
+            # Critical/High Attack Paths
+            critical_paths = [ap for ap in attack_data.attack_paths if ap.threat_level in ['critical', 'high']][:10]
+            if critical_paths:
+                html.append("""
+        <h3>Critical & High Threat Paths</h3>
+""")
+                for path in critical_paths:
+                    badge_class = f"badge-{path.threat_level}"
+                    requires_privs = 'Yes' if path.requires_privileges else 'No'
+
+                    html.append(f"""
+        <div class="vulnerability-card {path.threat_level}">
+            <h4>{path.path_id} <span class="badge {badge_class}">{path.threat_level.upper()}</span></h4>
+            <p><strong>Entry Point:</strong> <code>{path.entry_point}</code></p>
+            <p><strong>Target:</strong> <code>{path.target}</code></p>
+            <p><strong>Path Length:</strong> {path.path_length} steps</p>
+            <p><strong>Total CVSS:</strong> {path.total_cvss:.1f}</p>
+            <p><strong>Exploitability:</strong> {path.exploitability * 100:.0f}%</p>
+            <p><strong>Requires Privileges:</strong> {requires_privs}</p>
+            <p><strong>Description:</strong> {path.description}</p>
+""")
+                    if path.vulnerabilities_exploited:
+                        cves = ', '.join(path.vulnerabilities_exploited[:10])
+                        html.append(f"            <p><strong>CVEs Exploited:</strong> <code>{cves}</code></p>")
+
+                    if path.steps_summary:
+                        html.append("            <p><strong>Attack Steps:</strong></p><ol>")
+                        for step in path.steps_summary:
+                            html.append(f"                <li>{step}</li>")
+                        html.append("            </ol>")
+
+                    html.append("        </div>")
+
+            # Security Recommendations
+            if attack_data.recommendations:
+                html.append("""
+        <h3>Security Recommendations</h3>
+        <ul>
+""")
+                for rec in attack_data.recommendations:
+                    html.append(f"            <li>{rec}</li>")
+
+                html.append("""
+        </ul>
+""")
+
         # Critical/High Findings
         critical_high = [f for f in report.findings if f.severity in ['critical', 'high']]
         if critical_high:
@@ -551,6 +681,38 @@ class HTMLFormatter(ReportFormatter):
         return '\n'.join(html)
 
 
+class PDFFormatter(ReportFormatter):
+    """PDF format output (converts HTML to PDF using weasyprint)."""
+
+    def format(self, report: ComprehensiveReport) -> bytes:
+        """
+        Format report as PDF.
+
+        Returns PDF as bytes (not string).
+        Requires weasyprint to be installed: pip install weasyprint
+        """
+        try:
+            from weasyprint import HTML, CSS
+        except ImportError:
+            logger.error("weasyprint is required for PDF export. Install with: pip install weasyprint")
+            raise ImportError(
+                "PDF export requires weasyprint. Install it with:\n"
+                "  pip install weasyprint\n"
+                "Or install threat-radar with PDF support:\n"
+                "  pip install threat-radar[pdf]"
+            )
+
+        # Generate HTML using HTMLFormatter
+        html_formatter = HTMLFormatter()
+        html_content = html_formatter.format(report)
+
+        # Convert HTML to PDF
+        logger.info("Converting HTML to PDF...")
+        pdf = HTML(string=html_content).write_pdf()
+
+        return pdf
+
+
 def get_formatter(format_type: str) -> ReportFormatter:
     """Get formatter for specified format type."""
     formatters = {
@@ -558,6 +720,7 @@ def get_formatter(format_type: str) -> ReportFormatter:
         'markdown': MarkdownFormatter,
         'md': MarkdownFormatter,
         'html': HTMLFormatter,
+        'pdf': PDFFormatter,
     }
 
     formatter_class = formatters.get(format_type.lower())
