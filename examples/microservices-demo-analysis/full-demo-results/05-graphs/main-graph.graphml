@@ -286,7 +286,7 @@
       <data key="d24">medium</data>
       <data key="d25">False</data>
     </node>
-    <node id="scan:gcr.io/google-samples/microservices-demo/currencyservice:v0.10.1:1762928017.490005">
+    <node id="scan:gcr.io/google-samples/microservices-demo/currencyservice:v0.10.1:1763144025.26391">
       <data key="d0">scan_result</data>
       <data key="d36">gcr.io/google-samples/microservices-demo/currencyservice:v0.10.1</data>
       <data key="d37">45</data>
@@ -294,7 +294,7 @@
       <data key="d39">13</data>
       <data key="d40">14</data>
       <data key="d41">13</data>
-      <data key="d42">2025-11-11T22:13:37.490014</data>
+      <data key="d42">2025-11-14T10:13:45.263919</data>
     </node>
     <node id="cve:CVE-2024-6119">
       <data key="d0">vulnerability</data>
@@ -427,27 +427,6 @@
       <data key="d48">apk</data>
       <data key="d49">True</data>
     </node>
-    <node id="cve:GHSA-7v5v-9h63-cj86">
-      <data key="d0">vulnerability</data>
-      <data key="d43">GHSA-7v5v-9h63-cj86</data>
-      <data key="d44">medium</data>
-      <data key="d45">5.3</data>
-      <data key="d50">@grpc/grpc-js can allocate memory for incoming messages well above configured limits</data>
-      <data key="d46">[]</data>
-    </node>
-    <node id="package:@grpc/grpc-js@1.7.3">
-      <data key="d0">package</data>
-      <data key="d2" />
-      <data key="d47">grpc/grpc-js@1.7.3</data>
-      <data key="d48">npm</data>
-    </node>
-    <node id="package:@1.8.22">
-      <data key="d0">package</data>
-      <data key="d2" />
-      <data key="d47">1.8.22</data>
-      <data key="d48">npm</data>
-      <data key="d49">True</data>
-    </node>
     <node id="cve:GHSA-hcrg-fc28-fcg5">
       <data key="d0">vulnerability</data>
       <data key="d43">GHSA-hcrg-fc28-fcg5</data>
@@ -466,6 +445,27 @@
       <data key="d0">package</data>
       <data key="d2">parse-duration</data>
       <data key="d47">2.1.3</data>
+      <data key="d48">npm</data>
+      <data key="d49">True</data>
+    </node>
+    <node id="cve:GHSA-7v5v-9h63-cj86">
+      <data key="d0">vulnerability</data>
+      <data key="d43">GHSA-7v5v-9h63-cj86</data>
+      <data key="d44">medium</data>
+      <data key="d45">5.3</data>
+      <data key="d50">@grpc/grpc-js can allocate memory for incoming messages well above configured limits</data>
+      <data key="d46">[]</data>
+    </node>
+    <node id="package:@grpc/grpc-js@1.7.3">
+      <data key="d0">package</data>
+      <data key="d2" />
+      <data key="d47">grpc/grpc-js@1.7.3</data>
+      <data key="d48">npm</data>
+    </node>
+    <node id="package:@1.8.22">
+      <data key="d0">package</data>
+      <data key="d2" />
+      <data key="d47">1.8.22</data>
       <data key="d48">npm</data>
       <data key="d49">True</data>
     </node>
@@ -801,7 +801,7 @@ Impact:
       <data key="d47">0.0.0</data>
       <data key="d48">npm</data>
     </node>
-    <node id="scan:gcr.io/google-samples/microservices-demo/frontend:v0.10.1:1762928017.490607">
+    <node id="scan:gcr.io/google-samples/microservices-demo/frontend:v0.10.1:1763144025.264551">
       <data key="d0">scan_result</data>
       <data key="d36">gcr.io/google-samples/microservices-demo/frontend:v0.10.1</data>
       <data key="d37">27</data>
@@ -809,7 +809,7 @@ Impact:
       <data key="d39">10</data>
       <data key="d40">15</data>
       <data key="d41">0</data>
-      <data key="d42">2025-11-11T22:13:37.490610</data>
+      <data key="d42">2025-11-14T10:13:45.264554</data>
     </node>
     <node id="cve:GHSA-v778-237x-gjrc">
       <data key="d0">vulnerability</data>
@@ -832,21 +832,6 @@ Impact:
       <data key="d48">go-module</data>
       <data key="d49">True</data>
     </node>
-    <node id="cve:GHSA-hcg3-q754-cr77">
-      <data key="d0">vulnerability</data>
-      <data key="d43">GHSA-hcg3-q754-cr77</data>
-      <data key="d44">high</data>
-      <data key="d45">7.5</data>
-      <data key="d50">golang.org/x/crypto Vulnerable to Denial of Service (DoS) via Slow or Incomplete Key Exchange</data>
-      <data key="d46">[]</data>
-    </node>
-    <node id="package:golang.org/x/crypto@0.35.0">
-      <data key="d0">package</data>
-      <data key="d2">golang.org/x/crypto</data>
-      <data key="d47">0.35.0</data>
-      <data key="d48">go-module</data>
-      <data key="d49">True</data>
-    </node>
     <node id="cve:CVE-2024-34156">
       <data key="d0">vulnerability</data>
       <data key="d43">CVE-2024-34156</data>
@@ -865,6 +850,21 @@ Impact:
       <data key="d0">package</data>
       <data key="d2">stdlib</data>
       <data key="d47">1.22.7</data>
+      <data key="d48">go-module</data>
+      <data key="d49">True</data>
+    </node>
+    <node id="cve:GHSA-hcg3-q754-cr77">
+      <data key="d0">vulnerability</data>
+      <data key="d43">GHSA-hcg3-q754-cr77</data>
+      <data key="d44">high</data>
+      <data key="d45">7.5</data>
+      <data key="d50">golang.org/x/crypto Vulnerable to Denial of Service (DoS) via Slow or Incomplete Key Exchange</data>
+      <data key="d46">[]</data>
+    </node>
+    <node id="package:golang.org/x/crypto@0.35.0">
+      <data key="d0">package</data>
+      <data key="d2">golang.org/x/crypto</data>
+      <data key="d47">0.35.0</data>
       <data key="d48">go-module</data>
       <data key="d49">True</data>
     </node>
@@ -1149,7 +1149,7 @@ Impact:
       <data key="d50">os.OpenFile(path, os.O_CREATE|O_EXCL) behaved differently on Unix and Windows systems when the target path was a dangling symlink. On Unix systems, OpenFile with O_CREATE and O_EXCL flags never follows symlinks. On Windows, when the target path was a symlink to a nonexistent location, OpenFile would create a file in that location. OpenFile now always returns an error when the O_CREATE and O_EXCL flags are both set and the target path is a symlink.</data>
       <data key="d46">["https://go.dev/cl/672396", "https://go.dev/issue/73702", "https://groups.google.com/g/golang-announce/c/ufZ8WpEsA3A", "https://pkg.go.dev/vuln/GO-2025-3750"]</data>
     </node>
-    <node id="scan:gcr.io/google-samples/microservices-demo/cartservice:v0.10.1:1762928017.491113">
+    <node id="scan:gcr.io/google-samples/microservices-demo/cartservice:v0.10.1:1763144025.26518">
       <data key="d0">scan_result</data>
       <data key="d36">gcr.io/google-samples/microservices-demo/cartservice:v0.10.1</data>
       <data key="d37">13</data>
@@ -1157,7 +1157,7 @@ Impact:
       <data key="d39">0</data>
       <data key="d40">5</data>
       <data key="d41">8</data>
-      <data key="d42">2025-11-11T22:13:37.491115</data>
+      <data key="d42">2025-11-14T10:13:45.265185</data>
     </node>
     <node id="package:libssl3t64@3.0.13-0ubuntu3.1">
       <data key="d0">package</data>
@@ -1276,7 +1276,7 @@ Impact:
       <data key="d48">deb</data>
       <data key="d49">True</data>
     </node>
-    <node id="scan:gcr.io/google-samples/microservices-demo/checkoutservice:v0.10.1:1762928017.491523">
+    <node id="scan:gcr.io/google-samples/microservices-demo/checkoutservice:v0.10.1:1763144025.265721">
       <data key="d0">scan_result</data>
       <data key="d36">gcr.io/google-samples/microservices-demo/checkoutservice:v0.10.1</data>
       <data key="d37">27</data>
@@ -1284,9 +1284,9 @@ Impact:
       <data key="d39">10</data>
       <data key="d40">15</data>
       <data key="d41">0</data>
-      <data key="d42">2025-11-11T22:13:37.491525</data>
+      <data key="d42">2025-11-14T10:13:45.265723</data>
     </node>
-    <node id="scan:gcr.io/google-samples/microservices-demo/paymentservice:v0.10.1:1762928017.492095">
+    <node id="scan:gcr.io/google-samples/microservices-demo/paymentservice:v0.10.1:1763144025.266167">
       <data key="d0">scan_result</data>
       <data key="d36">gcr.io/google-samples/microservices-demo/paymentservice:v0.10.1</data>
       <data key="d37">46</data>
@@ -1294,7 +1294,7 @@ Impact:
       <data key="d39">13</data>
       <data key="d40">15</data>
       <data key="d41">13</data>
-      <data key="d42">2025-11-11T22:13:37.492097</data>
+      <data key="d42">2025-11-14T10:13:45.266169</data>
     </node>
     <node id="cve:GHSA-f5x3-32g6-xq36">
       <data key="d0">vulnerability</data>
@@ -1317,7 +1317,7 @@ Impact:
       <data key="d48">npm</data>
       <data key="d49">True</data>
     </node>
-    <node id="scan:gcr.io/google-samples/microservices-demo/productcatalogservice:v0.10.1:1762928017.492597">
+    <node id="scan:gcr.io/google-samples/microservices-demo/productcatalogservice:v0.10.1:1763144025.266623">
       <data key="d0">scan_result</data>
       <data key="d36">gcr.io/google-samples/microservices-demo/productcatalogservice:v0.10.1</data>
       <data key="d37">27</data>
@@ -1325,7 +1325,7 @@ Impact:
       <data key="d39">10</data>
       <data key="d40">15</data>
       <data key="d41">0</data>
-      <data key="d42">2025-11-11T22:13:37.492599</data>
+      <data key="d42">2025-11-14T10:13:45.266624</data>
     </node>
     <edge source="asset:asset-frontend-lb" target="asset:asset-frontend-web">
       <data key="d52">DEPENDS_ON</data>
@@ -1503,19 +1503,19 @@ Impact:
     <edge source="cve:CVE-2024-12797" target="package:libssl3@3.3.3-r0">
       <data key="d52">FIXED_BY</data>
     </edge>
-    <edge source="cve:GHSA-7v5v-9h63-cj86" target="package:@1.8.22">
-      <data key="d52">FIXED_BY</data>
-    </edge>
-    <edge source="package:@grpc/grpc-js@1.7.3" target="cve:GHSA-7v5v-9h63-cj86">
-      <data key="d52">HAS_VULNERABILITY</data>
-      <data key="d60">grpc/grpc-js@1.7.3</data>
-    </edge>
     <edge source="cve:GHSA-hcrg-fc28-fcg5" target="package:parse-duration@2.1.3">
       <data key="d52">FIXED_BY</data>
     </edge>
     <edge source="package:parse-duration@1.0.2" target="cve:GHSA-hcrg-fc28-fcg5">
       <data key="d52">HAS_VULNERABILITY</data>
       <data key="d60">1.0.2</data>
+    </edge>
+    <edge source="cve:GHSA-7v5v-9h63-cj86" target="package:@1.8.22">
+      <data key="d52">FIXED_BY</data>
+    </edge>
+    <edge source="package:@grpc/grpc-js@1.7.3" target="cve:GHSA-7v5v-9h63-cj86">
+      <data key="d52">HAS_VULNERABILITY</data>
+      <data key="d60">grpc/grpc-js@1.7.3</data>
     </edge>
     <edge source="package:ada-libs@2.7.8-r0" target="cve:CVE-2024-9410">
       <data key="d52">HAS_VULNERABILITY</data>
@@ -1670,9 +1670,6 @@ Impact:
       <data key="d52">HAS_VULNERABILITY</data>
       <data key="d60">v0.25.0</data>
     </edge>
-    <edge source="cve:GHSA-hcg3-q754-cr77" target="package:golang.org/x/crypto@0.35.0">
-      <data key="d52">FIXED_BY</data>
-    </edge>
     <edge source="cve:CVE-2024-34156" target="package:stdlib@1.22.7">
       <data key="d52">FIXED_BY</data>
     </edge>
@@ -1763,6 +1760,9 @@ Impact:
     <edge source="package:stdlib@go1.22.5" target="cve:CVE-2025-0913">
       <data key="d52">HAS_VULNERABILITY</data>
       <data key="d60">go1.22.5</data>
+    </edge>
+    <edge source="cve:GHSA-hcg3-q754-cr77" target="package:golang.org/x/crypto@0.35.0">
+      <data key="d52">FIXED_BY</data>
     </edge>
     <edge source="cve:CVE-2024-34158" target="package:stdlib@1.22.7">
       <data key="d52">FIXED_BY</data>

@@ -1,9 +1,11 @@
 """Comprehensive vulnerability report generator with AI-powered summaries."""
 import uuid
 import logging
+import json
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from collections import defaultdict
+from pathlib import Path
 
 from ..core.grype_integration import GrypeScanResult, GrypeVulnerability
 from ..ai.llm_client import get_llm_client
@@ -17,6 +19,8 @@ from .report_templates import (
     DashboardData,
     TrendData,
     ReportLevel,
+    AttackSurfaceData,
+    AttackPathSummary,
 )
 
 logger = logging.getLogger(__name__)
@@ -42,6 +46,7 @@ class ComprehensiveReportGenerator:
         report_level: ReportLevel = ReportLevel.DETAILED,
         include_executive_summary: bool = True,
         include_dashboard_data: bool = True,
+        attack_paths_file: Optional[Path] = None,
     ) -> ComprehensiveReport:
         """
         Generate comprehensive vulnerability report.
@@ -51,6 +56,7 @@ class ComprehensiveReportGenerator:
             report_level: Level of detail to include
             include_executive_summary: Whether to generate AI executive summary
             include_dashboard_data: Whether to include dashboard-ready data
+            attack_paths_file: Optional path to attack paths JSON file
 
         Returns:
             ComprehensiveReport object
@@ -94,6 +100,14 @@ class ComprehensiveReportGenerator:
         if include_dashboard_data:
             logger.info("Generating dashboard visualization data...")
             report.dashboard_data = self._generate_dashboard_data(report)
+
+        # Add attack path data if provided
+        if attack_paths_file:
+            try:
+                logger.info(f"Loading attack path data from {attack_paths_file}...")
+                report.attack_surface_data = self._load_attack_paths(attack_paths_file)
+            except Exception as e:
+                logger.warning(f"Failed to load attack paths: {e}")
 
         # Generate remediation recommendations
         report.remediation_recommendations = self._generate_remediation_recommendations(packages)
@@ -469,3 +483,59 @@ class ComprehensiveReportGenerator:
             return "sbom"
         else:
             return "directory"
+
+    def _load_attack_paths(self, attack_paths_file: Path) -> AttackSurfaceData:
+        """
+        Load attack path data from JSON file.
+
+        Args:
+            attack_paths_file: Path to attack paths JSON file
+
+        Returns:
+            AttackSurfaceData object with parsed attack path information
+        """
+        with open(attack_paths_file, 'r') as f:
+            data = json.load(f)
+
+        # Parse attack paths
+        attack_paths = []
+        for path_data in data.get('attack_paths', []):
+            # Extract steps summary
+            steps_summary = []
+            vulnerabilities = []
+            for step in path_data.get('steps', []):
+                steps_summary.append(step.get('description', ''))
+                vulnerabilities.extend(step.get('vulnerabilities', []))
+
+            attack_path = AttackPathSummary(
+                path_id=path_data.get('path_id', ''),
+                entry_point=path_data.get('entry_point', ''),
+                target=path_data.get('target', ''),
+                threat_level=path_data.get('threat_level', 'medium'),
+                total_cvss=path_data.get('total_cvss', 0.0),
+                path_length=path_data.get('path_length', 0),
+                exploitability=path_data.get('exploitability', 0.5),
+                requires_privileges=path_data.get('requires_privileges', False),
+                description=path_data.get('description', ''),
+                vulnerabilities_exploited=list(set(vulnerabilities)),  # Remove duplicates
+                steps_summary=steps_summary,
+            )
+            attack_paths.append(attack_path)
+
+        # Create attack surface data
+        attack_surface = AttackSurfaceData(
+            total_attack_paths=len(attack_paths),
+            critical_paths=sum(1 for ap in attack_paths if ap.threat_level == 'critical'),
+            high_paths=sum(1 for ap in attack_paths if ap.threat_level == 'high'),
+            entry_points_count=len(data.get('entry_points', [])),
+            high_value_targets_count=len(data.get('high_value_targets', [])),
+            privilege_escalation_opportunities=len(data.get('privilege_escalations', [])),
+            lateral_movement_opportunities=len(data.get('lateral_movements', [])),
+            total_risk_score=data.get('total_risk_score', 0.0),
+            attack_paths=attack_paths,
+            top_entry_points=data.get('entry_points', [])[:10],
+            top_targets=data.get('high_value_targets', [])[:10],
+            recommendations=data.get('recommendations', []),
+        )
+
+        return attack_surface

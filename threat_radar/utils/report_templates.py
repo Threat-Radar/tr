@@ -5,6 +5,49 @@ from datetime import datetime
 from enum import Enum
 
 
+@dataclass
+class AttackPathSummary:
+    """Summary of attack path analysis for reporting."""
+    path_id: str
+    entry_point: str
+    target: str
+    threat_level: str  # critical, high, medium, low
+    total_cvss: float
+    path_length: int
+    exploitability: float
+    requires_privileges: bool
+    description: str
+    vulnerabilities_exploited: List[str] = field(default_factory=list)
+    steps_summary: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return asdict(self)
+
+
+@dataclass
+class AttackSurfaceData:
+    """Attack surface analysis data for reporting."""
+    total_attack_paths: int = 0
+    critical_paths: int = 0
+    high_paths: int = 0
+    entry_points_count: int = 0
+    high_value_targets_count: int = 0
+    privilege_escalation_opportunities: int = 0
+    lateral_movement_opportunities: int = 0
+    total_risk_score: float = 0.0
+    attack_paths: List[AttackPathSummary] = field(default_factory=list)
+    top_entry_points: List[str] = field(default_factory=list)
+    top_targets: List[str] = field(default_factory=list)
+    recommendations: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        data = asdict(self)
+        data['attack_paths'] = [ap.to_dict() for ap in self.attack_paths]
+        return data
+
+
 class ReportLevel(Enum):
     """Report detail levels."""
     EXECUTIVE = "executive"  # High-level summary for executives
@@ -175,6 +218,9 @@ class ComprehensiveReport:
     findings: List[VulnerabilityFinding] = field(default_factory=list)
     packages: List[PackageVulnerabilities] = field(default_factory=list)
 
+    # Attack surface analysis
+    attack_surface_data: Optional[AttackSurfaceData] = None
+
     # Dashboard data
     dashboard_data: Optional[DashboardData] = None
 
@@ -199,6 +245,9 @@ class ComprehensiveReport:
 
         if self.executive_summary:
             data['executive_summary'] = self.executive_summary.to_dict()
+
+        if self.attack_surface_data:
+            data['attack_surface_data'] = self.attack_surface_data.to_dict()
 
         if self.dashboard_data:
             data['dashboard_data'] = self.dashboard_data.to_dict()
@@ -247,6 +296,28 @@ class ComprehensiveReport:
                 )
                 critical_packages.append(critical_pkg)
 
+        # Filter attack paths to critical/high only
+        filtered_attack_surface = None
+        if self.attack_surface_data:
+            filtered_paths = [
+                ap for ap in self.attack_surface_data.attack_paths
+                if ap.threat_level in ['critical', 'high']
+            ]
+            filtered_attack_surface = AttackSurfaceData(
+                total_attack_paths=len(filtered_paths),
+                critical_paths=sum(1 for ap in filtered_paths if ap.threat_level == 'critical'),
+                high_paths=sum(1 for ap in filtered_paths if ap.threat_level == 'high'),
+                entry_points_count=self.attack_surface_data.entry_points_count,
+                high_value_targets_count=self.attack_surface_data.high_value_targets_count,
+                privilege_escalation_opportunities=self.attack_surface_data.privilege_escalation_opportunities,
+                lateral_movement_opportunities=self.attack_surface_data.lateral_movement_opportunities,
+                total_risk_score=self.attack_surface_data.total_risk_score,
+                attack_paths=filtered_paths,
+                top_entry_points=self.attack_surface_data.top_entry_points,
+                top_targets=self.attack_surface_data.top_targets,
+                recommendations=self.attack_surface_data.recommendations,
+            )
+
         return ComprehensiveReport(
             report_id=f"{self.report_id}_critical",
             generated_at=self.generated_at,
@@ -257,6 +328,7 @@ class ComprehensiveReport:
             summary=critical_summary,
             findings=critical_findings,
             packages=critical_packages,
+            attack_surface_data=filtered_attack_surface,
             dashboard_data=self.dashboard_data,
             scan_metadata=self.scan_metadata,
             remediation_recommendations=self.remediation_recommendations,
