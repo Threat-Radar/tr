@@ -5,6 +5,24 @@ from .vulnerability_analyzer import VulnerabilityAnalyzer, VulnerabilityAnalysis
 from .prioritization import PrioritizationEngine, PrioritizedVulnerabilityList, PrioritizedVulnerability
 from .remediation_generator import RemediationGenerator, RemediationReport, RemediationPlan
 from .business_context_analyzer import BusinessContextAnalyzer, BusinessContextAnalysis, BusinessRiskAssessment
+from .threat_actor_modeler import (
+    ThreatActorModeler,
+    ThreatActorPersona,
+    ThreatActorType,
+    SkillLevel,
+    ResourceLevel
+)
+from .attack_scenario_generator import (
+    AttackScenarioGenerator,
+    AttackScenario,
+    AttackPhase,
+    BusinessImpact,
+    MitreTTP
+)
+from .structured_threat_analyzer import (
+    StructuredThreatAnalyzer,
+    ThreatModelReport
+)
 
 __all__ = [
     # LLM Clients
@@ -28,4 +46,19 @@ __all__ = [
     "BusinessContextAnalyzer",
     "BusinessContextAnalysis",
     "BusinessRiskAssessment",
+    # Threat Actor Modeling
+    "ThreatActorModeler",
+    "ThreatActorPersona",
+    "ThreatActorType",
+    "SkillLevel",
+    "ResourceLevel",
+    # Attack Scenario Generation
+    "AttackScenarioGenerator",
+    "AttackScenario",
+    "AttackPhase",
+    "BusinessImpact",
+    "MitreTTP",
+    # Structured Threat Analysis
+    "StructuredThreatAnalyzer",
+    "ThreatModelReport",
 ]
