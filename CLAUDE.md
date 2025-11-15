@@ -2476,7 +2476,7 @@ class GlobalBusinessContext:
 ```
 
 **Enterprise Production Configuration:**
-See `examples/environments/ecommerce-production.json` for a comprehensive example with:
+See `examples/10_attack_path_discovery/sample-environment.json` for a comprehensive example with:
 - 15+ assets across multiple zones
 - Complete network topology
 - PCI-DSS and GDPR compliance scope

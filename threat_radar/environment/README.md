@@ -451,7 +451,8 @@ Auto-generate environment files:
 
 - `schema_v1.json` - JSON Schema specification
 - `models.py` - Pydantic validation models
-- `../examples/environments/` - Example configurations
+- `../examples/10_attack_path_discovery/sample-environment.json` - Example environment configuration
+- `../examples/07_environment_configuration/` - Environment configuration examples
 - `../graph/` - Graph database integration
 - `../ai/` - AI risk analysis
 
