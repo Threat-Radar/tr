@@ -947,6 +947,116 @@ export_visualizations() {
     feature_complete
 }
 
+# Feature 22: Advanced Dynamic Visualizations
+advanced_dynamic_visualizations() {
+    if [ "$RUN_VISUALIZATIONS" != true ]; then
+        echo -e "${YELLOW}⊘ Skipping advanced visualizations${NC}\n"
+        return
+    fi
+
+    feature_section "ADVANCED DYNAMIC VISUALIZATIONS"
+
+    echo "Creating dynamic attack path visualizations..."
+    echo "  ⓘ Advanced dynamic visualizations available in example 11"
+    echo "  • Animated attack progression"
+    echo "  • 3D attack paths"
+    echo "  • Network flow particles"
+    echo "  • Multi-attack timeline simulation"
+    echo ""
+    echo "  To generate: cd ../11_graph_visualization && python 02b_dynamic_attack_path_visualization.py"
+
+    echo "  ✓ Example scripts available in ../11_graph_visualization/"
+
+    feature_complete
+}
+
+# Feature 23: 3D Topology Visualizations
+dynamic_3d_topology() {
+    if [ "$RUN_VISUALIZATIONS" != true ]; then
+        echo -e "${YELLOW}⊘ Skipping 3D topology${NC}\n"
+        return
+    fi
+
+    feature_section "DYNAMIC 3D TOPOLOGY VISUALIZATIONS"
+
+    echo "3D topology visualizations available:"
+    echo "  • Layered 3D network architecture"
+    echo "  • Rotating zone boundaries"
+    echo "  • Attack layer transition animations"
+    echo "  • Camera flythrough tours"
+    echo ""
+    echo "  To generate: cd ../11_graph_visualization && python 03_dynamic_3d_topology.py"
+
+    echo "  ✓ Example scripts available in ../11_graph_visualization/"
+
+    feature_complete
+}
+
+# Feature 24: Ultimate Combined Visualizations
+ultimate_visualizations() {
+    if [ "$RUN_VISUALIZATIONS" != true ]; then
+        echo -e "${YELLOW}⊘ Skipping ultimate visualizations${NC}\n"
+        return
+    fi
+
+    feature_section "ULTIMATE COMBINED VISUALIZATIONS"
+
+    echo "Ultimate 'masterpiece' visualizations available:"
+    echo "  • Security Command Center - Multi-panel SOC dashboard"
+    echo "  • Holographic Security Story - Cinematic 3D experience"
+    echo ""
+    echo "  These combine ALL security data:"
+    echo "    - Network topology with attack paths"
+    echo "    - Risk heatmaps"
+    echo "    - Zone security status"
+    echo "    - Real-time metrics"
+    echo ""
+    echo "  To generate: cd ../11_graph_visualization && python 04_ultimate_visualizations.py"
+
+    echo "  ✓ Example scripts available in ../11_graph_visualization/"
+
+    feature_complete
+}
+
+# Feature 25: Vulnerability Command Centers
+vulnerability_command_centers() {
+    if [ "$RUN_VISUALIZATIONS" != true ]; then
+        echo -e "${YELLOW}⊘ Skipping command centers${NC}\n"
+        return
+    fi
+
+    feature_section "VULNERABILITY COMMAND CENTERS"
+
+    echo "Four comprehensive command center dashboards:"
+    echo "  🚨 Critical Vulnerability Command Center"
+    echo "     • Top 20 critical/high CVEs with metrics"
+    echo "     • CVE-to-package network visualization"
+    echo "     • Severity distribution charts"
+    echo ""
+    echo "  📦 Package Risk Command Center"
+    echo "     • Most vulnerable packages"
+    echo "     • Package-vulnerability network"
+    echo "     • Ecosystem distribution"
+    echo "     • Risk scoring"
+    echo ""
+    echo "  ⚔️ Attack Vector Analysis Center"
+    echo "     • Attack type breakdown (RCE, privilege escalation, etc.)"
+    echo "     • Vector distribution analysis"
+    echo "     • Attack sequence visualization"
+    echo ""
+    echo "  🔧 Remediation Command Center"
+    echo "     • Priority fix targets"
+    echo "     • Risk reduction impact"
+    echo "     • Effort estimation"
+    echo "     • Remediation timeline"
+    echo ""
+    echo "  To generate: cd ../11_graph_visualization && python 05_vulnerability_command_centers.py"
+
+    echo "  ✓ Example scripts available in ../11_graph_visualization/"
+
+    feature_complete
+}
+
 # Generate final summary
 generate_summary() {
     feature_section "FINAL SUMMARY & FEATURE SHOWCASE"
@@ -1018,6 +1128,19 @@ This analysis demonstrates **ALL** Threat Radar capabilities on a real-world app
 - [x] Filtered visualizations (severity, compliance, zones)
 - [x] Multi-format export (HTML, PNG, JSON, SVG)
 - [x] Multiple layout algorithms
+- [x] **NEW:** Dynamic attack path animations
+- [x] **NEW:** 3D network topology visualizations
+- [x] **NEW:** Layered security architecture views
+- [x] **NEW:** Rotating zone boundaries
+- [x] **NEW:** Attack layer transitions
+- [x] **NEW:** Camera flythrough tours
+- [x] **NEW:** Security Command Center dashboard
+- [x] **NEW:** Holographic security story (cinematic)
+- [x] **NEW:** Vulnerability command centers (4 dashboards)
+- [x] **NEW:** Critical CVE tracking dashboard
+- [x] **NEW:** Package risk analysis dashboard
+- [x] **NEW:** Attack vector analysis center
+- [x] **NEW:** Remediation priority dashboard
 
 ### 🔐 Security Intelligence
 - [x] Entry point identification
@@ -1038,6 +1161,20 @@ full-demo-results/
 ├── 05-graphs/                    # Graph databases
 ├── 06-attack-paths/              # Attack path analysis
 ├── 07-visualizations/            # Interactive visualizations
+│   ├── attack_paths.html         # Standard attack path viz
+│   ├── topology_zones.html       # Network topology
+│   ├── topology_pci.html         # PCI compliance view
+│   ├── critical_only.html        # Critical vulnerabilities
+│   ├── dynamic/                  # Advanced dynamic visualizations
+│   ├── 3d/                       # 3D topology visualizations
+│   ├── ultimate/                 # Ultimate combined dashboards
+│   │   ├── ultimate_command_center.html
+│   │   └── ultimate_holographic_story.html
+│   └── command-centers/          # Vulnerability command centers
+│       ├── command_center_critical_vulns.html
+│       ├── command_center_package_risk.html
+│       ├── command_center_attack_vectors.html
+│       └── command_center_remediation.html
 └── environment.json              # Infrastructure config
 ```
 
@@ -1157,6 +1294,12 @@ main() {
     filtered_visualizations
     export_visualizations
 
+    # Advanced Visualizations
+    advanced_dynamic_visualizations
+    dynamic_3d_topology
+    ultimate_visualizations
+    vulnerability_command_centers
+
     # Summary
     generate_summary
 
@@ -1182,6 +1325,12 @@ EOF
     echo "  🎨 Attack Paths:       open ${VIZ_DIR}/attack_paths.html"
     echo "  🔒 PCI Topology:       open ${VIZ_DIR}/topology_pci.html"
     echo "  🤖 AI Analysis:        cat ${AI_DIR}/*_priorities.json"
+    echo ""
+    echo "Advanced Visualizations:"
+    echo "  🎯 Command Centers:    open ${VIZ_DIR}/command-centers/"
+    echo "  🌟 Ultimate Views:     open ${VIZ_DIR}/ultimate/"
+    echo "  🎬 Dynamic 3D:         open ${VIZ_DIR}/3d/"
+    echo "  ⚡ Advanced Dynamics: open ${VIZ_DIR}/dynamic/"
     echo ""
 
     echo -e "${CYAN}Total Features Demonstrated: ${COMPLETED_FEATURES}${NC}"

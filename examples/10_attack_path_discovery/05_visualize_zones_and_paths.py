@@ -19,12 +19,51 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from threat_radar.graph import NetworkXClient
+from threat_radar.graph.models import AttackPath, AttackStep, AttackStepType, ThreatLevel
 from threat_radar.visualization import (
     NetworkTopologyVisualizer,
     AttackPathVisualizer,
     GraphFilter,
     GraphExporter,
 )
+
+
+def convert_attack_paths_from_json(attack_data: dict) -> list:
+    """Convert JSON attack path data to AttackPath objects."""
+    attack_paths = []
+
+    for path_dict in attack_data.get("attack_paths", []):
+        # Convert steps
+        steps = []
+        for step_dict in path_dict.get("steps", []):
+            step = AttackStep(
+                node_id=step_dict["node_id"],
+                step_type=AttackStepType(step_dict["type"]),
+                description=step_dict["description"],
+                vulnerabilities=step_dict.get("vulnerabilities", []),
+                cvss_score=step_dict.get("cvss_score"),
+                prerequisites=step_dict.get("prerequisites", []),
+                impact=step_dict.get("impact"),
+            )
+            steps.append(step)
+
+        # Convert path
+        path = AttackPath(
+            path_id=path_dict["path_id"],
+            entry_point=path_dict["entry_point"],
+            target=path_dict["target"],
+            steps=steps,
+            total_cvss=path_dict["total_cvss"],
+            threat_level=ThreatLevel(path_dict["threat_level"]),
+            exploitability=path_dict.get("exploitability", 0.5),
+            impact_score=path_dict.get("impact_score", 0.0),
+            path_length=path_dict.get("path_length", len(steps)),
+            requires_privileges=path_dict.get("requires_privileges", False),
+            description=path_dict.get("description", ""),
+        )
+        attack_paths.append(path)
+
+    return attack_paths
 
 
 def main():
@@ -61,7 +100,6 @@ def main():
     topo_viz = NetworkTopologyVisualizer(client)
 
     zones_fig = topo_viz.visualize_security_zones(
-        layout="hierarchical",
         title="Security Zones Topology",
         width=1400,
         height=900,
@@ -95,7 +133,8 @@ def main():
         with open("attack-paths.json") as f:
             attack_data = json.load(f)
 
-        attack_paths = attack_data.get("attack_paths", [])
+        # Convert JSON to AttackPath objects
+        attack_paths = convert_attack_paths_from_json(attack_data)
 
         if attack_paths:
             path_viz = AttackPathVisualizer(client)
