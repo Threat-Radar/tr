@@ -990,12 +990,44 @@ The reporting system provides AI-powered vulnerability reports with multiple out
 
 **Key Features:**
 - **AI-Powered Executive Summaries** - Risk ratings, key findings, and business impact analysis
+- **Executive Dashboard with Key Security Metrics** - Real-time security KPIs, vulnerability trends, and actionable insights
+- **Detailed Technical Reports with Attack Paths** - Comprehensive analysis including attack path visualization and exploitation routes
 - **Multiple Output Formats** - JSON, Markdown, HTML for different use cases
 - **Report Levels** - Executive, Summary, Detailed, Critical-only
-- **Dashboard Data** - Visualization-ready data structures for custom dashboards
+- **Customizable Report Templates** - Flexible reporting levels and formats for different audiences
+- **Dashboard Data** - Visualization-ready data structures for custom dashboards (Grafana, custom web apps)
 - **Trend Analysis** - Compare reports over time to track improvements
+- **Automated Report Generation** - Schedule reports via cron, CI/CD pipelines, or custom automation
+- **Export Capabilities** - Multiple export formats (JSON, HTML, Markdown) for various use cases
 
 ### Report Generation
+
+#### Quick Start: Complete Security Report
+
+```bash
+# One-command workflow: Scan, analyze, and report with attack paths
+IMAGE="myapp:latest"
+
+# 1. Scan image
+threat-radar cve scan-image $IMAGE --auto-save -o scan.json
+
+# 2. Build graph and find attack paths
+threat-radar graph build scan.json -o graph.graphml
+threat-radar graph attack-paths graph.graphml -o attack-paths.json
+
+# 3. Generate reports in all formats with attack paths
+threat-radar report generate scan.json -o report.html --attack-paths attack-paths.json
+threat-radar report generate scan.json -o report.pdf --attack-paths attack-paths.json
+threat-radar report generate scan.json -o report.md --attack-paths attack-paths.json
+
+# Result: 3 comprehensive reports (HTML, PDF, Markdown) with:
+# - Vulnerability analysis
+# - Attack path analysis
+# - Security recommendations
+# - AI-powered insights
+```
+
+#### Basic Report Generation
 
 ```bash
 # Generate comprehensive HTML report with AI executive summary
@@ -1003,6 +1035,9 @@ threat-radar report generate scan-results.json -o report.html -f html
 
 # Executive summary in Markdown (for documentation)
 threat-radar report generate scan-results.json -o summary.md -f markdown --level executive
+
+# Executive PDF report (NEW!)
+threat-radar report generate scan-results.json -o executive.pdf -f pdf --level executive
 
 # Detailed JSON report with dashboard data
 threat-radar report generate scan-results.json -o detailed.json --level detailed
@@ -1015,6 +1050,35 @@ threat-radar report generate scan-results.json --ai-provider ollama --ai-model l
 
 # Without AI executive summary (faster)
 threat-radar report generate scan-results.json -o report.json --no-executive
+```
+
+#### Reports with Attack Path Analysis (NEW!)
+
+```bash
+# Generate attack paths first
+threat-radar graph build scan.json -o graph.graphml
+threat-radar graph attack-paths graph.graphml -o attack-paths.json
+
+# HTML report with integrated attack paths
+threat-radar report generate scan.json \
+  -o comprehensive-report.html \
+  -f html \
+  --attack-paths attack-paths.json
+
+# PDF executive report with attack path analysis
+threat-radar report generate scan.json \
+  -o executive-with-paths.pdf \
+  -f pdf \
+  --level executive \
+  --attack-paths attack-paths.json \
+  --ai-provider openai
+
+# Markdown documentation with attack paths
+threat-radar report generate scan.json \
+  -o security-analysis.md \
+  -f markdown \
+  --level detailed \
+  --attack-paths attack-paths.json
 ```
 
 ### Report Levels
@@ -1110,6 +1174,579 @@ Example dashboard.json structure:
 }
 ```
 
+### Attack Path Integration in Reports
+
+**✨ NEW:** Attack paths are now natively integrated into reports! Simply pass the attack paths file when generating reports:
+
+```bash
+# Generate report with integrated attack path analysis
+threat-radar cve scan-image myapp:production --auto-save -o scan.json
+threat-radar graph build scan.json --auto-save -o vuln-graph.graphml
+threat-radar graph attack-paths vuln-graph.graphml --max-paths 20 -o attack-paths.json
+
+# Single command to generate comprehensive report with attack paths
+threat-radar report generate scan.json \
+  -o comprehensive-report.html \
+  -f html \
+  --attack-paths attack-paths.json
+
+# Or with PDF export
+threat-radar report generate scan.json \
+  -o executive-report.pdf \
+  -f pdf \
+  --level executive \
+  --attack-paths attack-paths.json \
+  --ai-provider openai
+```
+
+**Attack path data in reports includes:**
+- Attack surface overview (total paths, critical/high counts, risk score)
+- Entry points and high-value targets
+- Detailed attack path breakdowns with threat levels
+- Step-by-step attack sequences
+- CVEs exploited in each path
+- Privilege escalation and lateral movement opportunities
+- Security recommendations based on attack paths
+
+**Attack path reporting workflow:**
+
+1. **Vulnerability Discovery**: Scan images/SBOMs to find CVEs
+2. **Graph Building**: Convert scan results to graph database
+3. **Attack Path Analysis**: Find exploitation routes from entry points to targets
+4. **Report Generation**: Create reports with vulnerability + attack path context
+5. **Visualization**: Interactive visualizations of attack routes
+6. **Executive Summary**: AI-powered risk assessment considering attack feasibility
+
+**Example: Complete attack-aware report workflow**
+
+```bash
+#!/bin/bash
+# attack-path-report-workflow.sh
+
+TARGET="production-api:v2.1"
+
+echo "Generating attack path-aware security report for $TARGET..."
+
+# Step 1: Scan for vulnerabilities
+echo "1. Scanning for vulnerabilities..."
+threat-radar cve scan-image $TARGET --auto-save -o scan.json
+
+# Step 2: Build environment graph with vulnerabilities
+echo "2. Building infrastructure graph..."
+threat-radar env build-graph production-env.json \
+  --merge-scan scan.json \
+  --auto-save -o env-graph.graphml
+
+# Step 3: Analyze attack surface
+echo "3. Analyzing attack surface..."
+threat-radar graph attack-surface env-graph.graphml \
+  -o attack-surface.json
+
+# Step 4: Find specific attack paths
+echo "4. Discovering attack paths..."
+threat-radar graph attack-paths env-graph.graphml \
+  --max-paths 50 -o attack-paths.json
+
+# Step 5: Identify privilege escalation opportunities
+echo "5. Detecting privilege escalation vectors..."
+threat-radar graph privilege-escalation env-graph.graphml \
+  -o privesc.json
+
+# Step 6: Generate integrated technical report with attack paths (HTML)
+echo "6. Generating technical security report with attack paths..."
+threat-radar report generate scan.json \
+  -o reports/technical-report.html \
+  -f html \
+  --level detailed \
+  --attack-paths attack-paths.json
+
+# Step 7: Generate executive PDF report with risk context and attack paths
+echo "7. Generating executive PDF summary..."
+threat-radar report generate scan.json \
+  -o reports/executive-summary.pdf \
+  -f pdf \
+  --level executive \
+  --attack-paths attack-paths.json \
+  --ai-provider openai
+
+# Step 8: Generate Markdown report for documentation
+echo "8. Generating Markdown report..."
+threat-radar report generate scan.json \
+  -o reports/security-analysis.md \
+  -f markdown \
+  --level detailed \
+  --attack-paths attack-paths.json
+
+# Step 9: Create attack path visualizations
+echo "9. Creating visualizations..."
+threat-radar visualize attack-paths env-graph.graphml \
+  -o reports/attack-paths-viz.html \
+  --paths attack-paths.json \
+  --max-paths 10
+
+threat-radar visualize topology env-graph.graphml \
+  -o reports/topology-security.html \
+  --view zones
+
+# Step 10: Export dashboard data
+echo "10. Exporting dashboard metrics..."
+threat-radar report dashboard-export scan.json \
+  -o reports/dashboard-data.json
+
+echo "✅ Complete attack-path-aware report generated!"
+echo ""
+echo "Reports with integrated attack path analysis:"
+echo "   - Technical Report (HTML): reports/technical-report.html"
+echo "   - Executive Summary (PDF): reports/executive-summary.pdf"
+echo "   - Documentation (Markdown): reports/security-analysis.md"
+echo "   - Attack Paths Visualization: reports/attack-paths-viz.html"
+echo "   - Topology View: reports/topology-security.html"
+echo "   - Dashboard Data: reports/dashboard-data.json"
+```
+
+**Benefits of attack path integration:**
+- **Contextual Risk Assessment**: Understand which vulnerabilities are actually exploitable
+- **Prioritization**: Focus on vulnerabilities in active attack paths
+- **Business Impact**: Show executives how attackers could reach critical assets
+- **Defense Planning**: Identify where to strengthen security controls
+- **Compliance**: Demonstrate security posture for audit requirements
+
+### Customizable Report Templates
+
+Threat Radar provides flexible report customization through report levels and AI-powered insights:
+
+**Report Level Customization:**
+
+```bash
+# Executive level - For C-suite and business stakeholders
+threat-radar report generate scan.json \
+  -o exec-report.md \
+  -f markdown \
+  --level executive \
+  --ai-provider openai
+
+# Summary level - For security team quick reviews
+threat-radar report generate scan.json \
+  -o summary-report.json \
+  --level summary
+
+# Detailed level - For technical analysis and remediation planning
+threat-radar report generate scan.json \
+  -o detailed-report.html \
+  -f html \
+  --level detailed
+
+# Critical-only - For incident response and urgent action
+threat-radar report generate scan.json \
+  -o critical-report.json \
+  --level critical-only
+```
+
+**AI Model Customization:**
+
+```bash
+# Use OpenAI for executive summaries
+threat-radar report generate scan.json \
+  --ai-provider openai \
+  --ai-model gpt-4o
+
+# Use Anthropic Claude for deeper analysis
+threat-radar report generate scan.json \
+  --ai-provider anthropic \
+  --ai-model claude-3-5-sonnet-20241022
+
+# Use local Ollama for privacy
+threat-radar report generate scan.json \
+  --ai-provider ollama \
+  --ai-model llama2
+
+# Disable AI for faster generation
+threat-radar report generate scan.json \
+  --no-executive
+```
+
+**Dashboard Customization:**
+
+```bash
+# Include/exclude dashboard data
+threat-radar report generate scan.json --dashboard  # Include (default)
+threat-radar report generate scan.json --no-dashboard  # Exclude
+
+# Export custom dashboard metrics only
+threat-radar report dashboard-export scan.json -o custom-dashboard.json
+```
+
+**Format-Specific Customization:**
+
+| Format | Best For | Features | Requirements |
+|--------|----------|----------|--------------|
+| **JSON** | API integration, automation | Machine-readable, complete data, easy parsing | None |
+| **Markdown** | Documentation, GitHub issues | Human-readable, version control friendly, charts | None |
+| **HTML** | Presentations, sharing | Beautiful styling, interactive, standalone | None |
+| **PDF** | Executive reports, printing | Professional formatting, print-ready, portable | `pip install weasyprint` |
+
+### Automated Report Generation and Scheduling
+
+Automate security reporting with cron jobs, CI/CD pipelines, and custom workflows:
+
+#### Cron-based Scheduled Reports
+
+```bash
+# Add to crontab: crontab -e
+
+# Daily vulnerability scan and report (2 AM)
+0 2 * * * /usr/local/bin/threat-radar cve scan-image myapp:latest \
+  --auto-save && \
+  /usr/local/bin/threat-radar report generate \
+  storage/cve_storage/myapp_latest_image_*.json \
+  -o /var/reports/daily-$(date +\%Y\%m\%d).html \
+  -f html --level summary
+
+# Weekly executive report (Monday 9 AM)
+0 9 * * 1 /home/user/scripts/weekly-security-report.sh
+
+# Monthly compliance report (1st of month, 8 AM)
+0 8 1 * * /home/user/scripts/monthly-compliance.sh
+
+# Hourly critical-only scan for production (business hours)
+0 9-17 * * 1-5 /usr/local/bin/threat-radar cve scan-image prod:latest \
+  --auto-save && \
+  /usr/local/bin/threat-radar report generate \
+  storage/cve_storage/prod_latest_*.json \
+  --level critical-only \
+  -o /var/reports/critical-$(date +\%Y\%m\%d-\%H\%M).json
+```
+
+#### GitHub Actions Automated Reporting
+
+```yaml
+# .github/workflows/weekly-security-report.yml
+name: Weekly Security Report
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Every Monday at 9 AM
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Threat Radar
+        run: pip install threat-radar
+
+      - name: Scan all production images
+        run: |
+          for image in frontend:prod backend:prod api:prod; do
+            threat-radar cve scan-image $image \
+              --auto-save -o scan-${image/:/-}.json
+          done
+
+      - name: Generate comprehensive report
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          threat-radar report generate scan-*.json \
+            -o weekly-report.html \
+            -f html \
+            --level detailed \
+            --ai-provider openai
+
+      - name: Generate executive summary
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          threat-radar report generate scan-*.json \
+            -o executive-summary.md \
+            -f markdown \
+            --level executive \
+            --ai-provider openai
+
+      - name: Export dashboard data
+        run: |
+          threat-radar report dashboard-export scan-*.json \
+            -o dashboard-metrics.json
+
+      - name: Upload reports to S3
+        run: |
+          aws s3 cp weekly-report.html s3://security-reports/$(date +%Y-%m-%d)/
+          aws s3 cp executive-summary.md s3://security-reports/$(date +%Y-%m-%d)/
+          aws s3 cp dashboard-metrics.json s3://security-reports/$(date +%Y-%m-%d)/
+
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Weekly security report generated",
+              "attachments": [{
+                "color": "good",
+                "fields": [
+                  {"title": "Report Date", "value": "${{ github.event.repository.updated_at }}", "short": true},
+                  {"title": "View Report", "value": "<https://security-reports.s3.amazonaws.com/${{ github.run_id }}/weekly-report.html|Click Here>", "short": true}
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: Create GitHub Issue for critical findings
+        run: |
+          CRITICAL=$(jq '.summary.critical' scan-*.json | jq -s 'add')
+          if [ $CRITICAL -gt 0 ]; then
+            gh issue create \
+              --title "⚠️  $CRITICAL Critical Vulnerabilities Found - $(date +%Y-%m-%d)" \
+              --body-file executive-summary.md \
+              --label security,critical
+          fi
+```
+
+#### Jenkins Pipeline for Continuous Reporting
+
+```groovy
+// Jenkinsfile
+pipeline {
+    agent any
+
+    triggers {
+        cron('H 2 * * *')  // Daily at 2 AM
+    }
+
+    environment {
+        OPENAI_API_KEY = credentials('openai-api-key')
+    }
+
+    stages {
+        stage('Scan Images') {
+            steps {
+                script {
+                    def images = ['frontend:latest', 'backend:latest', 'api:latest']
+
+                    images.each { image ->
+                        sh """
+                            threat-radar cve scan-image ${image} \
+                                --auto-save \
+                                -o scan-${image.replaceAll(':', '-')}.json
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Generate Reports') {
+            parallel {
+                stage('Technical Report') {
+                    steps {
+                        sh '''
+                            threat-radar report generate scan-*.json \
+                                -o technical-report.html \
+                                -f html \
+                                --level detailed
+                        '''
+                    }
+                }
+
+                stage('Executive Report') {
+                    steps {
+                        sh '''
+                            threat-radar report generate scan-*.json \
+                                -o executive-report.md \
+                                -f markdown \
+                                --level executive \
+                                --ai-provider openai
+                        '''
+                    }
+                }
+
+                stage('Dashboard Export') {
+                    steps {
+                        sh '''
+                            threat-radar report dashboard-export scan-*.json \
+                                -o dashboard-data.json
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Publish Reports') {
+            steps {
+                publishHTML([
+                    reportDir: '.',
+                    reportFiles: 'technical-report.html',
+                    reportName: 'Security Report'
+                ])
+
+                archiveArtifacts artifacts: '*.html,*.md,*.json'
+
+                // Email reports
+                emailext(
+                    subject: "Daily Security Report - ${new Date().format('yyyy-MM-dd')}",
+                    body: readFile('executive-report.md'),
+                    to: 'security-team@company.com',
+                    attachmentsPattern: 'technical-report.html'
+                )
+            }
+        }
+
+        stage('Alert on Critical Issues') {
+            steps {
+                script {
+                    def criticalCount = sh(
+                        script: "jq '.summary.critical' scan-*.json | jq -s 'add'",
+                        returnStdout: true
+                    ).trim().toInteger()
+
+                    if (criticalCount > 0) {
+                        slackSend(
+                            color: 'danger',
+                            message: "⚠️  ${criticalCount} critical vulnerabilities found! View report: ${env.BUILD_URL}"
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+#### Custom Python Automation Script
+
+```python
+#!/usr/bin/env python3
+"""
+Automated security reporting script.
+Run via cron: 0 2 * * * /usr/bin/python3 /opt/scripts/auto-report.py
+"""
+
+import subprocess
+import json
+from datetime import datetime
+from pathlib import Path
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+
+def run_scan(image):
+    """Scan Docker image for vulnerabilities."""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_file = f"scan_{image.replace(':', '_')}_{timestamp}.json"
+
+    cmd = [
+        "threat-radar", "cve", "scan-image", image,
+        "--auto-save", "-o", output_file
+    ]
+
+    subprocess.run(cmd, check=True)
+    return output_file
+
+def generate_report(scan_files, report_type="detailed"):
+    """Generate vulnerability report."""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    if report_type == "executive":
+        output_file = f"executive_report_{timestamp}.md"
+        format_type = "markdown"
+    else:
+        output_file = f"detailed_report_{timestamp}.html"
+        format_type = "html"
+
+    cmd = [
+        "threat-radar", "report", "generate",
+        *scan_files,
+        "-o", output_file,
+        "-f", format_type,
+        "--level", report_type,
+        "--ai-provider", "openai"
+    ]
+
+    subprocess.run(cmd, check=True)
+    return output_file
+
+def send_email_report(report_file, recipients):
+    """Send report via email."""
+    sender = "security-automation@company.com"
+
+    msg = MIMEMultipart()
+    msg['From'] = sender
+    msg['To'] = ", ".join(recipients)
+    msg['Subject'] = f"Security Report - {datetime.now().strftime('%Y-%m-%d')}"
+
+    body = "Please find attached the latest security vulnerability report."
+    msg.attach(MIMEText(body, 'plain'))
+
+    with open(report_file, "rb") as f:
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload(f.read())
+
+    encoders.encode_base64(part)
+    part.add_header('Content-Disposition', f"attachment; filename= {report_file}")
+    msg.attach(part)
+
+    server = smtplib.SMTP('smtp.company.com', 587)
+    server.starttls()
+    server.login("automation@company.com", "password")
+    server.send_message(msg)
+    server.quit()
+
+def check_critical_threshold(scan_files):
+    """Check if critical vulnerabilities exceed threshold."""
+    total_critical = 0
+
+    for scan_file in scan_files:
+        with open(scan_file) as f:
+            data = json.load(f)
+            total_critical += data.get('severity_counts', {}).get('critical', 0)
+
+    return total_critical
+
+def main():
+    # Configuration
+    images_to_scan = [
+        "frontend:production",
+        "backend:production",
+        "api:production",
+        "worker:production"
+    ]
+
+    executive_recipients = ["cto@company.com", "ciso@company.com"]
+    team_recipients = ["security-team@company.com"]
+
+    # Scan all images
+    print("Starting automated security scan...")
+    scan_files = []
+
+    for image in images_to_scan:
+        print(f"Scanning {image}...")
+        scan_file = run_scan(image)
+        scan_files.append(scan_file)
+
+    # Generate reports
+    print("Generating reports...")
+    exec_report = generate_report(scan_files, "executive")
+    tech_report = generate_report(scan_files, "detailed")
+
+    # Check for critical issues
+    critical_count = check_critical_threshold(scan_files)
+
+    if critical_count > 0:
+        print(f"⚠️  WARNING: {critical_count} critical vulnerabilities found!")
+        # Send urgent notification
+        send_email_report(tech_report, team_recipients + executive_recipients)
+    else:
+        # Send routine reports
+        send_email_report(exec_report, executive_recipients)
+        send_email_report(tech_report, team_recipients)
+
+    print("✅ Automated reporting complete!")
+
+if __name__ == "__main__":
+    main()
+```
+
 ### Report Comparison
 
 Track vulnerability changes over time:
@@ -1143,24 +1780,34 @@ IMAGE="myapp:production"
 # 1. Scan production Docker image
 threat-radar cve scan-image $IMAGE --auto-save -o scan-${WEEK}.json
 
-# 2. Generate comprehensive HTML report for security team
+# 2. Build vulnerability graph
+threat-radar graph build scan-${WEEK}.json --auto-save -o graph-${WEEK}.graphml
+
+# 3. Discover attack paths
+threat-radar graph attack-paths graph-${WEEK}.graphml \
+  --max-paths 30 -o attack-paths-${WEEK}.json
+
+# 4. Generate comprehensive HTML report for security team with attack paths
 threat-radar report generate scan-${WEEK}.json \
   -o reports/detailed-${WEEK}.html \
   -f html \
   --level detailed \
+  --attack-paths attack-paths-${WEEK}.json \
   --ai-provider openai
 
-# 3. Generate executive summary for leadership meeting
+# 5. Generate executive PDF summary for leadership meeting
 threat-radar report generate scan-${WEEK}.json \
-  -o reports/exec-${WEEK}.md \
-  -f markdown \
-  --level executive
+  -o reports/exec-${WEEK}.pdf \
+  -f pdf \
+  --level executive \
+  --attack-paths attack-paths-${WEEK}.json \
+  --ai-provider openai
 
-# 4. Export dashboard data for Grafana monitoring
+# 6. Export dashboard data for Grafana monitoring
 threat-radar report dashboard-export scan-${WEEK}.json \
   -o dashboards/metrics-${WEEK}.json
 
-# 5. Compare with last week's scan
+# 7. Compare with last week's scan
 if [ -f "scan-${LAST_WEEK}.json" ]; then
   threat-radar report compare \
     scan-${LAST_WEEK}.json \
@@ -1170,15 +1817,18 @@ if [ -f "scan-${LAST_WEEK}.json" ]; then
   # Alert if situation is worsening
   TREND=$(jq -r '.trend' reports/trend-${WEEK}.json)
   if [ "$TREND" = "worsening" ]; then
-    send_slack_alert "⚠️  Security posture worsening! Check reports/exec-${WEEK}.md"
+    send_slack_alert "⚠️  Security posture worsening! Check reports/exec-${WEEK}.pdf"
   fi
 fi
 
-# 6. Send reports via email/Slack
-send_report_email reports/exec-${WEEK}.md "leadership@company.com"
+# 8. Send reports via email/Slack
+send_report_email reports/exec-${WEEK}.pdf "leadership@company.com"
 send_slack_report reports/detailed-${WEEK}.html "#security-team"
 
 echo "✅ Weekly security report complete!"
+echo "   - Technical Report: reports/detailed-${WEEK}.html"
+echo "   - Executive Summary: reports/exec-${WEEK}.pdf"
+echo "   - Dashboard Data: dashboards/metrics-${WEEK}.json"
 ```
 
 #### CI/CD Pipeline Integration
@@ -1230,16 +1880,39 @@ jobs:
             exit 1
           fi
 
-      - name: Generate PR comment report
+      - name: Build vulnerability graph
+        run: |
+          threat-radar graph build scan-results.json \
+            --auto-save -o vuln-graph.graphml
+
+      - name: Discover attack paths
+        run: |
+          threat-radar graph attack-paths vuln-graph.graphml \
+            --max-paths 20 -o attack-paths.json
+
+      - name: Generate PR comment report with attack paths
         if: github.event_name == 'pull_request'
         run: |
           threat-radar report generate scan-results.json \
             -o pr-report.md \
             -f markdown \
-            --level summary
+            --level summary \
+            --attack-paths attack-paths.json
 
           gh pr comment ${{ github.event.pull_request.number }} \
             --body-file pr-report.md
+
+      - name: Generate executive PDF report
+        if: github.ref == 'refs/heads/main'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          threat-radar report generate scan-results.json \
+            -o executive-report.pdf \
+            -f pdf \
+            --level executive \
+            --attack-paths attack-paths.json \
+            --ai-provider openai
 
       - name: Upload reports as artifacts
         uses: actions/upload-artifact@v3
@@ -1250,6 +1923,8 @@ jobs:
             scan-results.json
             critical-report.json
             pr-report.md
+            executive-report.pdf
+            attack-paths.json
 ```
 
 #### Trend Monitoring & Compliance
@@ -1268,20 +1943,39 @@ IMAGES=(
 
 echo "Generating quarterly compliance report for $QUARTER..."
 
-# Scan all production images
+# Scan all production images and generate reports
 for IMAGE in "${IMAGES[@]}"; do
   echo "Scanning $IMAGE..."
+  SAFE_NAME="${IMAGE//:/─}"
 
+  # Scan for vulnerabilities
   threat-radar cve scan-image $IMAGE \
-    -o "compliance/${IMAGE//:/─}-${QUARTER}.json" \
+    -o "compliance/${SAFE_NAME}-${QUARTER}.json" \
     --auto-save
 
-  # Generate detailed report for each service
+  # Build graph and find attack paths
+  threat-radar graph build "compliance/${SAFE_NAME}-${QUARTER}.json" \
+    -o "compliance/${SAFE_NAME}-graph.graphml"
+
+  threat-radar graph attack-paths "compliance/${SAFE_NAME}-graph.graphml" \
+    --max-paths 30 -o "compliance/${SAFE_NAME}-paths.json"
+
+  # Generate detailed HTML report with attack paths
   threat-radar report generate \
-    "compliance/${IMAGE//:/─}-${QUARTER}.json" \
-    -o "compliance/${IMAGE//:/─}-${QUARTER}.html" \
+    "compliance/${SAFE_NAME}-${QUARTER}.json" \
+    -o "compliance/${SAFE_NAME}-${QUARTER}.html" \
     -f html \
     --level detailed \
+    --attack-paths "compliance/${SAFE_NAME}-paths.json" \
+    --ai-provider openai
+
+  # Generate executive PDF for auditors
+  threat-radar report generate \
+    "compliance/${SAFE_NAME}-${QUARTER}.json" \
+    -o "compliance/${SAFE_NAME}-${QUARTER}.pdf" \
+    -f pdf \
+    --level executive \
+    --attack-paths "compliance/${SAFE_NAME}-paths.json" \
     --ai-provider openai
 done
 
@@ -1416,6 +2110,322 @@ def send_metrics_to_prometheus(data):
 
 if __name__ == "__main__":
     update_dashboard("latest-scan.json")
+```
+
+### Export Capabilities
+
+Threat Radar supports multiple export formats for reports and visualizations:
+
+#### Supported Report Export Formats
+
+| Format | File Extension | Use Case | Features | Requirements |
+|--------|---------------|----------|----------|--------------|
+| **JSON** | `.json` | API integration, automation, archival | Machine-readable, complete structured data, easy parsing | None |
+| **Markdown** | `.md`, `.markdown` | Documentation, GitHub/GitLab, wikis | Human-readable, version control friendly, supports tables and charts | None |
+| **HTML** | `.html` | Web viewing, presentations, sharing | Beautiful styling, interactive, standalone, no dependencies | None |
+| **PDF** | `.pdf` | Print-ready reports, executive summaries | Professional formatting, print-ready, email-friendly | `pip install weasyprint` |
+
+**Export Format Examples:**
+
+```bash
+# Export as JSON (default) - Best for automation
+threat-radar report generate scan.json -o report.json -f json
+
+# Export as Markdown - Best for documentation
+threat-radar report generate scan.json -o report.md -f markdown
+
+# Export as HTML - Best for presentations
+threat-radar report generate scan.json -o report.html -f html
+
+# Export as PDF - Best for executives and printing
+threat-radar report generate scan.json -o report.pdf -f pdf
+
+# Auto-detect format from file extension
+threat-radar report generate scan.json -o report.html  # Automatically uses HTML
+threat-radar report generate scan.json -o report.md    # Automatically uses Markdown
+threat-radar report generate scan.json -o report.pdf   # Automatically uses PDF
+```
+
+**Note:** PDF export requires weasyprint:
+```bash
+# Install weasyprint for PDF export
+pip install weasyprint
+
+# Or install threat-radar with PDF support
+pip install threat-radar[pdf]
+```
+
+#### Dashboard Export Formats
+
+Dashboard data is exported in JSON format optimized for visualization tools:
+
+```bash
+# Export dashboard data for Grafana
+threat-radar report dashboard-export scan.json -o dashboard.json
+
+# Dashboard data structure includes:
+# - Summary cards (total vulnerabilities, critical count, CVSS scores)
+# - Severity distribution chart data
+# - Top vulnerable packages chart data
+# - CVSS score histogram
+# - Package type breakdown
+# - Critical items list
+```
+
+**Integration examples:**
+
+```bash
+# Export for Grafana dashboard
+threat-radar report dashboard-export scan.json -o /var/grafana/data/security-metrics.json
+
+# Export for custom web dashboard
+threat-radar report dashboard-export scan.json | \
+  curl -X POST https://dashboard.company.com/api/metrics -d @-
+
+# Export for Splunk/ELK
+threat-radar report generate scan.json -f json | \
+  curl -X POST https://splunk.company.com:8088/services/collector -d @-
+```
+
+#### Visualization Export Formats
+
+Graph visualizations support multiple export formats via the `visualize export` command:
+
+| Format | Extension | Use Case | Requirements |
+|--------|-----------|----------|--------------|
+| **HTML** | `.html` | Interactive web visualization | None |
+| **PNG** | `.png` | Static images for reports | Requires `kaleido` |
+| **SVG** | `.svg` | Scalable vector graphics | Requires `kaleido` |
+| **PDF** | `.pdf` | Print-ready documents | Requires `kaleido` |
+| **JSON** | `.json` | Custom web applications | None |
+| **DOT** | `.dot` | Graphviz processing | Requires `pydot` |
+| **GEXF** | `.gexf` | Gephi import | None |
+| **Cytoscape** | `.json` | Cytoscape.js | None |
+
+```bash
+# Export graph visualization as HTML
+threat-radar visualize export graph.graphml -o viz.html --format html
+
+# Export as high-resolution PNG
+threat-radar visualize export graph.graphml -o viz.png --format png
+
+# Export as PDF for reports
+threat-radar visualize export graph.graphml -o viz.pdf --format pdf
+
+# Export multiple formats at once
+threat-radar visualize export graph.graphml -o viz \
+  --format html --format png --format pdf
+```
+
+#### Complete Export Workflow Example
+
+```bash
+#!/bin/bash
+# complete-export-workflow.sh - Generate all report formats
+
+TARGET="myapp:production"
+DATE=$(date +%Y-%m-%d)
+REPORT_DIR="reports/${DATE}"
+
+mkdir -p $REPORT_DIR
+
+echo "Generating complete security report suite for $TARGET..."
+
+# 1. Scan for vulnerabilities
+echo "Step 1: Scanning for vulnerabilities..."
+threat-radar cve scan-image $TARGET --auto-save -o scan.json
+
+# 2. Build graph and analyze attack paths
+echo "Step 2: Building vulnerability graph..."
+threat-radar graph build scan.json --auto-save -o graph.graphml
+
+echo "Step 3: Discovering attack paths..."
+threat-radar graph attack-paths graph.graphml \
+  --max-paths 30 -o attack-paths.json
+
+# 3. Export reports in all formats with attack paths
+echo "Step 4: Generating reports in all formats..."
+
+# JSON - For automation
+threat-radar report generate scan.json \
+  -o $REPORT_DIR/detailed-report.json \
+  -f json \
+  --level detailed \
+  --attack-paths attack-paths.json
+
+# Markdown - For documentation
+threat-radar report generate scan.json \
+  -o $REPORT_DIR/executive-summary.md \
+  -f markdown \
+  --level executive \
+  --attack-paths attack-paths.json \
+  --ai-provider openai
+
+# HTML - For presentations
+threat-radar report generate scan.json \
+  -o $REPORT_DIR/technical-report.html \
+  -f html \
+  --level detailed \
+  --attack-paths attack-paths.json
+
+# PDF - For executives and printing
+threat-radar report generate scan.json \
+  -o $REPORT_DIR/executive-report.pdf \
+  -f pdf \
+  --level executive \
+  --attack-paths attack-paths.json \
+  --ai-provider openai
+
+# 4. Export dashboard data
+echo "Step 5: Exporting dashboard data..."
+threat-radar report dashboard-export scan.json \
+  -o $REPORT_DIR/dashboard-data.json
+
+# 5. Export visualizations
+echo "Step 6: Creating visualizations..."
+threat-radar visualize export graph.graphml \
+  -o $REPORT_DIR/graph-viz \
+  --format html --format png --format pdf
+
+threat-radar visualize attack-paths graph.graphml \
+  -o $REPORT_DIR/attack-paths-viz.html \
+  --paths attack-paths.json
+
+# 6. Create archive
+echo "Step 7: Creating archive..."
+tar -czf security-report-${DATE}.tar.gz $REPORT_DIR/
+
+echo ""
+echo "✅ Complete export ready!"
+echo ""
+echo "Generated reports with attack path analysis:"
+echo "   - JSON (automation): $REPORT_DIR/detailed-report.json"
+echo "   - Markdown (docs): $REPORT_DIR/executive-summary.md"
+echo "   - HTML (web): $REPORT_DIR/technical-report.html"
+echo "   - PDF (print): $REPORT_DIR/executive-report.pdf"
+echo "   - Dashboard data: $REPORT_DIR/dashboard-data.json"
+echo "   - Graph visualization: $REPORT_DIR/graph-viz.html"
+echo "   - Attack paths viz: $REPORT_DIR/attack-paths-viz.html"
+echo ""
+echo "Archive: security-report-${DATE}.tar.gz"
+```
+
+#### Export to Cloud Storage
+
+```bash
+# Upload to AWS S3
+threat-radar report generate scan.json -o report.html -f html
+aws s3 cp report.html s3://security-reports/$(date +%Y/%m/%d)/
+
+# Upload to Google Cloud Storage
+threat-radar report generate scan.json -o report.json -f json
+gsutil cp report.json gs://security-reports/$(date +%Y/%m/%d)/
+
+# Upload to Azure Blob Storage
+threat-radar report generate scan.json -o report.md -f markdown
+az storage blob upload \
+  --container-name security-reports \
+  --name $(date +%Y/%m/%d)/report.md \
+  --file report.md
+```
+
+#### Export API Integration
+
+```python
+#!/usr/bin/env python3
+"""Export reports to various systems via API."""
+
+import subprocess
+import json
+import requests
+from pathlib import Path
+
+def export_to_jira(report_file):
+    """Create Jira ticket with security findings."""
+    with open(report_file) as f:
+        report = json.load(f)
+
+    summary = report['summary']
+    critical_count = summary['critical']
+    high_count = summary['high']
+
+    issue_data = {
+        "fields": {
+            "project": {"key": "SEC"},
+            "summary": f"Security Scan: {critical_count} Critical, {high_count} High",
+            "description": f"Vulnerability scan results attached. Total: {summary['total_vulnerabilities']}",
+            "issuetype": {"name": "Bug"},
+            "priority": {"name": "Critical" if critical_count > 0 else "High"},
+            "labels": ["security", "vulnerability-scan"]
+        }
+    }
+
+    response = requests.post(
+        "https://jira.company.com/rest/api/2/issue",
+        json=issue_data,
+        auth=("user", "api-token")
+    )
+
+    return response.json()
+
+def export_to_servicenow(report_file):
+    """Create ServiceNow incident."""
+    with open(report_file) as f:
+        report = json.load(f)
+
+    incident_data = {
+        "short_description": f"Security Vulnerabilities Detected",
+        "description": json.dumps(report['summary'], indent=2),
+        "urgency": "1" if report['summary']['critical'] > 0 else "2",
+        "impact": "1",
+        "assignment_group": "Security Operations"
+    }
+
+    response = requests.post(
+        "https://servicenow.company.com/api/now/table/incident",
+        json=incident_data,
+        auth=("user", "password")
+    )
+
+    return response.json()
+
+def export_to_slack(report_file):
+    """Send report summary to Slack."""
+    with open(report_file) as f:
+        report = json.load(f)
+
+    summary = report['summary']
+
+    message = {
+        "text": "Security Scan Complete",
+        "blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*Security Scan Results*\n\nTotal Vulnerabilities: {summary['total_vulnerabilities']}\nCritical: {summary['critical']}\nHigh: {summary['high']}\nMedium: {summary['medium']}"
+                }
+            }
+        ]
+    }
+
+    requests.post(
+        "https://hooks.slack.com/services/YOUR/WEBHOOK/URL",
+        json=message
+    )
+
+# Example usage
+if __name__ == "__main__":
+    # Generate report
+    subprocess.run([
+        "threat-radar", "report", "generate",
+        "scan.json", "-o", "report.json", "-f", "json"
+    ])
+
+    # Export to various systems
+    export_to_jira("report.json")
+    export_to_servicenow("report.json")
+    export_to_slack("report.json")
 ```
 
 ### Report Architecture
@@ -2476,7 +3486,7 @@ class GlobalBusinessContext:
 ```
 
 **Enterprise Production Configuration:**
-See `examples/environments/ecommerce-production.json` for a comprehensive example with:
+See `examples/10_attack_path_discovery/sample-environment.json` for a comprehensive example with:
 - 15+ assets across multiple zones
 - Complete network topology
 - PCI-DSS and GDPR compliance scope

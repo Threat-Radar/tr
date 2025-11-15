@@ -76,10 +76,11 @@ def load_scan_results(scan_file: Path) -> GrypeScanResult:
 def generate_report(
     scan_file: Path = typer.Argument(..., exists=True, help="Path to CVE scan results JSON file"),
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="Output file path (format inferred from extension)"),
-    format: str = typer.Option("json", "--format", "-f", help="Output format (json, markdown, html)"),
+    format: str = typer.Option("json", "--format", "-f", help="Output format (json, markdown, html, pdf)"),
     level: str = typer.Option("detailed", "--level", "-l", help="Report level (executive, summary, detailed, critical-only)"),
     include_executive_summary: bool = typer.Option(True, "--executive/--no-executive", help="Include AI-powered executive summary"),
     include_dashboard_data: bool = typer.Option(True, "--dashboard/--no-dashboard", help="Include dashboard visualization data"),
+    attack_paths_file: Optional[Path] = typer.Option(None, "--attack-paths", help="Path to attack paths JSON file (from graph attack-paths command)"),
     ai_provider: Optional[str] = typer.Option(None, "--ai-provider", help="AI provider for executive summary (openai, ollama)"),
     ai_model: Optional[str] = typer.Option(None, "--ai-model", help="AI model name"),
 ):
@@ -98,8 +99,11 @@ def generate_report(
         # Critical-only issues in JSON
         threat-radar report generate scan-results.json -o critical.json --level critical-only
 
-        # Full report with custom AI model
-        threat-radar report generate scan-results.json --ai-provider ollama --ai-model llama2
+        # Report with attack path analysis
+        threat-radar report generate scan.json -o report.html --attack-paths attack-paths.json
+
+        # Full report with custom AI model and attack paths
+        threat-radar report generate scan-results.json --ai-provider ollama --ai-model llama2 --attack-paths paths.json
     """
     with handle_cli_error("generating report", console):
         # Validate report level
@@ -139,6 +143,7 @@ def generate_report(
                 report_level=report_level,
                 include_executive_summary=include_executive_summary,
                 include_dashboard_data=include_dashboard_data,
+                attack_paths_file=attack_paths_file,
             )
 
             progress.update(task, completed=True, description="Report generated!")
@@ -163,12 +168,20 @@ def generate_report(
             for finding in report.executive_summary.key_findings[:3]:
                 console.print(f"  • {finding}")
 
+        # Show attack surface data if present
+        if report.attack_surface_data:
+            console.print(f"\n[bold cyan]Attack Surface Analysis:[/bold cyan]")
+            console.print(f"Total Attack Paths: {report.attack_surface_data.total_attack_paths}")
+            console.print(f"Critical Paths: {report.attack_surface_data.critical_paths}")
+            console.print(f"High Paths: {report.attack_surface_data.high_paths}")
+            console.print(f"Risk Score: {report.attack_surface_data.total_risk_score:.2f}/100")
+
         # Determine output format
         output_format = format
         if output and not format:
             # Infer from file extension
             ext = output.suffix.lstrip('.')
-            output_format = ext if ext in ['json', 'md', 'markdown', 'html'] else 'json'
+            output_format = ext if ext in ['json', 'md', 'markdown', 'html', 'pdf'] else 'json'
 
         # Format output
         formatter = get_formatter(output_format)
@@ -177,12 +190,21 @@ def generate_report(
         # Save to file if specified
         if output:
             output.parent.mkdir(parents=True, exist_ok=True)
-            with open(output, 'w') as f:
-                f.write(formatted_output)
+
+            # Handle binary formats (PDF)
+            if output_format == 'pdf':
+                with open(output, 'wb') as f:
+                    f.write(formatted_output)
+            else:
+                with open(output, 'w') as f:
+                    f.write(formatted_output)
+
             console.print(f"\n[green]✓ Report saved to: {output}[/green]")
         else:
             # Print to console (JSON only for readability)
-            if output_format == 'json':
+            if output_format == 'pdf':
+                console.print("[yellow]PDF output requires --output file path.[/yellow]")
+            elif output_format == 'json':
                 console.print_json(formatted_output)
             else:
                 console.print(formatted_output)
