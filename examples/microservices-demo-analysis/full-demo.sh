@@ -256,7 +256,7 @@ environment_config() {
     echo "Generating environment configuration with business context..."
 
     # Check if we can use the example config from the repo
-    EXAMPLE_CONFIG="${SCRIPT_DIR}/../../examples/environments/ecommerce-production.json"
+    EXAMPLE_CONFIG="${SCRIPT_DIR}/../10_attack_path_discovery/sample-environment.json"
     if [ -f "${EXAMPLE_CONFIG}" ]; then
         echo "  Using example ecommerce config from repository..."
         cp "${EXAMPLE_CONFIG}" "${CONFIG_FILE}"
