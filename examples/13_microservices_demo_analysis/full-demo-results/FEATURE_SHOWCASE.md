@@ -64,6 +64,19 @@ This analysis demonstrates **ALL** Threat Radar capabilities on a real-world app
 - [x] Filtered visualizations (severity, compliance, zones)
 - [x] Multi-format export (HTML, PNG, JSON, SVG)
 - [x] Multiple layout algorithms
+- [x] **NEW:** Dynamic attack path animations
+- [x] **NEW:** 3D network topology visualizations
+- [x] **NEW:** Layered security architecture views
+- [x] **NEW:** Rotating zone boundaries
+- [x] **NEW:** Attack layer transitions
+- [x] **NEW:** Camera flythrough tours
+- [x] **NEW:** Security Command Center dashboard
+- [x] **NEW:** Holographic security story (cinematic)
+- [x] **NEW:** Vulnerability command centers (4 dashboards)
+- [x] **NEW:** Critical CVE tracking dashboard
+- [x] **NEW:** Package risk analysis dashboard
+- [x] **NEW:** Attack vector analysis center
+- [x] **NEW:** Remediation priority dashboard
 
 ### 🔐 Security Intelligence
 - [x] Entry point identification
@@ -84,6 +97,20 @@ full-demo-results/
 ├── 05-graphs/                    # Graph databases
 ├── 06-attack-paths/              # Attack path analysis
 ├── 07-visualizations/            # Interactive visualizations
+│   ├── attack_paths.html         # Standard attack path viz
+│   ├── topology_zones.html       # Network topology
+│   ├── topology_pci.html         # PCI compliance view
+│   ├── critical_only.html        # Critical vulnerabilities
+│   ├── dynamic/                  # Advanced dynamic visualizations
+│   ├── 3d/                       # 3D topology visualizations
+│   ├── ultimate/                 # Ultimate combined dashboards
+│   │   ├── ultimate_command_center.html
+│   │   └── ultimate_holographic_story.html
+│   └── command-centers/          # Vulnerability command centers
+│       ├── command_center_critical_vulns.html
+│       ├── command_center_package_risk.html
+│       ├── command_center_attack_vectors.html
+│       └── command_center_remediation.html
 └── environment.json              # Infrastructure config
 ```
 

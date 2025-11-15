@@ -162,8 +162,8 @@ class EnvironmentGraphBuilder:
                 port.public for port in asset.network.exposed_ports
             ) if asset.network.exposed_ports else False
 
-            # Find asset's network zone from topology
-            asset_zone = self._find_asset_zone(asset.id, environment)
+            # Get asset's network zone (prefer direct zone assignment from asset.network.zone)
+            asset_zone = asset.network.zone or self._find_asset_zone(asset.id, environment)
 
             properties.update({
                 "internal_ip": asset.network.internal_ip,
