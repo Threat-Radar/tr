@@ -35,7 +35,7 @@ If any are missing, see [installation instructions](README.md#prerequisites).
 ### Option 1: Full Analysis (Recommended First Time)
 
 ```bash
-cd examples/microservices-demo-analysis
+cd examples/13_microservices_demo_analysis
 
 # Run everything (scans + analysis)
 ./analyze-microservices-demo.sh
