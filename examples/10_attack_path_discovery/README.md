@@ -27,7 +27,7 @@ brew install grype syft  # macOS
 ## Quick Start
 
 ```bash
-# 1. Run the complete demo
+# 1. Run the complete demo (includes visualizations)
 ./run_attack_path_demo.sh
 
 # 2. Run individual examples
@@ -35,6 +35,9 @@ python 01_basic_attack_path.py
 python 02_privilege_escalation.py
 python 03_lateral_movement.py
 python 04_complete_assessment.py
+
+# 3. Generate visualizations only (after running demo)
+python 05_visualize_zones_and_paths.py
 ```
 
 ## Example Files
@@ -48,7 +51,7 @@ python 04_complete_assessment.py
 - `02_privilege_escalation.py` - Privilege escalation detection
 - `03_lateral_movement.py` - Lateral movement identification
 - `04_complete_assessment.py` - Comprehensive attack surface analysis
-- `05_red_team_simulation.py` - Simulate red team attack scenarios
+- `05_visualize_zones_and_paths.py` - **NEW**: Create interactive zone and attack path visualizations
 
 ### 3. Shell Scripts
 - `run_attack_path_demo.sh` - Complete demonstration workflow
@@ -147,6 +150,105 @@ cat paths.json | jq '[.attack_paths[] |
 
 echo "PCI-Scoped Attack Paths: $(cat pci-attack-paths.json | jq '. | length')"
 ```
+
+### Visualization Workflow
+
+```bash
+# Build environment graph with vulnerabilities
+threat-radar env build-graph sample-environment.json \
+  --merge-scan ../03_vulnerability_scanning/alpine-scan.json \
+  -o environment-graph.graphml
+
+# Discover attack paths
+threat-radar graph attack-paths environment-graph.graphml \
+  --max-paths 20 -o attack-paths.json
+
+# Create security zones topology visualization
+threat-radar visualize topology environment-graph.graphml \
+  -o visualizations/zones.html \
+  --view zones \
+  --layout hierarchical
+
+# Create attack paths overlay on topology
+threat-radar visualize attack-paths environment-graph.graphml \
+  -o visualizations/attack-overlay.html \
+  --paths attack-paths.json \
+  --max-paths 10 \
+  --layout hierarchical
+
+# Create full topology with zone colors
+threat-radar visualize topology environment-graph.graphml \
+  -o visualizations/full-topology.html \
+  --view topology \
+  --color-by zone
+
+# Filter and visualize critical paths only
+threat-radar visualize filter environment-graph.graphml \
+  -o visualizations/critical-only.html \
+  --type severity \
+  --value critical
+
+# Export to multiple formats for reports
+threat-radar visualize export environment-graph.graphml \
+  -o visualizations/zones \
+  --format html \
+  --format png \
+  --format svg
+```
+
+## Visualization Features
+
+The demo now includes interactive visualizations showing security zones with attack path overlays:
+
+### Security Zones Topology
+- **Color-coded zones**: DMZ (orange), Internal (blue), Trusted (green)
+- **Zone boundaries**: Visual separation of network segments
+- **Asset placement**: Shows which assets belong to which zones
+- **Trust levels**: Visualize security perimeter layers
+
+### Attack Paths Overlay
+- **Entry points highlighted**: Red nodes show where attacks originate
+- **Attack routes**: Colored edges trace exploitation paths
+- **Target assets**: Purple nodes highlight critical targets
+- **Threat levels**: Color intensity indicates path severity
+  - CRITICAL: Dark red
+  - HIGH: Orange
+  - MEDIUM: Yellow
+  - LOW: Blue
+
+### Interactive Features
+- **Zoom and pan**: Explore large infrastructure graphs
+- **Hover for details**: See CVE information, CVSS scores, asset metadata
+- **Click to filter**: Focus on specific zones or attack paths
+- **Export options**: HTML, PNG, SVG, PDF formats
+
+### Generated Visualizations
+
+The demo creates these interactive visualizations in the `visualizations/` directory:
+
+1. **topology-zones.html** - Security zones topology view
+   - Shows all security zones with boundaries
+   - Assets colored by zone membership
+   - Hierarchical layout for clarity
+
+2. **attack-paths-overlay.html** - Attack paths overlaid on topology
+   - Attack routes traced through infrastructure
+   - Entry points and targets highlighted
+   - Top 10 most critical paths displayed
+
+3. **topology-full.html** - Comprehensive topology view
+   - All security context (zones, compliance, criticality)
+   - Assets colored by security zone
+   - Full infrastructure relationships
+
+4. **topology-critical.html** - Critical issues only
+   - Filtered to CRITICAL severity vulnerabilities
+   - Focus on immediate remediation priorities
+   - Reduced visual complexity
+
+5. **topology-zones.png** - Static image export
+   - For reports and presentations
+   - High-resolution PNG format
 
 ## Expected Output
 

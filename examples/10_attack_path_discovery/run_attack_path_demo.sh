@@ -93,6 +93,78 @@ else
     echo -e "${YELLOW}⚠ Assessment had issues (continuing...)${NC}"
 fi
 
+# Step 6: Generate visualizations with zones and attack paths
+echo -e "\n${BLUE}Step 6: Generating visualizations with zones and attack path overlays...${NC}"
+
+# Create visualization directory
+mkdir -p visualizations
+
+# Topology visualization with security zones
+echo -e "  ${BLUE}Creating security zones topology view...${NC}"
+threat-radar visualize topology environment-graph.graphml \
+    -o visualizations/topology-zones.html \
+    --view zones \
+    --layout hierarchical
+
+if [ -f "visualizations/topology-zones.html" ]; then
+    echo -e "  ${GREEN}✓ Zones topology created: visualizations/topology-zones.html${NC}"
+fi
+
+# Attack paths visualization overlaid on topology
+if [ -f "attack-paths.json" ]; then
+    echo -e "  ${BLUE}Creating attack paths overlay visualization...${NC}"
+    threat-radar visualize attack-paths environment-graph.graphml \
+        -o visualizations/attack-paths-overlay.html \
+        --paths attack-paths.json \
+        --max-paths 10 \
+        --layout hierarchical
+
+    if [ -f "visualizations/attack-paths-overlay.html" ]; then
+        echo -e "  ${GREEN}✓ Attack paths overlay created: visualizations/attack-paths-overlay.html${NC}"
+    fi
+fi
+
+# Full topology with all context (zones + compliance + criticality)
+echo -e "  ${BLUE}Creating comprehensive topology view...${NC}"
+threat-radar visualize topology environment-graph.graphml \
+    -o visualizations/topology-full.html \
+    --view topology \
+    --color-by zone \
+    --layout hierarchical
+
+if [ -f "visualizations/topology-full.html" ]; then
+    echo -e "  ${GREEN}✓ Full topology created: visualizations/topology-full.html${NC}"
+fi
+
+# Critical attack paths only (filtered view)
+if [ -f "attack-paths.json" ]; then
+    echo -e "  ${BLUE}Creating critical attack paths view...${NC}"
+    # First filter to critical severity, then visualize
+    threat-radar visualize filter environment-graph.graphml \
+        -o visualizations/topology-critical.html \
+        --type severity \
+        --value critical \
+        --layout hierarchical
+
+    if [ -f "visualizations/topology-critical.html" ]; then
+        echo -e "  ${GREEN}✓ Critical paths view created: visualizations/topology-critical.html${NC}"
+    fi
+fi
+
+# Export visualizations to multiple formats for reporting
+echo -e "  ${BLUE}Exporting visualizations to multiple formats...${NC}"
+threat-radar visualize export environment-graph.graphml \
+    -o visualizations/topology-zones \
+    --format html \
+    --format png \
+    --layout hierarchical
+
+if [ -f "visualizations/topology-zones.html" ]; then
+    echo -e "  ${GREEN}✓ Multi-format export complete${NC}"
+fi
+
+echo -e "${GREEN}✓ All visualizations generated${NC}"
+
 # Display results summary
 echo -e "\n======================================================================"
 echo "RESULTS SUMMARY"
@@ -123,7 +195,30 @@ fi
 
 # Show generated files
 echo -e "\n📁 Generated Files:"
+echo -e "\nAnalysis Results:"
 ls -lh *.json *.graphml 2>/dev/null | awk '{print "   • " $9 " (" $5 ")"}'
+
+echo -e "\nVisualizations:"
+if [ -d "visualizations" ]; then
+    ls -lh visualizations/*.html visualizations/*.png 2>/dev/null | awk '{print "   • " $9 " (" $5 ")"}'
+fi
+
+# Show visualization links
+echo -e "\n🎨 Interactive Visualizations:"
+if [ -f "visualizations/topology-zones.html" ]; then
+    echo "   • Security Zones Topology: visualizations/topology-zones.html"
+fi
+if [ -f "visualizations/attack-paths-overlay.html" ]; then
+    echo "   • Attack Paths Overlay: visualizations/attack-paths-overlay.html"
+fi
+if [ -f "visualizations/topology-full.html" ]; then
+    echo "   • Full Topology View: visualizations/topology-full.html"
+fi
+if [ -f "visualizations/topology-critical.html" ]; then
+    echo "   • Critical Paths Only: visualizations/topology-critical.html"
+fi
+
+echo -e "\n💡 TIP: Open HTML files in browser to explore interactive visualizations!"
 
 # CLI command examples
 echo -e "\n======================================================================"
@@ -144,12 +239,36 @@ echo ""
 echo "  # Complete assessment"
 echo "  threat-radar graph attack-surface environment-graph.graphml -o surface.json"
 echo ""
+echo "Generate visualizations with zones and attack path overlays:"
+echo ""
+echo "  # Security zones topology view"
+echo "  threat-radar visualize topology environment-graph.graphml -o zones.html --view zones"
+echo ""
+echo "  # Attack paths overlay on topology"
+echo "  threat-radar visualize attack-paths environment-graph.graphml -o paths.html \\"
+echo "    --paths attack-paths.json --max-paths 10"
+echo ""
+echo "  # Full topology with zone colors"
+echo "  threat-radar visualize topology environment-graph.graphml -o topology.html \\"
+echo "    --view topology --color-by zone"
+echo ""
+echo "  # Filter and visualize critical issues only"
+echo "  threat-radar visualize filter environment-graph.graphml -o critical.html \\"
+echo "    --type severity --value critical"
+echo ""
+echo "  # Export to multiple formats (HTML, PNG, SVG)"
+echo "  threat-radar visualize export environment-graph.graphml -o viz \\"
+echo "    --format html --format png --format svg"
+echo ""
 
 echo -e "${GREEN}✅ Demo complete!${NC}"
 echo ""
 echo "Next steps:"
-echo "  1. Review JSON files for detailed results"
-echo "  2. Customize sample-environment.json for your infrastructure"
-echo "  3. Integrate into CI/CD pipeline"
-echo "  4. Set up continuous monitoring"
+echo "  1. Open visualizations in browser to explore attack paths and zones"
+echo "     • Security zones: visualizations/topology-zones.html"
+echo "     • Attack paths overlay: visualizations/attack-paths-overlay.html"
+echo "  2. Review JSON files for detailed results"
+echo "  3. Customize sample-environment.json for your infrastructure"
+echo "  4. Integrate into CI/CD pipeline with visualization exports"
+echo "  5. Set up continuous monitoring with trend visualizations"
 echo ""
