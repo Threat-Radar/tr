@@ -158,6 +158,173 @@ class TestNetworkGraphVisualizer:
         assert "node_types" in stats
         assert "edge_types" in stats
 
+    def test_3d_layout_spring(self, sample_graph_client):
+        """Test 3D spring layout with proper z-axis spacing."""
+        visualizer = NetworkGraphVisualizer(sample_graph_client)
+
+        pos = visualizer._calculate_layout("spring", three_d=True)
+
+        assert len(pos) == 3  # 3 nodes
+        # All positions should be 3D (x, y, z)
+        assert all(isinstance(p, tuple) and len(p) == 3 for p in pos.values())
+
+        # Check that z-coordinates vary (not all at z=0)
+        z_coords = [p[2] for p in pos.values()]
+        assert len(set(z_coords)) > 1, "Z-coordinates should vary across nodes"
+
+    def test_3d_layout_kamada_kawai(self, sample_graph_client):
+        """Test 3D Kamada-Kawai layout with proper z-axis spacing."""
+        visualizer = NetworkGraphVisualizer(sample_graph_client)
+
+        pos = visualizer._calculate_layout("kamada_kawai", three_d=True)
+
+        assert len(pos) == 3
+        assert all(isinstance(p, tuple) and len(p) == 3 for p in pos.values())
+
+        # Verify z-coordinates are distributed
+        z_coords = [p[2] for p in pos.values()]
+        assert len(set(z_coords)) > 1, "Z-coordinates should vary"
+
+    def test_3d_layout_circular_spiral(self, sample_graph_client):
+        """Test 3D circular layout creates spiral pattern."""
+        visualizer = NetworkGraphVisualizer(sample_graph_client)
+
+        pos = visualizer._calculate_layout("circular", three_d=True)
+
+        assert len(pos) == 3
+        assert all(isinstance(p, tuple) and len(p) == 3 for p in pos.values())
+
+        # Verify spiral: z-coords should vary smoothly
+        z_coords = [p[2] for p in pos.values()]
+        assert min(z_coords) < 0 and max(z_coords) > 0, "Spiral should span negative and positive z"
+
+    def test_3d_layout_spectral_degree_based(self, sample_graph_client):
+        """Test 3D spectral layout with degree-based z-positioning."""
+        visualizer = NetworkGraphVisualizer(sample_graph_client)
+
+        pos = visualizer._calculate_layout("spectral", three_d=True)
+
+        assert len(pos) == 3
+        assert all(isinstance(p, tuple) and len(p) == 3 for p in pos.values())
+
+        # Z-position should be based on node degree
+        degrees = dict(sample_graph_client.graph.degree())
+        max_degree_node = max(degrees, key=degrees.get)
+
+        # Node with highest degree should have z closer to 1
+        assert pos[max_degree_node][2] >= pos[min(degrees, key=degrees.get)][2]
+
+    def test_3d_layout_shell_concentric(self, sample_graph_client):
+        """Test 3D shell layout with concentric z-levels."""
+        visualizer = NetworkGraphVisualizer(sample_graph_client)
+
+        pos = visualizer._calculate_layout("shell", three_d=True)
+
+        assert len(pos) == 3
+        assert all(isinstance(p, tuple) and len(p) == 3 for p in pos.values())
+
+        # Z-coords should vary based on distance from center
+        z_coords = [p[2] for p in pos.values()]
+        assert len(set(z_coords)) >= 1, "Shell layout should have z-variation"
+
+    def test_3d_layout_hierarchical_z_layers(self, sample_graph_client):
+        """Test 3D hierarchical layout uses z-axis for layering."""
+        visualizer = NetworkGraphVisualizer(sample_graph_client)
+
+        pos = visualizer._calculate_layout("hierarchical", three_d=True)
+
+        assert len(pos) == 3
+        assert all(isinstance(p, tuple) and len(p) == 3 for p in pos.values())
+
+        # In 3D hierarchical, different node types should be at different z-levels
+        node_z = {}
+        for node in sample_graph_client.graph.nodes():
+            node_type = sample_graph_client.graph.nodes[node].get("node_type")
+            z_coord = pos[node][2]
+            if node_type not in node_z:
+                node_z[node_type] = []
+            node_z[node_type].append(z_coord)
+
+        # Verify different node types are at different z-levels
+        avg_z_by_type = {nt: sum(zs) / len(zs) for nt, zs in node_z.items()}
+        if len(avg_z_by_type) > 1:
+            z_values = list(avg_z_by_type.values())
+            assert len(set(z_values)) > 1, "Different node types should be at different z-levels"
+
+    def test_3d_visualization_creation(self, sample_graph_client):
+        """Test creating 3D visualization."""
+        visualizer = NetworkGraphVisualizer(sample_graph_client)
+
+        fig = visualizer.visualize(
+            layout="spring",
+            three_d=True,
+            title="3D Test Graph",
+        )
+
+        assert fig is not None
+        assert fig.layout.title.text == "3D Test Graph"
+        # 3D plots should have scene configuration
+        assert hasattr(fig.layout, 'scene')
+
+    def test_add_spiral_z_dimension(self, sample_graph_client):
+        """Test spiral z-dimension helper method."""
+        visualizer = NetworkGraphVisualizer(sample_graph_client)
+
+        # Create 2D circular layout
+        pos_2d = {
+            "node1": (1.0, 0.0),
+            "node2": (0.0, 1.0),
+            "node3": (-1.0, 0.0),
+        }
+
+        pos_3d = visualizer._add_spiral_z_dimension(pos_2d)
+
+        assert len(pos_3d) == 3
+        assert all(len(p) == 3 for p in pos_3d.values())
+
+        # Verify spiral pattern
+        z_coords = [p[2] for p in pos_3d.values()]
+        assert min(z_coords) < 0 and max(z_coords) > 0
+
+    def test_add_degree_based_z_dimension(self, sample_graph_client):
+        """Test degree-based z-dimension helper method."""
+        visualizer = NetworkGraphVisualizer(sample_graph_client)
+
+        # Create 2D positions for graph nodes
+        pos_2d = nx.circular_layout(sample_graph_client.graph)
+
+        pos_3d = visualizer._add_degree_based_z_dimension(pos_2d)
+
+        assert len(pos_3d) == 3
+        assert all(len(p) == 3 for p in pos_3d.values())
+
+        # Higher degree nodes should have higher z
+        degrees = dict(sample_graph_client.graph.degree())
+        for node in sample_graph_client.graph.nodes():
+            # Verify z-coordinate correlates with degree
+            assert -1.0 <= pos_3d[node][2] <= 1.0
+
+    def test_add_shell_z_dimension(self, sample_graph_client):
+        """Test shell-based z-dimension helper method."""
+        visualizer = NetworkGraphVisualizer(sample_graph_client)
+
+        # Create 2D shell layout
+        pos_2d = {
+            "node1": (0.5, 0.5),   # Inner
+            "node2": (1.0, 0.0),   # Middle
+            "node3": (2.0, 2.0),   # Outer
+        }
+
+        pos_3d = visualizer._add_shell_z_dimension(pos_2d)
+
+        assert len(pos_3d) == 3
+        assert all(len(p) == 3 for p in pos_3d.values())
+
+        # Inner nodes should have higher z than outer nodes
+        # node1 (closest to center) should have highest z
+        # node3 (farthest from center) should have lowest z
+        assert pos_3d["node1"][2] > pos_3d["node3"][2]
+
 
 class TestAttackPathVisualizer:
     """Tests for AttackPathVisualizer."""

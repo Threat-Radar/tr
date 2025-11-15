@@ -23,27 +23,38 @@ class NetworkGraphVisualizer:
     Interactive graph visualizer using Plotly.
 
     Provides interactive web-based visualizations of vulnerability graphs with
-    customizable layouts, colors, and styling. Supports both 2D and 3D visualizations.
+    customizable layouts, colors, and styling. Supports both 2D and 3D visualizations
+    with intelligent z-axis spacing for improved node visibility.
 
     Color Schemes:
         - Node colors by type: Container (blue), Package (green), Vulnerability (red), etc.
         - Severity colors: Critical (dark red) → Negligible (light green)
         - Edge colors by relationship type
 
-    Supported Layout Algorithms:
-        - spring: Force-directed layout (default, good for general graphs)
-        - kamada_kawai: Energy-based layout (balanced node distribution)
-        - circular: Circular layout (shows connections clearly)
-        - spectral: Spectral layout (based on graph eigenvalues)
-        - shell: Shell layout
-        - hierarchical: Custom layered layout (vulnerabilities → packages → containers)
+    Supported Layout Algorithms (2D and 3D):
+        - spring: Force-directed layout (3D: native NetworkX 3D spring algorithm)
+        - kamada_kawai: Energy-based layout (3D: native NetworkX 3D algorithm)
+        - circular: Circular layout (3D: spiral/helix pattern along z-axis)
+        - spectral: Spectral layout (3D: z-position based on node connectivity)
+        - shell: Shell layout (3D: concentric shells at different z-levels)
+        - hierarchical: Custom layered layout (3D: z-axis layers by node type)
+
+    3D Visualization Improvements:
+        - Spring/Kamada-Kawai: Use native 3D algorithms for natural spatial distribution
+        - Circular: Creates spiral pattern for even z-axis distribution
+        - Spectral: Z-position based on node degree (hubs at higher levels)
+        - Shell: Inner shells at higher z, outer shells at lower z
+        - Hierarchical: Node types separated along z-axis (vulnerabilities highest)
 
     Example:
         >>> client = NetworkXClient()
         >>> client.load("vulnerability_graph.graphml")
         >>> visualizer = NetworkGraphVisualizer(client)
+        >>> # 2D visualization
         >>> fig = visualizer.visualize(layout="hierarchical", color_by="severity")
-        >>> visualizer.save_html(fig, "output.html", auto_open=True)
+        >>> # 3D visualization with proper z-spacing
+        >>> fig_3d = visualizer.visualize(layout="spring", three_d=True)
+        >>> visualizer.save_html(fig_3d, "output.html", auto_open=True)
     """
 
     # Color schemes
@@ -155,7 +166,7 @@ class NetworkGraphVisualizer:
 
         Args:
             layout: Layout algorithm name
-            three_d: Use 3D positions
+            three_d: Use 3D positions with proper z-axis spacing
             seed: Random seed for reproducible layouts
 
         Returns:
@@ -166,37 +177,43 @@ class NetworkGraphVisualizer:
         # Choose layout algorithm
         if layout == "spring":
             if three_d:
-                # NetworkX doesn't have 3D spring, so we'll do 2D + add z dimension
-                pos_2d = nx.spring_layout(self.graph, seed=seed, dim=2)
-                pos = {node: (*coords, 0.0) for node, coords in pos_2d.items()}
+                # Use native 3D spring layout for proper z-axis distribution
+                pos_raw = nx.spring_layout(self.graph, seed=seed, dim=3)
+                # Convert numpy arrays to tuples
+                pos = {node: tuple(coords) for node, coords in pos_raw.items()}
             else:
                 pos = nx.spring_layout(self.graph, seed=seed, dim=2)
 
         elif layout == "kamada_kawai":
             if three_d:
-                pos_2d = nx.kamada_kawai_layout(self.graph, dim=2)
-                pos = {node: (*coords, 0.0) for node, coords in pos_2d.items()}
+                # Use native 3D kamada-kawai layout
+                pos_raw = nx.kamada_kawai_layout(self.graph, dim=3)
+                # Convert numpy arrays to tuples
+                pos = {node: tuple(coords) for node, coords in pos_raw.items()}
             else:
                 pos = nx.kamada_kawai_layout(self.graph, dim=2)
 
         elif layout == "circular":
             pos_2d = nx.circular_layout(self.graph)
             if three_d:
-                pos = {node: (*coords, 0.0) for node, coords in pos_2d.items()}
+                # Create 3D spiral/helix pattern from circular layout
+                pos = self._add_spiral_z_dimension(pos_2d)
             else:
                 pos = pos_2d
 
         elif layout == "spectral":
             pos_2d = nx.spectral_layout(self.graph)
             if three_d:
-                pos = {node: (*coords, 0.0) for node, coords in pos_2d.items()}
+                # Add z-dimension based on node degree (connectivity)
+                pos = self._add_degree_based_z_dimension(pos_2d)
             else:
                 pos = pos_2d
 
         elif layout == "shell":
             pos_2d = nx.shell_layout(self.graph)
             if three_d:
-                pos = {node: (*coords, 0.0) for node, coords in pos_2d.items()}
+                # Add z-dimension based on shell layers
+                pos = self._add_shell_z_dimension(pos_2d)
             else:
                 pos = pos_2d
 
@@ -206,13 +223,21 @@ class NetworkGraphVisualizer:
 
         else:
             logger.warning(f"Unknown layout '{layout}', using spring layout")
-            pos = nx.spring_layout(self.graph, seed=seed, dim=2)
+            if three_d:
+                pos_raw = nx.spring_layout(self.graph, seed=seed, dim=3)
+                # Convert numpy arrays to tuples
+                pos = {node: tuple(coords) for node, coords in pos_raw.items()}
+            else:
+                pos = nx.spring_layout(self.graph, seed=seed, dim=2)
 
         return pos
 
     def _hierarchical_layout(self, three_d: bool = False) -> Dict[str, Tuple[float, ...]]:
         """
         Create hierarchical layout with vulnerability nodes at top.
+
+        In 3D mode, uses z-axis for vertical layering instead of y-axis,
+        providing better visibility and separation between node types.
 
         Returns:
             Position dictionary
@@ -235,7 +260,7 @@ class NetworkGraphVisualizer:
         ]
 
         pos = {}
-        layer_y = 0.0
+        layer_coord = 0.0
         layer_spacing = 2.0
 
         for node_type in type_order:
@@ -249,13 +274,18 @@ class NetworkGraphVisualizer:
 
             for i, node in enumerate(nodes):
                 x = (i - num_nodes / 2) * x_spacing
-                y = layer_y
                 if three_d:
-                    pos[node] = (x, y, 0.0)
+                    # In 3D, use z-axis for hierarchy (top to bottom)
+                    # Spread nodes in a grid pattern on x-y plane
+                    y = 0.0
+                    z = -layer_coord  # Negative so top nodes are at higher z
+                    pos[node] = (x, y, z)
                 else:
+                    # In 2D, use y-axis for hierarchy
+                    y = layer_coord
                     pos[node] = (x, y)
 
-            layer_y += layer_spacing
+            layer_coord += layer_spacing
 
         # Handle any remaining nodes not in type_order
         remaining_nodes = set(self.graph.nodes()) - set(pos.keys())
@@ -264,13 +294,103 @@ class NetworkGraphVisualizer:
             x_spacing = 10.0 / max(num_remaining, 1)
             for i, node in enumerate(remaining_nodes):
                 x = (i - num_remaining / 2) * x_spacing
-                y = layer_y
                 if three_d:
-                    pos[node] = (x, y, 0.0)
+                    y = 0.0
+                    z = -layer_coord
+                    pos[node] = (x, y, z)
                 else:
+                    y = layer_coord
                     pos[node] = (x, y)
 
         return pos
+
+    def _add_spiral_z_dimension(self, pos_2d: Dict[str, Tuple[float, float]]) -> Dict[str, Tuple[float, float, float]]:
+        """
+        Add z-dimension to circular layout to create a 3D spiral/helix pattern.
+
+        This distributes nodes along the z-axis based on their position in the circle,
+        creating a visually appealing spiral that spreads nodes out in 3D space.
+
+        Args:
+            pos_2d: 2D circular layout positions
+
+        Returns:
+            3D positions with spiral z-coordinates
+        """
+        import math
+
+        pos_3d = {}
+        nodes = list(pos_2d.keys())
+        num_nodes = len(nodes)
+
+        for i, node in enumerate(nodes):
+            x, y = pos_2d[node]
+            # Create spiral: z varies smoothly from -1 to 1 based on position in circle
+            # Using sine wave for smooth spiral
+            z = math.sin(2 * math.pi * i / num_nodes) * 1.5
+            pos_3d[node] = (x, y, z)
+
+        return pos_3d
+
+    def _add_degree_based_z_dimension(self, pos_2d: Dict[str, Tuple[float, float]]) -> Dict[str, Tuple[float, float, float]]:
+        """
+        Add z-dimension based on node degree (connectivity).
+
+        Highly connected nodes appear at higher z-levels, making network hubs
+        more visible in the 3D visualization.
+
+        Args:
+            pos_2d: 2D layout positions
+
+        Returns:
+            3D positions with degree-based z-coordinates
+        """
+        pos_3d = {}
+
+        # Calculate node degrees
+        degrees = dict(self.graph.degree())
+        max_degree = max(degrees.values()) if degrees else 1
+
+        for node, (x, y) in pos_2d.items():
+            degree = degrees.get(node, 0)
+            # Normalize degree to z-range [-1, 1]
+            z = (degree / max_degree) * 2.0 - 1.0
+            pos_3d[node] = (x, y, z)
+
+        return pos_3d
+
+    def _add_shell_z_dimension(self, pos_2d: Dict[str, Tuple[float, float]]) -> Dict[str, Tuple[float, float, float]]:
+        """
+        Add z-dimension to shell layout based on distance from center.
+
+        Creates concentric shells at different z-levels, with inner shells
+        at higher z-coordinates and outer shells at lower levels.
+
+        Args:
+            pos_2d: 2D shell layout positions
+
+        Returns:
+            3D positions with shell-based z-coordinates
+        """
+        import math
+
+        pos_3d = {}
+
+        # Calculate distance from center for each node
+        distances = {}
+        for node, (x, y) in pos_2d.items():
+            distance = math.sqrt(x**2 + y**2)
+            distances[node] = distance
+
+        max_distance = max(distances.values()) if distances else 1
+
+        for node, (x, y) in pos_2d.items():
+            distance = distances[node]
+            # Normalize distance to z-range [1, -1] (inner = high, outer = low)
+            z = 1.0 - (distance / max_distance) * 2.0
+            pos_3d[node] = (x, y, z)
+
+        return pos_3d
 
     def _create_figure(
         self,
