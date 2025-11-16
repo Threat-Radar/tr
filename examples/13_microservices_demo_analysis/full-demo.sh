@@ -1659,7 +1659,7 @@ try:
 
     for node in client.graph.nodes():
         node_data = client.graph.nodes[node]
-        if node_data.get('type') == 'vulnerability':
+        if node_data.get('node_type') == 'vulnerability':
             severity = node_data.get('severity', '').lower()
             if severity == 'critical':
                 critical_vulns.append((node, node_data))
@@ -1714,10 +1714,10 @@ try:
     # Severity distribution pie
     severities = ['Critical', 'High', 'Medium', 'Low']
     counts = [
-        stats.get('critical', 0),
-        stats.get('high', 0),
-        stats.get('medium', 0),
-        stats.get('low', 0)
+        stats['by_severity']['critical'],
+        stats['by_severity']['high'],
+        stats['by_severity']['medium'],
+        stats['by_severity']['low']
     ]
 
     fig_critical.add_trace(
@@ -1730,10 +1730,10 @@ try:
     pkg_vuln_count = Counter()
     for node in client.graph.nodes():
         node_data = client.graph.nodes[node]
-        if node_data.get('type') == 'package':
+        if node_data.get('node_type') == 'package':
             # Count vulnerabilities for this package
             vuln_count = sum(1 for neighbor in client.graph.neighbors(node)
-                           if client.graph.nodes[neighbor].get('type') == 'vulnerability')
+                           if client.graph.nodes[neighbor].get('node_type') == 'vulnerability')
             if vuln_count > 0:
                 pkg_vuln_count[node] = vuln_count
 
@@ -1789,7 +1789,7 @@ try:
     ecosystems = Counter()
     for node in client.graph.nodes():
         node_data = client.graph.nodes[node]
-        if node_data.get('type') == 'package':
+        if node_data.get('node_type') == 'package':
             ecosystem = node_data.get('ecosystem', 'unknown')
             ecosystems[ecosystem] += 1
 
@@ -1813,10 +1813,10 @@ try:
     critical_pkg_count = {}
     for node in client.graph.nodes():
         node_data = client.graph.nodes[node]
-        if node_data.get('type') == 'package':
+        if node_data.get('node_type') == 'package':
             critical_count = sum(
                 1 for neighbor in client.graph.neighbors(node)
-                if (client.graph.nodes[neighbor].get('type') == 'vulnerability' and
+                if (client.graph.nodes[neighbor].get('node_type') == 'vulnerability' and
                     client.graph.nodes[neighbor].get('severity', '').lower() == 'critical')
             )
             if critical_count > 0:
