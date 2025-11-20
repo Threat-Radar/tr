@@ -165,56 +165,56 @@ class GrypeClient:
         Returns:
             Parsed JSON dict for JSON format, raw string for other formats
 
-        Raises:
-            RuntimeError: If scan fails
-        """
+    Raises:
+        RuntimeError: If scan fails
+    """
         cmd = [self.grype_path, target, "-o", output_format.value]
 
         # Add scope for Docker images
         if target.startswith("docker:") or ":" in target:
             cmd.extend(["--scope", scope])
 
-        # Add severity threshold
-        if fail_on_severity:
-            cmd.extend(["--fail-on", fail_on_severity.value])
+            # Add severity threshold
+            if fail_on_severity:
+                cmd.extend(["--fail-on", fail_on_severity.value])
 
-        # Only show vulnerabilities with fixes
-        if only_fixed:
-            cmd.append("--only-fixed")
+            # Only show vulnerabilities with fixes
+            if only_fixed:
+                cmd.append("--only-fixed")
 
-        # Add any additional arguments
-        if additional_args:
-            cmd.extend(additional_args)
+            # Add any additional arguments
+            if additional_args:
+                cmd.extend(additional_args)
 
-        logger.info(f"Running Grype scan: {' '.join(cmd)}")
+            logger.info(f"Running Grype scan: {' '.join(cmd)}")
 
-        try:
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=300  # 5 minutes timeout
-            )
+            try:
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=300  # 5 minutes timeout
+                )
 
-            # Grype returns non-zero if vulnerabilities are found with --fail-on
-            # We still want the output, so don't treat this as an error
-            if result.returncode != 0 and not fail_on_severity:
-                raise RuntimeError(f"Grype scan failed: {result.stderr}")
+                # Grype returns non-zero if vulnerabilities are found with --fail-on
+                # We still want the output, so don't treat this as an error
+                if result.returncode != 0 and not fail_on_severity:
+                    raise RuntimeError(f"Grype scan failed: {result.stderr}")
 
-            # Parse JSON output
-            if output_format == GrypeOutputFormat.JSON:
-                if not result.stdout.strip():
-                    # Empty output means no vulnerabilities found
-                    return {"matches": [], "source": {"target": target}}
-                return json.loads(result.stdout)
+                # Parse JSON output
+                if output_format == GrypeOutputFormat.JSON:
+                    if not result.stdout.strip():
+                        # Empty output means no vulnerabilities found
+                        return {"matches": [], "source": {"target": target}}
+                    return json.loads(result.stdout)
 
-            # Return raw text for other formats
-            return result.stdout
+                # Return raw text for other formats
+                return result.stdout
 
-        except subprocess.TimeoutExpired:
-            raise RuntimeError(f"Grype scan timed out after 300s for target: {target}")
-        except json.JSONDecodeError as e:
-            raise RuntimeError(f"Failed to parse Grype JSON output: {e}")
+            except subprocess.TimeoutExpired:
+                raise RuntimeError(f"Grype scan timed out after 300s for target: {target}")
+            except json.JSONDecodeError as e:
+                raise RuntimeError(f"Failed to parse Grype JSON output: {e}")
 
     def scan_docker_image(
         self,
