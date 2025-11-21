@@ -187,7 +187,7 @@
       <data key="d25">False</data>
       <data key="d26">True</data>
     </node>
-    <node id="scan:gcr.io/google-samples/microservices-demo/currencyservice:v0.10.1:1763195275.032116">
+    <node id="scan:gcr.io/google-samples/microservices-demo/currencyservice:v0.10.1:1763265892.969793">
       <data key="d0">scan_result</data>
       <data key="d27">gcr.io/google-samples/microservices-demo/currencyservice:v0.10.1</data>
       <data key="d28">45</data>
@@ -195,7 +195,7 @@
       <data key="d30">13</data>
       <data key="d31">14</data>
       <data key="d32">13</data>
-      <data key="d33">2025-11-15T00:27:55.032123</data>
+      <data key="d33">2025-11-15T20:04:52.969800</data>
     </node>
     <node id="cve:CVE-2024-6119">
       <data key="d0">vulnerability</data>
@@ -702,7 +702,7 @@ Impact:
       <data key="d38">0.0.0</data>
       <data key="d39">npm</data>
     </node>
-    <node id="scan:gcr.io/google-samples/microservices-demo/frontend:v0.10.1:1763195275.032775">
+    <node id="scan:gcr.io/google-samples/microservices-demo/frontend:v0.10.1:1763265892.970378">
       <data key="d0">scan_result</data>
       <data key="d27">gcr.io/google-samples/microservices-demo/frontend:v0.10.1</data>
       <data key="d28">27</data>
@@ -710,7 +710,7 @@ Impact:
       <data key="d30">10</data>
       <data key="d31">15</data>
       <data key="d32">0</data>
-      <data key="d33">2025-11-15T00:27:55.032778</data>
+      <data key="d33">2025-11-15T20:04:52.970381</data>
     </node>
     <node id="cve:GHSA-v778-237x-gjrc">
       <data key="d0">vulnerability</data>
@@ -1050,7 +1050,7 @@ Impact:
       <data key="d41">os.OpenFile(path, os.O_CREATE|O_EXCL) behaved differently on Unix and Windows systems when the target path was a dangling symlink. On Unix systems, OpenFile with O_CREATE and O_EXCL flags never follows symlinks. On Windows, when the target path was a symlink to a nonexistent location, OpenFile would create a file in that location. OpenFile now always returns an error when the O_CREATE and O_EXCL flags are both set and the target path is a symlink.</data>
       <data key="d37">["https://go.dev/cl/672396", "https://go.dev/issue/73702", "https://groups.google.com/g/golang-announce/c/ufZ8WpEsA3A", "https://pkg.go.dev/vuln/GO-2025-3750"]</data>
     </node>
-    <node id="scan:gcr.io/google-samples/microservices-demo/cartservice:v0.10.1:1763195275.033282">
+    <node id="scan:gcr.io/google-samples/microservices-demo/cartservice:v0.10.1:1763265892.970821">
       <data key="d0">scan_result</data>
       <data key="d27">gcr.io/google-samples/microservices-demo/cartservice:v0.10.1</data>
       <data key="d28">13</data>
@@ -1058,7 +1058,7 @@ Impact:
       <data key="d30">0</data>
       <data key="d31">5</data>
       <data key="d32">8</data>
-      <data key="d33">2025-11-15T00:27:55.033284</data>
+      <data key="d33">2025-11-15T20:04:52.970823</data>
     </node>
     <node id="package:libssl3t64@3.0.13-0ubuntu3.1">
       <data key="d0">package</data>
@@ -1177,7 +1177,7 @@ Impact:
       <data key="d39">deb</data>
       <data key="d40">True</data>
     </node>
-    <node id="scan:gcr.io/google-samples/microservices-demo/checkoutservice:v0.10.1:1763195275.033701">
+    <node id="scan:gcr.io/google-samples/microservices-demo/checkoutservice:v0.10.1:1763265892.971193">
       <data key="d0">scan_result</data>
       <data key="d27">gcr.io/google-samples/microservices-demo/checkoutservice:v0.10.1</data>
       <data key="d28">27</data>
@@ -1185,9 +1185,9 @@ Impact:
       <data key="d30">10</data>
       <data key="d31">15</data>
       <data key="d32">0</data>
-      <data key="d33">2025-11-15T00:27:55.033703</data>
+      <data key="d33">2025-11-15T20:04:52.971194</data>
     </node>
-    <node id="scan:gcr.io/google-samples/microservices-demo/paymentservice:v0.10.1:1763195275.034175">
+    <node id="scan:gcr.io/google-samples/microservices-demo/paymentservice:v0.10.1:1763265892.971626">
       <data key="d0">scan_result</data>
       <data key="d27">gcr.io/google-samples/microservices-demo/paymentservice:v0.10.1</data>
       <data key="d28">46</data>
@@ -1195,7 +1195,7 @@ Impact:
       <data key="d30">13</data>
       <data key="d31">15</data>
       <data key="d32">13</data>
-      <data key="d33">2025-11-15T00:27:55.034177</data>
+      <data key="d33">2025-11-15T20:04:52.971628</data>
     </node>
     <node id="cve:GHSA-f5x3-32g6-xq36">
       <data key="d0">vulnerability</data>
@@ -1218,7 +1218,7 @@ Impact:
       <data key="d39">npm</data>
       <data key="d40">True</data>
     </node>
-    <node id="scan:gcr.io/google-samples/microservices-demo/productcatalogservice:v0.10.1:1763195275.034679">
+    <node id="scan:gcr.io/google-samples/microservices-demo/productcatalogservice:v0.10.1:1763265892.97208">
       <data key="d0">scan_result</data>
       <data key="d27">gcr.io/google-samples/microservices-demo/productcatalogservice:v0.10.1</data>
       <data key="d28">27</data>
@@ -1226,7 +1226,7 @@ Impact:
       <data key="d30">10</data>
       <data key="d31">15</data>
       <data key="d32">0</data>
-      <data key="d33">2025-11-15T00:27:55.034680</data>
+      <data key="d33">2025-11-15T20:04:52.972082</data>
     </node>
     <edge source="asset:asset-dmz-web" target="asset:asset-internal-app">
       <data key="d43">COMMUNICATES_WITH</data>

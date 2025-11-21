@@ -16,7 +16,7 @@ from ..environment import (
     EnvironmentGraphBuilder,
     Environment,
 )
-from ..graph import NetworkXClient, GraphBuilder, GraphAnalyzer
+from ..graph import NetworkXClient, GraphBuilder, GraphAnalyzer, GraphValidator, validate_asset_scan_matching
 from ..core import GrypeScanResult, GrypeVulnerability
 from ..utils.graph_storage import GraphStorageManager
 
@@ -123,6 +123,28 @@ def build_graph(
         console.print(f"[green]✓[/green] Loaded environment: {env.environment.name}")
         console.print(f"  • {len(env.assets)} assets")
         console.print(f"  • {len(env.dependencies)} dependencies")
+
+        # Pre-flight validation: Check asset-scan matching
+        if merge_scans:
+            console.print(f"\n[cyan]🔍 Running pre-flight validation...[/cyan]")
+
+            # Load environment as dict for validation
+            with open(env_file) as f:
+                env_dict = json.load(f)
+
+            validation_report = validate_asset_scan_matching(
+                env_dict,
+                [str(scan) for scan in merge_scans]
+            )
+
+            # Display validation results
+            for issue in validation_report.issues:
+                console.print(f"  {issue}")
+
+            if validation_report.has_critical_issues():
+                console.print("\n[red]⚠️  CRITICAL VALIDATION ISSUES DETECTED[/red]")
+                console.print("[yellow]The graph will be built but may have missing CONTAINS edges.[/yellow]")
+                console.print("[yellow]Attack paths and vulnerability attribution may be incomplete.[/yellow]\n")
 
         # Build graph
         with console.status("[bold green]Building graph..."):
@@ -256,6 +278,39 @@ def build_graph(
                     console.print(f"    [green]✓[/green] Linked to {len(matched_assets)} asset(s)")
 
                 console.print(f"    [green]✓[/green] Merged {len(vulnerabilities)} vulnerabilities")
+
+        # Post-build validation: Check graph data quality
+        if merge_scans:
+            console.print(f"\n[cyan]🔍 Running post-build validation...[/cyan]")
+
+            validator = GraphValidator(client)
+            validation_report = validator.validate_all()
+
+            # Show critical issues and warnings
+            critical_issues = validation_report.get_issues_by_severity("critical")
+            warnings = validation_report.get_issues_by_severity("warning")
+
+            if critical_issues:
+                console.print(f"\n[red]❌ Critical Issues Found:[/red]")
+                for issue in critical_issues:
+                    console.print(f"  {issue}")
+
+            if warnings:
+                console.print(f"\n[yellow]⚠️  Warnings:[/yellow]")
+                for issue in warnings[:3]:  # Show first 3 warnings
+                    console.print(f"  {issue}")
+                if len(warnings) > 3:
+                    console.print(f"  ... and {len(warnings) - 3} more warnings")
+
+            if not critical_issues and not warnings:
+                console.print(f"  [green]✅ Graph validation passed - all data quality checks OK[/green]")
+
+            # Show key stats
+            contains_edges = validation_report.stats.get('edges_CONTAINS', 0)
+            has_vuln_edges = validation_report.stats.get('edges_HAS_VULNERABILITY', 0)
+            console.print(f"\n  Graph Quality Metrics:")
+            console.print(f"    • CONTAINS edges: {contains_edges}")
+            console.print(f"    • HAS_VULNERABILITY edges: {has_vuln_edges}")
 
         # Calculate risk scores
         console.print(f"\n[bold]Risk Assessment:[/bold]")
