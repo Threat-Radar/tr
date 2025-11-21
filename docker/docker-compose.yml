@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  threat-radar:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: threat-radar:latest
+    container_name: threat-radar
+
+    # Environment variables
+    environment:
+      # AI Configuration
+      - AI_PROVIDER=${AI_PROVIDER:-openai}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - AI_MODEL=${AI_MODEL:-gpt-4o}
+      - LOCAL_MODEL_ENDPOINT=${LOCAL_MODEL_ENDPOINT:-http://localhost:11434}
+
+      # Grype Configuration
+      - GRYPE_DB_AUTO_UPDATE=${GRYPE_DB_AUTO_UPDATE:-true}
+      - GRYPE_DB_CACHE_DIR=/app/cache/grype
+
+      # Logging Configuration
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - LOG_FILE=/app/logs/app.log
+
+      # Storage Configuration
+      - STORAGE_PATH=/app/storage
+      - CACHE_PATH=/app/cache
+
+      # GitHub Integration (optional)
+      - GITHUB_ACCESS_TOKEN=${GITHUB_ACCESS_TOKEN}
+
+    # Volumes for persistence
+    volumes:
+      # Storage for scan results
+      - threat-radar-storage:/app/storage
+
+      # Cache for Grype database
+      - threat-radar-cache:/app/cache
+
+      # Logs
+      - threat-radar-logs:/app/logs
+
+      # SBOM storage
+      - threat-radar-sbom:/app/sbom_storage
+
+      # Docker socket (for container scanning)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 512M
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "threat-radar", "--help"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # Network mode
+    network_mode: bridge
+
+    # Command (override with docker-compose run)
+    # Default: Show help
+    command: ["threat-radar", "--help"]
+
+# Named volumes for data persistence
+volumes:
+  threat-radar-storage:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./storage
+
+  threat-radar-cache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./cache
+
+  threat-radar-logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./logs
+
+  threat-radar-sbom:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./sbom_storage
+
+# Networks
+networks:
+  default:
+    driver: bridge

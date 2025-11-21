@@ -1,0 +1,18 @@
+# Threat Radar - Docker Dependencies
+# This is a subset of requirements.txt optimized for Docker builds
+# anchore-syft is excluded because it requires CMake - we install Syft CLI instead
+
+# Core dependencies
+PyGithub==2.1.1
+python-dotenv==1.0.0
+typer>=0.9.0
+docker>=7.0.0
+networkx>=3.0
+
+# AI features
+openai>=1.0.0
+tenacity>=8.2.0
+
+# Visualization
+plotly>=5.18.0
+kaleido>=0.2.1  # For static image export (PNG, SVG, PDF)
