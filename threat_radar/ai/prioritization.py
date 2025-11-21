@@ -135,7 +135,13 @@ class PrioritizationEngine:
 
     def _parse_priority_list(self, priority_data: List[Dict[str, Any]]) -> List[PrioritizedVulnerability]:
         """Parse priority list from API response"""
-        return [PrioritizedVulnerability(**item) for item in priority_data]
+        # Filter to only expected fields to avoid LLM adding extra fields
+        expected_fields = {'cve_id', 'package_name', 'reason', 'urgency_score'}
+        filtered_items = [
+            {k: v for k, v in item.items() if k in expected_fields}
+            for item in priority_data
+        ]
+        return [PrioritizedVulnerability(**item) for item in filtered_items]
 
     def get_top_priorities(
         self, prioritized_list: PrioritizedVulnerabilityList, limit: int = 10

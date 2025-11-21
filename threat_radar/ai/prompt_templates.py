@@ -47,7 +47,15 @@ Given the following vulnerability analysis, create a prioritized list based on:
 VULNERABILITY ANALYSIS:
 {analysis_data}
 
-Create a prioritized remediation plan in JSON format:
+Create a prioritized remediation plan in JSON format.
+
+IMPORTANT: Each vulnerability object MUST contain EXACTLY these 4 fields and NO additional fields:
+- cve_id: The CVE identifier (string)
+- package_name: The affected package name (string)
+- reason: Why this vulnerability has this priority (string)
+- urgency_score: Priority score from 0-100 (integer)
+
+JSON format:
 {{
     "priority_levels": {{
         "critical": [
@@ -67,6 +75,7 @@ Create a prioritized remediation plan in JSON format:
 }}
 
 Urgency score should be 0-100 based on severity + exploitability + business impact.
+DO NOT include any additional fields like attack_vectors, exploitability, business_impact, etc.
 """
 
 

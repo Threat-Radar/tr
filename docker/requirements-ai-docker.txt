@@ -1,0 +1,11 @@
+# Threat Radar - Optional AI Dependencies (Docker version)
+# Install with: pip install -r requirements-ai-docker.txt
+# For local AI models and additional providers
+
+# Note: Core dependencies are in requirements-docker.txt (installed separately)
+
+# Local AI models
+ollama>=0.1.0
+
+# Additional AI providers
+anthropic>=0.7.0
