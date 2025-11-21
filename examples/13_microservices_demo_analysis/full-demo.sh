@@ -1462,7 +1462,7 @@ try:
                 scene=dict(
                     camera=dict(
                         eye=dict(x=camera_x/radius, y=camera_y/radius, z=camera_z/radius),
-                        center=dict(x=0, y=0, z=6)
+                        center=dict(x=0, y=0, z=0)  # Center at origin (FIXED)
                     )
                 ),
                 title=dict(
@@ -1490,9 +1490,11 @@ try:
             showlegend=False,
             scene=dict(
                 camera=dict(
-                    eye=dict(x=1, y=0, z=0.4),  # Initial camera position
-                    center=dict(x=0, y=0, z=6)
+                    eye=dict(x=1.5, y=1.5, z=0.8),  # Initial camera position (FIXED)
+                    center=dict(x=0, y=0, z=0),  # Center at origin (FIXED)
+                    projection=dict(type='perspective')
                 ),
+                aspectmode='auto',  # Ensure everything fits in view (FIXED)
                 xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, showbackground=False),
                 yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, showbackground=False),
                 zaxis=dict(
