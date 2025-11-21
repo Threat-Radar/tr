@@ -15,6 +15,7 @@ from ..graph import (
     GraphBuilder,
     GraphAnalyzer,
     GraphAnalytics,
+    GraphValidator,
     CentralityMetric,
     CommunityAlgorithm,
 )
@@ -1463,6 +1464,146 @@ def metrics(
     except Exception as e:
         console.print(f"[red]✗[/red] Error calculating metrics: {e}")
         logger.exception("Error calculating metrics")
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def validate(
+    graph_file: Path = typer.Argument(
+        ...,
+        help="Path to graph file (.graphml)",
+        exists=True,
+    ),
+    show_all: bool = typer.Option(
+        False,
+        "--all",
+        help="Show all issues including info-level",
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "-o",
+        "--output",
+        help="Save validation report to JSON file",
+    ),
+):
+    """
+    Validate graph data quality and structure.
+
+    Checks for common data quality issues:
+    - Missing node types or edge types
+    - Assets disconnected from packages (no CONTAINS edges)
+    - Packages disconnected from vulnerabilities
+    - Missing vulnerability attributes
+    - Orphaned nodes
+    - End-to-end connectivity issues
+
+    Returns exit code 1 if critical issues are found.
+    """
+    console.print(f"[cyan]🔍 Validating graph: {graph_file}[/cyan]\n")
+
+    try:
+        # Load graph
+        client = NetworkXClient()
+        with console.status("[bold green]Loading graph..."):
+            client.load(str(graph_file))
+
+        # Run validation
+        validator = GraphValidator(client)
+
+        with console.status("[bold green]Running validation checks..."):
+            report = validator.validate_all()
+
+        # Display summary
+        console.print(report.summary())
+        console.print()
+
+        # Display critical issues
+        critical = report.get_issues_by_severity("critical")
+        if critical:
+            console.print("[red]❌ Critical Issues:[/red]\n")
+            for issue in critical:
+                console.print(f"{issue}\n")
+
+        # Display warnings
+        warnings = report.get_issues_by_severity("warning")
+        if warnings:
+            console.print("[yellow]⚠️  Warnings:[/yellow]\n")
+            for issue in warnings:
+                console.print(f"{issue}\n")
+
+        # Display info if requested
+        if show_all:
+            info = report.get_issues_by_severity("info")
+            if info:
+                console.print("[cyan]ℹ️  Info:[/cyan]\n")
+                for issue in info:
+                    console.print(f"{issue}\n")
+
+        # Display statistics
+        console.print("\n[bold]Graph Statistics:[/bold]")
+
+        stats_table = Table(show_header=False)
+        stats_table.add_column("Metric", style="cyan")
+        stats_table.add_column("Count", justify="right", style="yellow")
+
+        stats_table.add_row("Total Nodes", str(report.stats.get('total_nodes', 0)))
+        stats_table.add_row("Total Edges", str(report.stats.get('total_edges', 0)))
+
+        # Node counts
+        for key, value in report.stats.items():
+            if key.startswith('nodes_') and key != 'nodes_unknown':
+                node_type = key.replace('nodes_', '').replace('_', ' ').title()
+                stats_table.add_row(f"  {node_type}", str(value))
+
+        stats_table.add_row("", "")  # Separator
+
+        # Edge counts - highlight key edges
+        for edge_type in ['CONTAINS', 'HAS_VULNERABILITY', 'COMMUNICATES_WITH', 'DEPENDS_ON']:
+            key = f'edges_{edge_type}'
+            count = report.stats.get(key, 0)
+            style = "green" if count > 0 else "red"
+            stats_table.add_row(f"  {edge_type} Edges", f"[{style}]{count}[/{style}]")
+
+        console.print(stats_table)
+
+        # Save report if requested
+        if output:
+            report_data = {
+                "graph_file": str(graph_file),
+                "validation_summary": {
+                    "critical": len(critical),
+                    "warnings": len(warnings),
+                    "info": len(report.get_issues_by_severity("info")),
+                },
+                "issues": [
+                    {
+                        "severity": issue.severity.value,
+                        "category": issue.category,
+                        "message": issue.message,
+                        "affected_items": issue.affected_items,
+                        "suggestion": issue.suggestion,
+                    }
+                    for issue in report.issues
+                ],
+                "stats": report.stats,
+            }
+
+            with open(output, 'w') as f:
+                json.dump(report_data, f, indent=2)
+
+            console.print(f"\n[green]✓[/green] Validation report saved to: {output}")
+
+        # Exit with error if critical issues found
+        if report.has_critical_issues():
+            console.print("\n[red]⚠️  Graph has critical data quality issues![/red]")
+            console.print("[yellow]These issues may prevent correct attack path analysis and vulnerability attribution.[/yellow]")
+            raise typer.Exit(code=1)
+
+    except typer.Exit:
+        raise
+    except Exception as e:
+        console.print(f"[red]✗[/red] Error validating graph: {e}")
+        logger.exception("Error validating graph")
         raise typer.Exit(code=1)
 
 

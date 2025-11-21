@@ -529,7 +529,9 @@ class AttackPathVisualizer(NetworkGraphVisualizer):
             else:
                 for step in path.steps:
                     if step.node_id == node_id:
-                        roles.append(f"⚡ {step.step_type.value.replace('_', ' ').title()}")
+                        # Handle both enum and string step_type
+                        step_type_str = step.step_type.value if hasattr(step.step_type, 'value') else str(step.step_type)
+                        roles.append(f"⚡ {step_type_str.replace('_', ' ').title()}")
                         break
 
         if roles:

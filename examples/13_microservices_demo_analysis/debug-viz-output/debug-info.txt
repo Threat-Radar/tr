@@ -1,0 +1,10 @@
+Graph File: ./full-demo-results/05-graphs/main-graph.graphml
+Nodes: 147
+Edges: 155
+Position ranges:
+  X: -6.00 to 5.94
+  Y: -5.97 to 5.94
+  Z: 0.00 to 4.00
+
+Node types:
+  unknown: 147
