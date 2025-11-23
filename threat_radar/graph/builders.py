@@ -246,7 +246,7 @@ class GraphBuilder:
             properties={
                 "cve_id": vuln.id,
                 "severity": vuln.severity,
-                "cvss_score": vuln.cvss_score,
+                "cvss_score": float(vuln.cvss_score) if vuln.cvss_score is not None else None,
                 "description": vuln.description,
                 "data_source": vuln.data_source,
                 "namespace": vuln.namespace,
