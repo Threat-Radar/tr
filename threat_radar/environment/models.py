@@ -152,6 +152,7 @@ class Network(BaseModel):
     """Network configuration for an asset."""
     internal_ip: Optional[str] = None
     public_ip: Optional[str] = None
+    zone: Optional[str] = None  # Network zone assignment (e.g., "dmz", "internal", "trusted")
     exposed_ports: List[ExposedPort] = Field(default_factory=list)
     firewall_rules: List[FirewallRule] = Field(default_factory=list)
 

@@ -182,7 +182,9 @@ class NetworkGraphVisualizer:
                 # Convert numpy arrays to tuples
                 pos = {node: tuple(coords) for node, coords in pos_raw.items()}
             else:
-                pos = nx.spring_layout(self.graph, seed=seed, dim=2)
+                pos_raw = nx.spring_layout(self.graph, seed=seed, dim=2)
+                # Convert numpy arrays to tuples
+                pos = {node: tuple(coords) for node, coords in pos_raw.items()}
 
         elif layout == "kamada_kawai":
             if three_d:
@@ -191,10 +193,14 @@ class NetworkGraphVisualizer:
                 # Convert numpy arrays to tuples
                 pos = {node: tuple(coords) for node, coords in pos_raw.items()}
             else:
-                pos = nx.kamada_kawai_layout(self.graph, dim=2)
+                pos_raw = nx.kamada_kawai_layout(self.graph, dim=2)
+                # Convert numpy arrays to tuples
+                pos = {node: tuple(coords) for node, coords in pos_raw.items()}
 
         elif layout == "circular":
-            pos_2d = nx.circular_layout(self.graph)
+            pos_2d_raw = nx.circular_layout(self.graph)
+            # Convert numpy arrays to tuples
+            pos_2d = {node: tuple(coords) for node, coords in pos_2d_raw.items()}
             if three_d:
                 # Create 3D spiral/helix pattern from circular layout
                 pos = self._add_spiral_z_dimension(pos_2d)
@@ -202,7 +208,9 @@ class NetworkGraphVisualizer:
                 pos = pos_2d
 
         elif layout == "spectral":
-            pos_2d = nx.spectral_layout(self.graph)
+            pos_2d_raw = nx.spectral_layout(self.graph)
+            # Convert numpy arrays to tuples
+            pos_2d = {node: tuple(coords) for node, coords in pos_2d_raw.items()}
             if three_d:
                 # Add z-dimension based on node degree (connectivity)
                 pos = self._add_degree_based_z_dimension(pos_2d)
@@ -210,7 +218,9 @@ class NetworkGraphVisualizer:
                 pos = pos_2d
 
         elif layout == "shell":
-            pos_2d = nx.shell_layout(self.graph)
+            pos_2d_raw = nx.shell_layout(self.graph)
+            # Convert numpy arrays to tuples
+            pos_2d = {node: tuple(coords) for node, coords in pos_2d_raw.items()}
             if three_d:
                 # Add z-dimension based on shell layers
                 pos = self._add_shell_z_dimension(pos_2d)
@@ -228,7 +238,9 @@ class NetworkGraphVisualizer:
                 # Convert numpy arrays to tuples
                 pos = {node: tuple(coords) for node, coords in pos_raw.items()}
             else:
-                pos = nx.spring_layout(self.graph, seed=seed, dim=2)
+                pos_raw = nx.spring_layout(self.graph, seed=seed, dim=2)
+                # Convert numpy arrays to tuples
+                pos = {node: tuple(coords) for node, coords in pos_raw.items()}
 
         return pos
 

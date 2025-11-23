@@ -334,7 +334,6 @@ The CLI is built with Typer and uses a modular command structure in `threat_rada
   - Works seamlessly with Grype for vulnerability scanning
 
 #### Utilities (`threat_radar/utils/`)
-- **`hasher.py`** - File hashing utilities for integrity verification
 - **`config_manager.py`** - Configuration management system
   - `ThreatRadarConfig` - Main configuration dataclass with nested defaults for scan, AI, report, output, and paths
   - `ConfigManager` - Manages config loading from JSON files, environment variables, and defaults
@@ -3577,7 +3576,6 @@ The project uses organized storage directories (git-ignored):
 - Batch processing tests in `test_batch_processing.py` validate large-scale CVE handling
 - Comprehensive report tests in `test_comprehensive_report.py` validate all report formats
 - Graph integration tests in `test_graph_integration.py` test graph building, querying, and storage
-- Hash tests in `test_hasher.py` test file integrity verification
 - All tests can run independently without external dependencies (except Docker tests)
 
 ### Dependencies
