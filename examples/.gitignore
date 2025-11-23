@@ -1,8 +1,0 @@
-# Generated output files
-output/
-*.json
-!examples.json
-
-# Python cache
-__pycache__/
-*.pyc

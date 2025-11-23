@@ -3,7 +3,7 @@ import typer
 from typing import Optional
 from pathlib import Path
 
-from . import cve as cve_cmd, sbom, config, hash, docker, ai, report, graph, env, visualize, health
+from . import cve as cve_cmd, sbom, config, docker, ai, report, graph, env, visualize, health
 from ..utils.cli_context import CLIContext, set_cli_context
 
 app = typer.Typer(
@@ -15,7 +15,6 @@ app = typer.Typer(
 app.add_typer(cve_cmd.app, name="cve", help="CVE vulnerability scanning operations")
 app.add_typer(sbom.app, name="sbom", help="SBOM generation and operations")
 app.add_typer(config.app, name="config", help="Configuration management")
-app.add_typer(hash.app, name="hash", help="File hashing utilities")
 app.add_typer(docker.app, name="docker", help="Docker container analysis")
 app.add_typer(ai.app, name="ai", help="AI-powered vulnerability analysis")
 app.add_typer(report.app, name="report", help="Comprehensive vulnerability reporting")

@@ -67,6 +67,11 @@ class GraphAnalytics:
         # Calculate centrality based on metric type
         if metric == CentralityMetric.DEGREE:
             centrality_scores = nx.degree_centrality(self.graph)
+            # Fix edge case: single node with no edges should have centrality 0.0
+            if self.graph.number_of_nodes() == 1:
+                for node in centrality_scores:
+                    if self.graph.degree(node) == 0:
+                        centrality_scores[node] = 0.0
         elif metric == CentralityMetric.BETWEENNESS:
             centrality_scores = nx.betweenness_centrality(self.graph)
         elif metric == CentralityMetric.CLOSENESS:
@@ -246,6 +251,95 @@ class GraphAnalytics:
         logger.info(f"Detected {len(communities)} communities")
         return result
 
+    def simulate_propagation(
+        self, start_node: str, max_steps: int = 10
+    ) -> PropagationReport:
+        """
+        Simulate propagation from any starting node in the graph.
+
+        This is a general-purpose propagation simulator that can start from
+        any node type (vulnerability, package, container, etc.).
+
+        Args:
+            start_node: Node ID to start propagation from
+            max_steps: Maximum propagation steps to simulate
+
+        Returns:
+            PropagationReport with propagation analysis
+        """
+        logger.info(f"Simulating propagation from {start_node}")
+
+        if start_node not in self.graph:
+            raise ValueError(f"Node {start_node} not found in graph")
+
+        # BFS to find all reachable nodes
+        queue = deque([(start_node, 0, [start_node])])
+        visited = {start_node}
+        all_paths = []
+        affected_packages = []
+        affected_containers = []
+        max_observed_depth = 0
+
+        while queue:
+            current_node, depth, path = queue.popleft()
+
+            if depth >= max_steps:
+                continue
+
+            max_observed_depth = max(max_observed_depth, depth)
+
+            # Get incoming neighbors (propagation goes backwards: CVE -> package -> container)
+            neighbors = list(self.graph.predecessors(current_node))
+
+            for neighbor in neighbors:
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    new_path = path + [neighbor]
+
+                    # Record node by type
+                    node_data = self.graph.nodes[neighbor]
+                    node_type = node_data.get("node_type", "unknown")
+
+                    if node_type == "package":
+                        affected_packages.append(neighbor)
+                    elif node_type == "container":
+                        affected_containers.append(neighbor)
+
+                    # Save this path (at least 2 nodes)
+                    all_paths.append(new_path)
+
+                    # Continue propagation
+                    if depth + 1 < max_steps:
+                        queue.append((neighbor, depth + 1, new_path))
+
+        # Convert all paths to PropagationStep format
+        propagation_paths = [self._path_to_steps(path) for path in all_paths if len(path) > 1]
+
+        # Calculate infection score
+        total_nodes = self.graph.number_of_nodes()
+        affected_ratio = len(visited) / total_nodes if total_nodes > 0 else 0.0
+        infection_score = min(100.0, affected_ratio * 100 * (1 + max_observed_depth / 10))
+
+        # Find critical path
+        critical_path = self._find_critical_path(propagation_paths)
+
+        report = PropagationReport(
+            cve_id=start_node,  # Use start_node as cve_id for general propagation
+            total_affected_nodes=len(visited),
+            affected_packages=affected_packages,
+            affected_containers=affected_containers,
+            max_depth=max_observed_depth,
+            propagation_paths=propagation_paths,
+            infection_score=infection_score,
+            critical_path=critical_path,
+        )
+
+        logger.info(
+            f"Propagation simulation: {len(visited)} nodes affected, "
+            f"depth={max_observed_depth}, score={infection_score:.1f}"
+        )
+        return report
+
     def analyze_vulnerability_propagation(
         self, cve_id: str, max_depth: int = 10
     ) -> PropagationReport:
@@ -352,28 +446,59 @@ class GraphAnalytics:
         total_nodes = self.graph.number_of_nodes()
         total_edges = self.graph.number_of_edges()
 
+        # Handle empty graph edge case
+        if total_nodes == 0:
+            return GraphMetrics(
+                total_nodes=0,
+                total_edges=0,
+                density=0.0,
+                avg_degree=0.0,
+                avg_clustering=0.0,
+                avg_path_length=0.0,
+                diameter=0,
+                connected_components=0,
+                largest_component_size=0,
+                vulnerability_concentration=0.0,
+                critical_node_count=0,
+                security_score=100.0,  # Empty graph is technically "secure"
+                node_type_distribution={},
+            )
+
         # Basic metrics
         density = nx.density(self.graph)
         degrees = [d for n, d in self.graph.degree()]
         avg_degree = sum(degrees) / len(degrees) if degrees else 0.0
 
-        # Clustering coefficient
+        # Clustering coefficient (handle empty graph)
         undirected = self.graph.to_undirected()
-        avg_clustering = nx.average_clustering(undirected)
+        if total_nodes > 0:
+            try:
+                avg_clustering = nx.average_clustering(undirected)
+            except ZeroDivisionError:
+                avg_clustering = 0.0
+        else:
+            avg_clustering = 0.0
 
         # Path length and diameter (on largest weakly connected component)
         weakly_connected_components = list(nx.weakly_connected_components(self.graph))
-        connected_components_count = len(weakly_connected_components)
-        largest_cc = max(weakly_connected_components, key=len)
-        largest_component_size = len(largest_cc)
+        connected_components_count = len(weakly_connected_components) if weakly_connected_components else 0
+
+        if weakly_connected_components:
+            largest_cc = max(weakly_connected_components, key=len)
+            largest_component_size = len(largest_cc)
+        else:
+            largest_cc = set()
+            largest_component_size = 0
 
         if len(largest_cc) > 1:
-            largest_subgraph = self.graph.subgraph(largest_cc)
+            # Convert to undirected for path length and diameter calculations
+            # since directed graphs require strong connectivity
+            largest_subgraph = self.graph.subgraph(largest_cc).to_undirected()
             try:
                 avg_path_length = nx.average_shortest_path_length(largest_subgraph)
-                diameter = nx.diameter(largest_subgraph.to_undirected())
+                diameter = nx.diameter(largest_subgraph)
             except nx.NetworkXError:
-                # Graph is not connected even within component
+                # Graph is not connected even as undirected (shouldn't happen in weakly connected component)
                 avg_path_length = 0.0
                 diameter = 0
         else:
@@ -397,6 +522,12 @@ class GraphAnalytics:
             critical_node_ratio=critical_node_count / total_nodes if total_nodes > 0 else 0,
         )
 
+        # Calculate node type distribution
+        node_type_distribution = defaultdict(int)
+        for node, data in self.graph.nodes(data=True):
+            node_type = data.get("node_type", "unknown")
+            node_type_distribution[node_type] += 1
+
         metrics = GraphMetrics(
             total_nodes=total_nodes,
             total_edges=total_edges,
@@ -410,6 +541,7 @@ class GraphAnalytics:
             vulnerability_concentration=vulnerability_concentration,
             critical_node_count=critical_node_count,
             security_score=security_score,
+            node_type_distribution=dict(node_type_distribution),
         )
 
         logger.info(f"Graph metrics calculated: security_score={security_score:.1f}")
@@ -522,3 +654,165 @@ class GraphAnalytics:
         )
 
         return max(0.0, min(100.0, security_score))
+
+    def calculate_metrics(self) -> GraphMetrics:
+        """
+        Alias for calculate_graph_metrics() for backward compatibility.
+
+        Returns:
+            GraphMetrics with various graph statistics
+        """
+        return self.calculate_graph_metrics()
+
+    def generate_summary(
+        self,
+        top_n: int = 10,
+        include_communities: bool = True,
+        include_propagations: bool = False,
+    ) -> AnalyticsSummary:
+        """
+        Generate comprehensive analytics summary combining all analyses.
+
+        Args:
+            top_n: Number of top critical nodes to include
+            include_communities: Whether to include community detection
+            include_propagations: Whether to include vulnerability propagations
+
+        Returns:
+            AnalyticsSummary with combined analytics results
+        """
+        logger.info(f"Generating analytics summary (top_n={top_n})")
+
+        # Calculate graph metrics
+        graph_metrics = self.calculate_graph_metrics()
+
+        # Calculate centrality for top critical nodes
+        centrality_result = self.calculate_centrality(
+            CentralityMetric.PAGERANK, top_n=top_n
+        )
+        top_critical_nodes = centrality_result.nodes
+
+        # Detect communities if requested
+        communities = None
+        if include_communities:
+            communities = self.detect_communities(CommunityAlgorithm.GREEDY_MODULARITY)
+
+        # Find high-risk propagations if requested
+        high_risk_propagations = []
+        if include_propagations:
+            # Find top vulnerabilities by CVSS score
+            vuln_nodes = [
+                (node, data)
+                for node, data in self.graph.nodes(data=True)
+                if data.get("node_type") == "vulnerability"
+            ]
+            # Sort by CVSS score (descending)
+            vuln_nodes.sort(
+                key=lambda x: x[1].get("cvss_score", 0.0), reverse=True
+            )
+
+            # Analyze propagation for top 5 vulnerabilities
+            for node_id, data in vuln_nodes[:5]:
+                cve_id = data.get("cve_id") or node_id.replace("cve:", "")
+                try:
+                    propagation = self.analyze_vulnerability_propagation(
+                        cve_id, max_depth=5
+                    )
+                    high_risk_propagations.append(propagation)
+                except ValueError:
+                    # Vulnerability not found or invalid
+                    continue
+
+        # Generate recommendations based on analysis
+        recommendations = self._generate_recommendations(
+            graph_metrics=graph_metrics,
+            top_critical_nodes=top_critical_nodes,
+            communities=communities,
+        )
+
+        summary = AnalyticsSummary(
+            graph_metrics=graph_metrics,
+            top_critical_nodes=top_critical_nodes,
+            communities=communities,
+            high_risk_propagations=high_risk_propagations,
+            recommendations=recommendations,
+        )
+
+        logger.info("Analytics summary generated")
+        return summary
+
+    def _generate_recommendations(
+        self,
+        graph_metrics: GraphMetrics,
+        top_critical_nodes: List[NodeCentrality],
+        communities: Optional[CommunityDetectionResult],
+    ) -> List[str]:
+        """
+        Generate security recommendations based on analytics.
+
+        Args:
+            graph_metrics: Overall graph metrics
+            top_critical_nodes: Top critical nodes by centrality
+            communities: Community detection results
+
+        Returns:
+            List of actionable recommendations
+        """
+        recommendations = []
+
+        # Security score recommendations
+        if graph_metrics.security_score < 30:
+            recommendations.append(
+                "CRITICAL: Security score is very low. Immediate remediation required."
+            )
+        elif graph_metrics.security_score < 60:
+            recommendations.append(
+                "WARNING: Security score is below acceptable levels. Review critical vulnerabilities."
+            )
+
+        # Critical node recommendations
+        if graph_metrics.critical_node_count > graph_metrics.total_nodes * 0.2:
+            recommendations.append(
+                f"High number of critical nodes ({graph_metrics.critical_node_count}). "
+                "Focus on reducing bottleneck dependencies."
+            )
+
+        # Vulnerability concentration
+        if graph_metrics.vulnerability_concentration > 0.7:
+            recommendations.append(
+                "Vulnerabilities are highly concentrated. Consider diversifying dependencies "
+                "to reduce risk from single package failures."
+            )
+
+        # Density recommendations
+        if graph_metrics.density > 0.5:
+            recommendations.append(
+                "High graph density detected. Tightly coupled dependencies increase "
+                "vulnerability propagation risk."
+            )
+
+        # Top critical nodes
+        if top_critical_nodes:
+            vuln_nodes = [
+                n for n in top_critical_nodes if n.node_type == "vulnerability"
+            ]
+            if vuln_nodes:
+                recommendations.append(
+                    f"Prioritize fixing top {len(vuln_nodes)} critical vulnerabilities "
+                    "with high centrality scores."
+                )
+
+        # Community recommendations
+        if communities and communities.total_communities > 10:
+            recommendations.append(
+                f"Detected {communities.total_communities} isolated communities. "
+                "Consider consolidating dependencies to reduce attack surface."
+            )
+
+        # Default recommendation if all metrics look good
+        if not recommendations:
+            recommendations.append(
+                "Overall graph security appears healthy. Continue monitoring for new vulnerabilities."
+            )
+
+        return recommendations

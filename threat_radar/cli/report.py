@@ -108,7 +108,8 @@ def generate_report(
     with handle_cli_error("generating report", console):
         # Validate report level
         try:
-            report_level = ReportLevel(level.lower())
+            # Replace hyphens with underscores for enum compatibility
+            report_level = ReportLevel(level.lower().replace("-", "_"))
         except ValueError:
             console.print(f"[red]Invalid report level: {level}[/red]")
             console.print(f"Valid levels: executive, summary, detailed, critical-only")
