@@ -157,7 +157,7 @@ class PropagationReport:
     Analysis of how a vulnerability propagates through the graph.
 
     Attributes:
-        cve_id: Source CVE identifier
+        cve_id: Source CVE identifier (or start_node for general propagation)
         total_affected_nodes: Total nodes affected by propagation
         affected_packages: Packages directly affected
         affected_containers: Containers indirectly affected
@@ -165,6 +165,9 @@ class PropagationReport:
         propagation_paths: All propagation paths from source
         infection_score: Overall infection score (0-100)
         critical_path: Most critical propagation path
+        start_node: Starting node for propagation (alias for cve_id)
+        steps: Propagation steps (flattened from propagation_paths)
+        affected_nodes: All affected node IDs (combined list)
     """
     cve_id: str
     total_affected_nodes: int
@@ -174,6 +177,26 @@ class PropagationReport:
     propagation_paths: List[List[PropagationStep]]
     infection_score: float
     critical_path: Optional[List[PropagationStep]] = None
+
+    @property
+    def start_node(self) -> str:
+        """Alias for cve_id for backward compatibility."""
+        return self.cve_id
+
+    @property
+    def steps(self) -> List[PropagationStep]:
+        """Flattened list of all propagation steps."""
+        if self.critical_path:
+            return self.critical_path
+        elif self.propagation_paths:
+            # Return steps from first path
+            return self.propagation_paths[0]
+        return []
+
+    @property
+    def affected_nodes(self) -> List[str]:
+        """All affected node IDs."""
+        return self.affected_packages + self.affected_containers
 
     def get_direct_impact(self) -> int:
         """Number of directly affected nodes (depth 1)."""
@@ -215,6 +238,27 @@ class GraphMetrics:
     vulnerability_concentration: float = 0.0
     critical_node_count: int = 0
     security_score: float = 0.0
+    node_type_distribution: Dict[str, int] = field(default_factory=dict)
+
+    @property
+    def average_degree(self) -> float:
+        """Alias for avg_degree for backward compatibility."""
+        return self.avg_degree
+
+    @property
+    def average_clustering(self) -> float:
+        """Alias for avg_clustering for backward compatibility."""
+        return self.avg_clustering
+
+    @property
+    def average_path_length(self) -> float:
+        """Alias for avg_path_length for backward compatibility."""
+        return self.avg_path_length
+
+    @property
+    def clustering_coefficient(self) -> float:
+        """Alias for avg_clustering for backward compatibility."""
+        return self.avg_clustering
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
@@ -251,3 +295,28 @@ class AnalyticsSummary:
     communities: Optional[CommunityDetectionResult] = None
     high_risk_propagations: List[PropagationReport] = field(default_factory=list)
     recommendations: List[str] = field(default_factory=list)
+
+    @property
+    def total_nodes(self) -> int:
+        """Convenience property to access total_nodes from graph_metrics."""
+        return self.graph_metrics.total_nodes
+
+    @property
+    def total_edges(self) -> int:
+        """Convenience property to access total_edges from graph_metrics."""
+        return self.graph_metrics.total_edges
+
+    @property
+    def security_score(self) -> float:
+        """Convenience property to access security_score from graph_metrics."""
+        return self.graph_metrics.security_score
+
+    @property
+    def top_central_nodes(self) -> List[NodeCentrality]:
+        """Alias for top_critical_nodes for backward compatibility."""
+        return self.top_critical_nodes
+
+    @property
+    def metrics(self) -> GraphMetrics:
+        """Alias for graph_metrics for backward compatibility."""
+        return self.graph_metrics

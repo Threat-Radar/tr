@@ -1,6 +1,4 @@
 """Utilities and helper functions"""
-
-from .hasher import Hasher
 from .docker_utils import (
     docker_analyzer,
     docker_client,
@@ -27,7 +25,6 @@ from .report_templates import (
 from .report_formatters import get_formatter, JSONFormatter, MarkdownFormatter, HTMLFormatter
 
 __all__ = [
-    "Hasher",
     "docker_analyzer",
     "docker_client",
     "parse_image_reference",

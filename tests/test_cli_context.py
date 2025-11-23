@@ -263,13 +263,13 @@ class TestCLIContextConsole:
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
 
-            # With color
+            # With color (force_terminal should be True)
             context_with_color = CLIContext.create(no_color=False)
-            assert context_with_color.console.force_terminal is True
+            assert context_with_color.console._force_terminal is True
 
-            # Without color
+            # Without color (force_terminal should be False)
             context_no_color = CLIContext.create(no_color=True)
-            assert context_no_color.console.force_terminal is False
+            assert context_no_color.console._force_terminal is False
 
 
 class TestCLIContextDataClass:

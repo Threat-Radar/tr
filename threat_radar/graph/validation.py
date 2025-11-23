@@ -357,36 +357,42 @@ class GraphValidator:
         if not assets or not vulns:
             return
 
-        # Check if at least one asset can reach vulnerabilities
-        assets_reaching_vulns = 0
+        # Check if at least one asset has direct vulnerability data (CONTAINS edges to packages)
+        assets_with_scan_data = 0
 
         for asset in assets:
-            descendants = nx.descendants(self.graph, asset)
-            can_reach_vulns = any(
-                self.graph.nodes[d].get('node_type') == NodeType.VULNERABILITY.value
-                for d in descendants
+            # Check for direct CONTAINS edges to packages (indicates scan data exists)
+            has_contains_edges = any(
+                edge_data.get('edge_type') == EdgeType.CONTAINS.value
+                for _, _, edge_data in self.graph.out_edges(asset, data=True)
             )
 
-            if can_reach_vulns:
-                assets_reaching_vulns += 1
+            if has_contains_edges:
+                assets_with_scan_data += 1
 
-        if assets_reaching_vulns == 0:
+        if assets_with_scan_data == 0:
             report.add_issue(ValidationIssue(
                 severity=ValidationSeverity.CRITICAL,
-                category="No Asset-to-Vulnerability Paths",
-                message="No assets can reach any vulnerabilities in the graph",
+                category="No Asset Scan Data",
+                message="No assets have scan data (missing CONTAINS edges)",
                 suggestion=(
                     "This indicates missing CONTAINS edges. "
                     "Verify that asset image names match scan targets exactly."
                 )
             ))
-        elif assets_reaching_vulns < len(assets):
-            unreachable_count = len(assets) - assets_reaching_vulns
+        elif assets_with_scan_data < len(assets):
+            missing_count = len(assets) - assets_with_scan_data
             report.add_issue(ValidationIssue(
                 severity=ValidationSeverity.WARNING,
                 category="Partial Asset Coverage",
-                message=f"{unreachable_count}/{len(assets)} assets cannot reach vulnerabilities",
-                suggestion="Some assets may not have matching scan data"
+                message=(
+                    f"Only {assets_with_scan_data}/{len(assets)} assets have vulnerability scan data. "
+                    f"{missing_count} asset(s) missing scans."
+                ),
+                suggestion=(
+                    f"Scan the {missing_count} missing asset(s) to get complete vulnerability coverage. "
+                    "Assets without scans cannot be analyzed for vulnerabilities."
+                )
             ))
 
 
