@@ -16,7 +16,32 @@ from threat_radar.utils.config_manager import (
     OutputDefaults,
     PathDefaults,
     get_config_manager,
+    reset_config_manager,
 )
+
+
+@pytest.fixture(autouse=True)
+def isolate_config(monkeypatch, tmp_path):
+    """Isolate tests from user's actual config files."""
+    # Reset global config manager before each test
+    reset_config_manager()
+
+    # Mock default config locations to use tmp_path instead
+    fake_locations = [
+        tmp_path / ".threat-radar.json",
+        tmp_path / "threat-radar.json",
+        tmp_path / ".threat-radar" / "config.json",
+        tmp_path / ".config" / "threat-radar" / "config.json",
+    ]
+    monkeypatch.setattr(
+        "threat_radar.utils.config_manager.ConfigManager.DEFAULT_CONFIG_LOCATIONS",
+        fake_locations
+    )
+
+    yield
+
+    # Reset again after test
+    reset_config_manager()
 
 
 @pytest.fixture
@@ -626,6 +651,294 @@ class TestConfigurationEdgeCases:
         manager = ConfigManager(config_path=config_file)
 
         assert manager.get("ai.provider") == "测试"
+
+
+class TestConfigManagerErrorHandling:
+    """Test error handling in ConfigManager."""
+
+    def test_load_config_with_json_decode_error(self, tmp_path):
+        """Test handling of invalid JSON in config file during initialization."""
+        bad_json_file = tmp_path / "bad.json"
+        bad_json_file.write_text("{ invalid json }")
+
+        # Should not raise, just log error and use defaults
+        manager = ConfigManager(config_path=bad_json_file)
+
+        # Should have default values since JSON was invalid
+        assert manager.get("scan.severity") is None
+        assert manager.get("output.format") == "table"
+
+    def test_load_config_with_general_exception(self, tmp_path):
+        """Test handling of general exception during config load."""
+        config_file = tmp_path / "test.json"
+        config_file.write_text(json.dumps({"scan": {"severity": "HIGH"}}))
+
+        manager = ConfigManager(config_path=config_file)
+
+        # Mock open to raise exception
+        with patch('builtins.open', side_effect=PermissionError("Access denied")):
+            # Should not crash, just log error
+            manager._load_config()
+
+    def test_find_config_file_with_nonexistent_path(self, tmp_path):
+        """Test finding config when explicit path doesn't exist."""
+        nonexistent = tmp_path / "does_not_exist.json"
+
+        manager = ConfigManager(config_path=nonexistent)
+        found = manager._find_config_file()
+
+        assert found is None
+
+    def test_save_config_creates_directory(self, tmp_path):
+        """Test that save_config creates parent directory if needed."""
+        nested_path = tmp_path / "nested" / "dir" / "config.json"
+
+        manager = ConfigManager()
+        manager.set("scan.severity", "HIGH")
+
+        saved_path = manager.save_config(nested_path)
+
+        assert saved_path.exists()
+        assert saved_path.parent.exists()
+
+
+class TestEnvironmentVariableOverrides:
+    """Test comprehensive environment variable override scenarios."""
+
+    def test_backward_compat_severity_var(self):
+        """Test backward compatibility with THREAT_RADAR_SEVERITY."""
+        with patch.dict(os.environ, {
+            "THREAT_RADAR_SEVERITY": "MEDIUM",
+        }, clear=True):
+            manager = ConfigManager()
+            manager.load_from_env()
+
+            assert manager.get("scan.severity") == "MEDIUM"
+
+    def test_new_var_overrides_old_var(self):
+        """Test that new env var takes precedence over old."""
+        with patch.dict(os.environ, {
+            "THREAT_RADAR_SCAN_SEVERITY": "CRITICAL",
+            "THREAT_RADAR_SEVERITY": "LOW",  # Should be ignored
+        }):
+            manager = ConfigManager()
+            manager.load_from_env()
+
+            assert manager.get("scan.severity") == "CRITICAL"
+
+    def test_backward_compat_verbosity_var(self):
+        """Test backward compatibility with THREAT_RADAR_VERBOSITY."""
+        with patch.dict(os.environ, {
+            "THREAT_RADAR_VERBOSITY": "2",
+        }, clear=True):
+            manager = ConfigManager()
+            manager.load_from_env()
+
+            assert manager.get("output.verbosity") == 2
+
+    def test_invalid_verbosity_value(self):
+        """Test handling of invalid verbosity value."""
+        with patch.dict(os.environ, {
+            "THREAT_RADAR_OUTPUT_VERBOSITY": "not_a_number",
+        }):
+            manager = ConfigManager()
+            manager.load_from_env()
+
+            # Should keep default value
+            assert manager.get("output.verbosity") == 1
+
+    def test_auto_save_env_var(self):
+        """Test THREAT_RADAR_AUTO_SAVE environment variable."""
+        with patch.dict(os.environ, {
+            "THREAT_RADAR_AUTO_SAVE": "true",
+        }):
+            manager = ConfigManager()
+            manager.load_from_env()
+
+            assert manager.get("scan.auto_save") is True
+
+    def test_output_format_env_var(self):
+        """Test THREAT_RADAR_OUTPUT_FORMAT environment variable."""
+        with patch.dict(os.environ, {
+            "THREAT_RADAR_OUTPUT_FORMAT": "json",
+        }):
+            manager = ConfigManager()
+            manager.load_from_env()
+
+            assert manager.get("output.format") == "json"
+
+
+class TestValidationEdgeCases:
+    """Test validation edge cases."""
+
+    def test_validate_all_severities(self):
+        """Test validation accepts all valid severity levels."""
+        valid_severities = ["NEGLIGIBLE", "LOW", "MEDIUM", "HIGH", "CRITICAL", None]
+
+        for severity in valid_severities:
+            manager = ConfigManager()
+            manager.set("scan.severity", severity)
+
+            is_valid, errors = manager.validate()
+            assert is_valid, f"Severity {severity} should be valid"
+
+    def test_validate_all_providers(self):
+        """Test validation accepts all valid AI providers."""
+        valid_providers = ["openai", "anthropic", "ollama", "openrouter", None]
+
+        for provider in valid_providers:
+            manager = ConfigManager()
+            manager.set("ai.provider", provider)
+
+            is_valid, errors = manager.validate()
+            assert is_valid, f"Provider {provider} should be valid"
+
+    def test_validate_all_output_formats(self):
+        """Test validation accepts all valid output formats."""
+        valid_formats = ["table", "json", "yaml", "csv"]
+
+        for fmt in valid_formats:
+            manager = ConfigManager()
+            manager.set("output.format", fmt)
+
+            is_valid, errors = manager.validate()
+            assert is_valid, f"Format {fmt} should be valid"
+
+    def test_validate_all_report_formats(self):
+        """Test validation accepts all valid report formats."""
+        valid_formats = ["json", "markdown", "html", "pdf"]
+
+        for fmt in valid_formats:
+            manager = ConfigManager()
+            manager.set("report.format", fmt)
+
+            is_valid, errors = manager.validate()
+            assert is_valid, f"Report format {fmt} should be valid"
+
+    def test_validate_negative_verbosity(self):
+        """Test validation rejects negative verbosity."""
+        manager = ConfigManager()
+        manager.set("output.verbosity", -1)
+
+        is_valid, errors = manager.validate()
+        assert not is_valid
+        assert any("verbosity" in err.lower() for err in errors)
+
+    def test_validate_verbosity_too_high(self):
+        """Test validation rejects verbosity > 3."""
+        manager = ConfigManager()
+        manager.set("output.verbosity", 4)
+
+        is_valid, errors = manager.validate()
+        assert not is_valid
+        assert any("verbosity" in err.lower() for err in errors)
+
+    def test_validate_invalid_severity(self):
+        """Test validation rejects invalid severity."""
+        manager = ConfigManager()
+        manager.set("scan.severity", "INVALID")
+
+        is_valid, errors = manager.validate()
+        assert not is_valid
+        assert any("severity" in err.lower() for err in errors)
+
+    def test_validate_invalid_provider(self):
+        """Test validation rejects invalid AI provider."""
+        manager = ConfigManager()
+        manager.set("ai.provider", "invalid_provider")
+
+        is_valid, errors = manager.validate()
+        assert not is_valid
+        assert any("provider" in err.lower() for err in errors)
+
+    def test_validate_invalid_output_format(self):
+        """Test validation rejects invalid output format."""
+        manager = ConfigManager()
+        manager.set("output.format", "invalid")
+
+        is_valid, errors = manager.validate()
+        assert not is_valid
+        assert any("output format" in err.lower() for err in errors)
+
+    def test_validate_invalid_report_format(self):
+        """Test validation rejects invalid report format."""
+        manager = ConfigManager()
+        manager.set("report.format", "invalid")
+
+        is_valid, errors = manager.validate()
+        assert not is_valid
+        assert any("report format" in err.lower() for err in errors)
+
+
+class TestMergeConfigurations:
+    """Test configuration merging scenarios."""
+
+    def test_merge_partial_override(self):
+        """Test merging with partial override."""
+        manager = ConfigManager()
+        manager.set("scan.severity", "LOW")
+        manager.set("ai.provider", "openai")
+
+        override = {
+            "scan": {
+                "severity": "HIGH",
+            }
+        }
+
+        manager.merge(override)
+
+        # Overridden value
+        assert manager.get("scan.severity") == "HIGH"
+        # Non-overridden value preserved
+        assert manager.get("ai.provider") == "openai"
+
+    def test_merge_multiple_sections(self):
+        """Test merging multiple config sections."""
+        manager = ConfigManager()
+
+        override = {
+            "scan": {"severity": "CRITICAL"},
+            "ai": {"provider": "anthropic", "model": "claude-3-5-sonnet-20241022"},
+            "output": {"verbosity": 3}
+        }
+
+        manager.merge(override)
+
+        assert manager.get("scan.severity") == "CRITICAL"
+        assert manager.get("ai.provider") == "anthropic"
+        assert manager.get("ai.model") == "claude-3-5-sonnet-20241022"
+        assert manager.get("output.verbosity") == 3
+
+    def test_merge_empty_override(self):
+        """Test merging empty override dict."""
+        manager = ConfigManager()
+        original_severity = manager.get("scan.severity")
+
+        manager.merge({})
+
+        # Nothing should change
+        assert manager.get("scan.severity") == original_severity
+
+
+class TestResetConfigManager:
+    """Test reset_config_manager function."""
+
+    def test_reset_config_manager_function(self):
+        """Test that reset_config_manager clears global instance."""
+        from threat_radar.utils.config_manager import reset_config_manager, get_config_manager
+
+        # Create first instance
+        manager1 = get_config_manager()
+        manager1.set("scan.severity", "HIGH")
+
+        # Reset global
+        reset_config_manager()
+
+        # Get new instance
+        manager2 = get_config_manager()
+
+        # Should be fresh instance with defaults
+        assert manager2.get("scan.severity") is None
 
 
 if __name__ == "__main__":
