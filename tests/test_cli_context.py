@@ -499,5 +499,63 @@ class TestCLIContextWithRealConfig:
             assert context.no_progress is True
 
 
+class TestGlobalContextManagement:
+    """Test global CLI context getter/setter functions."""
+
+    def test_get_cli_context_initially_none(self):
+        """Test that global context is None initially."""
+        from threat_radar.utils.cli_context import get_cli_context, reset_cli_context
+
+        reset_cli_context()
+        context = get_cli_context()
+
+        assert context is None
+
+    def test_set_and_get_cli_context(self):
+        """Test setting and getting global CLI context."""
+        from threat_radar.utils.cli_context import get_cli_context, set_cli_context, reset_cli_context
+
+        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+            mock_config = MagicMock()
+            mock_config.get.return_value = None
+            mock_get_config.return_value = mock_config
+
+            # Create a context
+            context = CLIContext.create(verbosity=3, output_format="json")
+
+            # Set it as global
+            set_cli_context(context)
+
+            # Get it back
+            retrieved = get_cli_context()
+
+            assert retrieved is context
+            assert retrieved.verbosity == 3
+            assert retrieved.output_format == "json"
+
+            # Clean up
+            reset_cli_context()
+
+    def test_reset_cli_context(self):
+        """Test resetting global CLI context."""
+        from threat_radar.utils.cli_context import get_cli_context, set_cli_context, reset_cli_context
+
+        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+            mock_config = MagicMock()
+            mock_config.get.return_value = None
+            mock_get_config.return_value = mock_config
+
+            # Create and set context
+            context = CLIContext.create()
+            set_cli_context(context)
+
+            assert get_cli_context() is not None
+
+            # Reset
+            reset_cli_context()
+
+            assert get_cli_context() is None
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

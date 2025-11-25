@@ -237,6 +237,92 @@ class TestComprehensiveReportGenerator:
 
         assert report.dashboard_data is not None
         assert "total_vulnerabilities" in report.dashboard_data.summary_cards
+
+    def test_vulnerability_deduplication(self):
+        """Test that duplicate vulnerabilities are removed during report generation."""
+        # Create scan result with DUPLICATE vulnerabilities
+        duplicate_vulns = [
+            GrypeVulnerability(
+                id="CVE-2024-0001",
+                severity="critical",
+                package_name="openssl",
+                package_version="1.1.1",
+                package_type="apk",
+                fixed_in_version="1.1.1k",
+                description="Critical vulnerability in OpenSSL",
+                cvss_score=9.8,
+                urls=["https://nvd.nist.gov/vuln/detail/CVE-2024-0001"],
+            ),
+            # DUPLICATE of CVE-2024-0001
+            GrypeVulnerability(
+                id="CVE-2024-0001",
+                severity="critical",
+                package_name="openssl",
+                package_version="1.1.1",
+                package_type="apk",
+                fixed_in_version="1.1.1k",
+                description="Critical vulnerability in OpenSSL",
+                cvss_score=9.8,
+                urls=["https://nvd.nist.gov/vuln/detail/CVE-2024-0001"],
+            ),
+            GrypeVulnerability(
+                id="CVE-2024-0002",
+                severity="high",
+                package_name="nginx",
+                package_version="1.20.0",
+                package_type="apk",
+                fixed_in_version="1.20.2",
+                description="High severity vulnerability in Nginx",
+                cvss_score=7.5,
+                urls=["https://nvd.nist.gov/vuln/detail/CVE-2024-0002"],
+            ),
+            # DUPLICATE of CVE-2024-0002
+            GrypeVulnerability(
+                id="CVE-2024-0002",
+                severity="high",
+                package_name="nginx",
+                package_version="1.20.0",
+                package_type="apk",
+                fixed_in_version="1.20.2",
+                description="High severity vulnerability in Nginx",
+                cvss_score=7.5,
+                urls=["https://nvd.nist.gov/vuln/detail/CVE-2024-0002"],
+            ),
+        ]
+
+        scan_result = GrypeScanResult(
+            target="alpine:3.18",
+            vulnerabilities=duplicate_vulns,
+            total_count=4,  # 4 vulnerabilities (2 duplicates)
+            severity_counts={"critical": 2, "high": 2},
+            scan_metadata={"scanner": "grype", "db_version": "5"},
+        )
+
+        generator = ComprehensiveReportGenerator()
+
+        report = generator.generate_report(
+            scan_result=scan_result,
+            include_executive_summary=False,
+            include_dashboard_data=True,
+        )
+
+        # Should have only 2 unique vulnerabilities (duplicates removed)
+        assert len(report.findings) == 2
+
+        # Verify unique CVE IDs
+        cve_ids = [f.cve_id for f in report.findings]
+        assert len(set(cve_ids)) == 2
+        assert "CVE-2024-0001" in cve_ids
+        assert "CVE-2024-0002" in cve_ids
+
+        # Verify summary reflects deduplicated counts
+        assert report.summary.total_vulnerabilities == 2
+        assert report.summary.critical == 1
+        assert report.summary.high == 1
+
+        # Verify dashboard data exists and is accurate
+        assert report.dashboard_data is not None
+        assert report.dashboard_data.summary_cards["total_vulnerabilities"] == 2
         assert len(report.dashboard_data.severity_distribution_chart) > 0
         assert len(report.dashboard_data.top_vulnerable_packages_chart) > 0
 
@@ -346,6 +432,68 @@ class TestExecutiveSummary:
         assert exec_sum.overall_risk_rating == "HIGH"
         assert len(exec_sum.key_findings) == 2
         assert exec_sum.days_to_patch_critical == 7
+
+    def test_executive_summary_deduplication(self, sample_scan_result):
+        """Test that executive summary removes duplicate findings and actions."""
+        from unittest.mock import Mock, patch
+
+        # Create a mock risk assessment response with duplicates
+        mock_risk_assessment = {
+            'risk_level': 'HIGH',
+            'key_risks': [
+                {'risk': 'Critical vulnerability in OpenSSL', 'likelihood': 'HIGH', 'impact': 'HIGH'},
+                {'risk': 'Critical vulnerability in OpenSSL', 'likelihood': 'HIGH', 'impact': 'HIGH'},  # Duplicate
+                {'risk': 'Remote code execution possible', 'likelihood': 'MEDIUM', 'impact': 'HIGH'},
+                {'risk': 'Remote code execution possible', 'likelihood': 'MEDIUM', 'impact': 'HIGH'},  # Duplicate
+                {'risk': 'Data exposure risk', 'likelihood': 'LOW', 'impact': 'MEDIUM'},
+            ],
+            'recommended_actions': [
+                {'action': 'Update OpenSSL to latest version', 'priority': 'CRITICAL'},
+                {'action': 'Update OpenSSL to latest version', 'priority': 'CRITICAL'},  # Duplicate
+                {'action': 'Apply security patches immediately', 'priority': 'HIGH'},
+                {'action': 'Apply security patches immediately', 'priority': 'HIGH'},  # Duplicate
+                {'action': 'Review access controls', 'priority': 'MEDIUM'},
+            ],
+            'risk_summary': 'Multiple critical vulnerabilities detected',
+            'compliance_concerns': ['PCI-DSS', 'SOC2'],
+        }
+
+        generator = ComprehensiveReportGenerator(ai_provider='openai', ai_model='gpt-4o')
+
+        # Mock the LLM client to return our test data
+        with patch('threat_radar.utils.comprehensive_report.get_llm_client') as mock_get_client:
+            mock_client = Mock()
+            mock_client.generate_json.return_value = mock_risk_assessment
+            mock_get_client.return_value = mock_client
+
+            # Generate report
+            report = generator.generate_report(
+                scan_result=sample_scan_result,
+                include_executive_summary=True,
+            )
+
+            # Verify deduplication worked
+            assert report.executive_summary is not None
+
+            # Should have 3 unique key findings (duplicates removed)
+            assert len(report.executive_summary.key_findings) == 3
+
+            # Check that each finding is unique
+            unique_findings = set(report.executive_summary.key_findings)
+            assert len(unique_findings) == 3
+
+            # Should have 2 unique immediate actions (duplicates removed, only CRITICAL/HIGH)
+            assert len(report.executive_summary.immediate_actions) == 2
+
+            # Check that each action is unique
+            unique_actions = set(report.executive_summary.immediate_actions)
+            assert len(unique_actions) == 2
+
+            # Verify the content is correct
+            assert any('OpenSSL' in finding for finding in report.executive_summary.key_findings)
+            assert any('code execution' in finding for finding in report.executive_summary.key_findings)
+            assert any('Update OpenSSL' in action for action in report.executive_summary.immediate_actions)
+            assert any('security patches' in action for action in report.executive_summary.immediate_actions)
 
 
 class TestDashboardData:

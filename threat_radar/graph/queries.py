@@ -1164,8 +1164,23 @@ class GraphAnalyzer:
             (avg_cvss * avg_exploitability)
         )
 
-        # Normalize to 0-100 scale
-        normalized_risk = min(100.0, (risk_score / 10.0) * 10)
+        # Normalize to 0-100 scale using logarithmic scaling to prevent saturation
+        # This ensures diverse scores while still reflecting severity:
+        # - Low risk (0-30): 1-3 critical paths, limited escalation
+        # - Medium risk (30-60): 4-7 critical paths, moderate escalation
+        # - High risk (60-85): 8-15 critical paths, significant escalation
+        # - Critical risk (85-100): 15+ critical paths, extensive attack surface
+        import math
+        if risk_score < 10:
+            # Linear scaling for low risk
+            normalized_risk = risk_score * 5.0  # Max ~50 for risk_score=10
+        else:
+            # Logarithmic scaling for higher risk to prevent immediate saturation
+            # log10(10) = 1 → 50, log10(100) = 2 → 75, log10(1000) = 3 → 90
+            normalized_risk = 50 + (math.log10(risk_score) - 1) * 25
+
+        # Cap at 100 but allow full range
+        normalized_risk = min(100.0, max(0.0, normalized_risk))
 
         return round(normalized_risk, 2)
 
