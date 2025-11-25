@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vulnerability Scan Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #1a202c;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+
+        h2 {
+            color: #2d3748;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        h3 {
+            color: #4a5568;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .metadata {
+            background-color: #f7fafc;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+        }
+
+        .metadata-item {
+            margin-bottom: 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.875em;
+            font-weight: 600;
+        }
+
+        .badge-critical {
+            background-color: #fee;
+            color: #c53030;
+        }
+
+        .badge-high {
+            background-color: #fed7d7;
+            color: #c05621;
+        }
+
+        .badge-medium {
+            background-color: #fefcbf;
+            color: #b7791f;
+        }
+
+        .badge-low {
+            background-color: #bee3f8;
+            color: #2c5282;
+        }
+
+        .badge-negligible {
+            background-color: #c6f6d5;
+            color: #22543d;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background-color: #f7fafc;
+            padding: 20px;
+            border-radius: 6px;
+            border-left: 4px solid #4299e1;
+        }
+
+        .stat-card h4 {
+            color: #718096;
+            font-size: 0.875em;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #1a202c;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background-color: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        tr:hover {
+            background-color: #f7fafc;
+        }
+
+        .vulnerability-card {
+            background-color: #f7fafc;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 6px;
+            border-left: 4px solid #cbd5e0;
+        }
+
+        .vulnerability-card.critical {
+            border-left-color: #c53030;
+        }
+
+        .vulnerability-card.high {
+            border-left-color: #c05621;
+        }
+
+        .executive-summary {
+            background-color: #edf2f7;
+            padding: 30px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+
+        .risk-rating {
+            font-size: 1.5em;
+            font-weight: 700;
+            padding: 15px 30px;
+            border-radius: 6px;
+            display: inline-block;
+            margin: 10px 0;
+        }
+
+        .risk-critical {
+            background-color: #c53030;
+            color: white;
+        }
+
+        .risk-high {
+            background-color: #dd6b20;
+            color: white;
+        }
+
+        .risk-medium {
+            background-color: #d69e2e;
+            color: white;
+        }
+
+        .risk-low {
+            background-color: #38a169;
+            color: white;
+        }
+
+        ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            background-color: #edf2f7;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+            color: #718096;
+            font-size: 0.875em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ Vulnerability Scan Report</h1>
+
+
+        <div class="metadata">
+            <div class="metadata-item"><strong>Report ID:</strong> <code>vuln-report-554f9d97</code></div>
+            <div class="metadata-item"><strong>Generated:</strong> 2025-11-23T00:24:31.291389</div>
+            <div class="metadata-item"><strong>Target:</strong> <code>us-central1-docker.pkg.dev/google-samples/microservices-demo/paymentservice:v0.10.3</code></div>
+            <div class="metadata-item"><strong>Report Level:</strong> DETAILED</div>
+        </div>
+
+
+        <h2>📈 Summary Statistics</h2>
+        <div class="stats-grid">
+
+
+            <div class="stat-card">
+                <h4>Total Vulnerabilities</h4>
+                <div class="value">37</div>
+            </div>
+
+
+            <div class="stat-card">
+                <h4>Critical <span class="badge badge-critical">CRITICAL</span></h4>
+                <div class="value">2</div>
+            </div>
+
+
+            <div class="stat-card">
+                <h4>High <span class="badge badge-high">HIGH</span></h4>
+                <div class="value">11</div>
+            </div>
+
+
+            <div class="stat-card">
+                <h4>Medium <span class="badge badge-medium">MEDIUM</span></h4>
+                <div class="value">14</div>
+            </div>
+
+
+            <div class="stat-card">
+                <h4>Low <span class="badge badge-low">LOW</span></h4>
+                <div class="value">10</div>
+            </div>
+
+
+            <div class="stat-card">
+                <h4>Vulnerable Packages</h4>
+                <div class="value">19</div>
+            </div>
+
+
+            <div class="stat-card">
+                <h4>Average CVSS</h4>
+                <div class="value">5.65</div>
+            </div>
+
+
+            <div class="stat-card">
+                <h4>Highest CVSS</h4>
+                <div class="value">9.40</div>
+            </div>
+
+        </div>
+
+        <h2>📦 Most Vulnerable Packages</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Package</th>
+                    <th>Version</th>
+                    <th>Vulnerabilities</th>
+                    <th>Highest Severity</th>
+                    <th>Recommended Version</th>
+                </tr>
+            </thead>
+            <tbody>
+
+
+                <tr>
+                    <td><code>libcrypto3</code></td>
+                    <td><code>3.3.2-r0</code></td>
+                    <td>6</td>
+                    <td><span class="badge badge-high">HIGH</span></td>
+                    <td><code>3.3.3-r0</code></td>
+                </tr>
+
+
+                <tr>
+                    <td><code>libssl3</code></td>
+                    <td><code>3.3.2-r0</code></td>
+                    <td>6</td>
+                    <td><span class="badge badge-high">HIGH</span></td>
+                    <td><code>3.3.3-r0</code></td>
+                </tr>
+
+
+                <tr>
+                    <td><code>nodejs</code></td>
+                    <td><code>20.15.1-r0</code></td>
+                    <td>5</td>
+                    <td><span class="badge badge-high">HIGH</span></td>
+                    <td><code>No fix available</code></td>
+                </tr>
+
+
+                <tr>
+                    <td><code>busybox</code></td>
+                    <td><code>1.36.1-r29</code></td>
+                    <td>2</td>
+                    <td><span class="badge badge-low">LOW</span></td>
+                    <td><code>No fix available</code></td>
+                </tr>
+
+
+                <tr>
+                    <td><code>busybox-binsh</code></td>
+                    <td><code>1.36.1-r29</code></td>
+                    <td>2</td>
+                    <td><span class="badge badge-low">LOW</span></td>
+                    <td><code>No fix available</code></td>
+                </tr>
+
+
+                <tr>
+                    <td><code>ssl_client</code></td>
+                    <td><code>1.36.1-r29</code></td>
+                    <td>2</td>
+                    <td><span class="badge badge-low">LOW</span></td>
+                    <td><code>No fix available</code></td>
+                </tr>
+
+
+                <tr>
+                    <td><code>brace-expansion</code></td>
+                    <td><code>1.1.11</code></td>
+                    <td>2</td>
+                    <td><span class="badge badge-low">LOW</span></td>
+                    <td><code>1.1.12</code></td>
+                </tr>
+
+
+                <tr>
+                    <td><code>taffydb</code></td>
+                    <td><code>2.6.2</code></td>
+                    <td>1</td>
+                    <td><span class="badge badge-high">HIGH</span></td>
+                    <td><code>No fix available</code></td>
+                </tr>
+
+
+                <tr>
+                    <td><code>parse-duration</code></td>
+                    <td><code>1.0.2</code></td>
+                    <td>1</td>
+                    <td><span class="badge badge-high">HIGH</span></td>
+                    <td><code>2.1.3</code></td>
+                </tr>
+
+
+                <tr>
+                    <td><code>tar</code></td>
+                    <td><code>6.1.12</code></td>
+                    <td>1</td>
+                    <td><span class="badge badge-medium">MEDIUM</span></td>
+                    <td><code>6.2.1</code></td>
+                </tr>
+
+
+            </tbody>
+        </table>
+
+
+        <h2>🔴 Critical & High Severity Vulnerabilities</h2>
+
+
+        <div class="vulnerability-card critical">
+            <h3>GHSA-fjxv-7rqg-78g4 <span class="badge badge-critical">CRITICAL</span></h3>
+            <p><strong>Package:</strong> <code>form-data@2.5.1</code></p>
+            <p><strong>CVSS Score:</strong> 9.4</p>
+            <p><strong>Fix Available:</strong> ✅ Upgrade to <code>2.5.4</code></p>
+            <p><strong>Description:</strong> form-data uses unsafe random function in form-data for choosing boundary</p>
+        </div>
+
+
+        <div class="vulnerability-card critical">
+            <h3>GHSA-2jcg-qqmg-46q6 <span class="badge badge-critical">CRITICAL</span></h3>
+            <p><strong>Package:</strong> <code>monorepo-symlink-test@0.0.0</code></p>
+            <p><strong>CVSS Score:</strong> N/A</p>
+            <p><strong>Fix Available:</strong> ❌ No fix available</p>
+            <p><strong>Description:</strong> Malware in monorepo-symlink-test</p>
+        </div>
+
+
+        <div class="vulnerability-card high">
+            <h3>CVE-2025-31498 <span class="badge badge-high">HIGH</span></h3>
+            <p><strong>Package:</strong> <code>c-ares@1.33.1-r0</code></p>
+            <p><strong>CVSS Score:</strong> 8.3</p>
+            <p><strong>Fix Available:</strong> ❌ No fix available</p>
+            <p><strong>Description:</strong> c-ares is an asynchronous resolver library. From 1.32.3 through 1.34.4, there is a use-after-free in read_answers() when process_answer() may re-enqueue a query either due to a DNS Cookie Failure or when the upstream server does not properly support EDNS, or possibly on TCP queries if the remote closed the connection immediately after a response. If there was an issue trying to put that new transaction on the wire, it would close the connection handle, but read_answers() was still expecting the connection handle to be available to possibly dequeue other responses. In theory a remote attacker might be able to trigger this by flooding the target with ICMP UNREACHABLE packets if they also control the upstream nameserver and can return a result with one of those conditions, this has been untested. Otherwise only a local attacker might be able to change system behavior to make send()/write() return a failure condition. This vulnerability is fixed in 1.34.5.</p>
+        </div>
+
+
+        <div class="vulnerability-card high">
+            <h3>CVE-2025-26519 <span class="badge badge-high">HIGH</span></h3>
+            <p><strong>Package:</strong> <code>musl@1.2.5-r0</code></p>
+            <p><strong>CVSS Score:</strong> 8.1</p>
+            <p><strong>Fix Available:</strong> ✅ Upgrade to <code>1.2.5-r1</code></p>
+            <p><strong>Description:</strong> No description available</p>
+        </div>
+
+
+        <div class="vulnerability-card high">
+            <h3>CVE-2025-26519 <span class="badge badge-high">HIGH</span></h3>
+            <p><strong>Package:</strong> <code>musl-utils@1.2.5-r0</code></p>
+            <p><strong>CVSS Score:</strong> 8.1</p>
+            <p><strong>Fix Available:</strong> ✅ Upgrade to <code>1.2.5-r1</code></p>
+            <p><strong>Description:</strong> No description available</p>
+        </div>
+
+
+        <div class="vulnerability-card high">
+            <h3>CVE-2025-23083 <span class="badge badge-high">HIGH</span></h3>
+            <p><strong>Package:</strong> <code>nodejs@20.15.1-r0</code></p>
+            <p><strong>CVSS Score:</strong> 7.7</p>
+            <p><strong>Fix Available:</strong> ❌ No fix available</p>
+            <p><strong>Description:</strong> With the aid of the diagnostics_channel utility, an event can be hooked into whenever a worker thread is created. This is not limited only to workers but also exposes internal workers, where an instance of them can be fetched, and its constructor can be grabbed and reinstated for malicious usage. 
+
+This vulnerability affects Permission Model users (--permission) on Node.js v20, v22, and v23.</p>
+        </div>
+
+
+        <div class="vulnerability-card high">
+            <h3>GHSA-mxhp-79qh-mcx6 <span class="badge badge-high">HIGH</span></h3>
+            <p><strong>Package:</strong> <code>taffydb@2.6.2</code></p>
+            <p><strong>CVSS Score:</strong> 7.5</p>
+            <p><strong>Fix Available:</strong> ❌ No fix available</p>
+            <p><strong>Description:</strong> TaffyDB can allow access to any data items in the DB</p>
+        </div>
+
+
+        <div class="vulnerability-card high">
+            <h3>GHSA-hcrg-fc28-fcg5 <span class="badge badge-high">HIGH</span></h3>
+            <p><strong>Package:</strong> <code>parse-duration@1.0.2</code></p>
+            <p><strong>CVSS Score:</strong> 7.5</p>
+            <p><strong>Fix Available:</strong> ✅ Upgrade to <code>2.1.3</code></p>
+            <p><strong>Description:</strong> parse-duration has a Regex Denial of Service that results in event loop delay and out of memory</p>
+        </div>
+
+
+        <div class="vulnerability-card high">
+            <h3>CVE-2025-23166 <span class="badge badge-high">HIGH</span></h3>
+            <p><strong>Package:</strong> <code>nodejs@20.15.1-r0</code></p>
+            <p><strong>CVSS Score:</strong> 7.5</p>
+            <p><strong>Fix Available:</strong> ❌ No fix available</p>
+            <p><strong>Description:</strong> The C++ method SignTraits::DeriveBits() may incorrectly call ThrowException() based on user-supplied inputs when executing in a background thread, crashing the Node.js process. Such cryptographic operations are commonly applied to untrusted inputs. Thus, this mechanism potentially allows an adversary to remotely crash a Node.js runtime.</p>
+        </div>
+
+
+        <div class="vulnerability-card high">
+            <h3>CVE-2025-9230 <span class="badge badge-high">HIGH</span></h3>
+            <p><strong>Package:</strong> <code>libcrypto3@3.3.2-r0</code></p>
+            <p><strong>CVSS Score:</strong> 7.5</p>
+            <p><strong>Fix Available:</strong> ✅ Upgrade to <code>3.3.5-r0</code></p>
+            <p><strong>Description:</strong> No description available</p>
+        </div>
+
+
+        <div class="vulnerability-card high">
+            <h3>CVE-2025-9230 <span class="badge badge-high">HIGH</span></h3>
+            <p><strong>Package:</strong> <code>libssl3@3.3.2-r0</code></p>
+            <p><strong>CVSS Score:</strong> 7.5</p>
+            <p><strong>Fix Available:</strong> ✅ Upgrade to <code>3.3.5-r0</code></p>
+            <p><strong>Description:</strong> No description available</p>
+        </div>
+
+
+        <div class="vulnerability-card high">
+            <h3>CVE-2025-5222 <span class="badge badge-high">HIGH</span></h3>
+            <p><strong>Package:</strong> <code>icu-data-en@74.2-r0</code></p>
+            <p><strong>CVSS Score:</strong> 7</p>
+            <p><strong>Fix Available:</strong> ✅ Upgrade to <code>74.2-r1</code></p>
+            <p><strong>Description:</strong> No description available</p>
+        </div>
+
+
+        <div class="vulnerability-card high">
+            <h3>CVE-2025-5222 <span class="badge badge-high">HIGH</span></h3>
+            <p><strong>Package:</strong> <code>icu-libs@74.2-r0</code></p>
+            <p><strong>CVSS Score:</strong> 7</p>
+            <p><strong>Fix Available:</strong> ✅ Upgrade to <code>74.2-r1</code></p>
+            <p><strong>Description:</strong> No description available</p>
+        </div>
+
+
+        <div class="footer">
+            <p>Report generated by Threat Radar on 2025-11-23 00:24:31</p>
+        </div>
+    </div>
+</body>
+</html>

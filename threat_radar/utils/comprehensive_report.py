@@ -120,10 +120,26 @@ class ComprehensiveReportGenerator:
         return report
 
     def _build_findings(self, scan_result: GrypeScanResult) -> List[VulnerabilityFinding]:
-        """Build vulnerability findings from scan result."""
+        """Build vulnerability findings from scan result with deduplication."""
         findings = []
+        seen_vulns = set()
 
         for vuln in scan_result.vulnerabilities:
+            # Create unique key for deduplication based on CVE ID, package, and version
+            vuln_key = (
+                vuln.id,
+                vuln.package_name,
+                vuln.package_version,
+                vuln.package_type,
+            )
+
+            # Skip if we've already seen this exact vulnerability
+            if vuln_key in seen_vulns:
+                logger.debug(f"Skipping duplicate vulnerability: {vuln.id} in {vuln.package_name}@{vuln.package_version}")
+                continue
+
+            seen_vulns.add(vuln_key)
+
             finding = VulnerabilityFinding(
                 cve_id=vuln.id,
                 severity=vuln.severity.lower(),
@@ -136,6 +152,10 @@ class ComprehensiveReportGenerator:
                 urls=vuln.urls or [],
             )
             findings.append(finding)
+
+        if len(seen_vulns) < len(scan_result.vulnerabilities):
+            duplicates_removed = len(scan_result.vulnerabilities) - len(seen_vulns)
+            logger.info(f"Removed {duplicates_removed} duplicate vulnerability entries")
 
         return findings
 
@@ -189,15 +209,20 @@ class ComprehensiveReportGenerator:
     def _build_summary(
         self, scan_result: GrypeScanResult, findings: List[VulnerabilityFinding]
     ) -> VulnerabilitySummary:
-        """Build summary statistics."""
+        """Build summary statistics from deduplicated findings."""
+        # Count severity from deduplicated findings, not from original scan result
+        severity_counts = defaultdict(int)
+        for finding in findings:
+            severity_counts[finding.severity] += 1
+
         summary = VulnerabilitySummary(
-            total_vulnerabilities=scan_result.total_count,
-            critical=scan_result.severity_counts.get('critical', 0),
-            high=scan_result.severity_counts.get('high', 0),
-            medium=scan_result.severity_counts.get('medium', 0),
-            low=scan_result.severity_counts.get('low', 0),
-            negligible=scan_result.severity_counts.get('negligible', 0),
-            unknown=scan_result.severity_counts.get('unknown', 0),
+            total_vulnerabilities=len(findings),  # Use deduplicated count
+            critical=severity_counts.get('critical', 0),
+            high=severity_counts.get('high', 0),
+            medium=severity_counts.get('medium', 0),
+            low=severity_counts.get('low', 0),
+            negligible=severity_counts.get('negligible', 0),
+            unknown=severity_counts.get('unknown', 0),
         )
 
         # Calculate fix availability
@@ -258,19 +283,30 @@ class ComprehensiveReportGenerator:
             import json
             risk_assessment = llm_client.generate_json(prompt)
 
-            # Extract key findings from risk assessment
+            # Extract key findings from risk assessment (deduplicated)
             key_findings = []
-            for risk in risk_assessment.get('key_risks', [])[:5]:
-                key_findings.append(
-                    f"{risk.get('risk', 'Risk identified')} (Likelihood: {risk.get('likelihood', 'Unknown')}, Impact: {risk.get('impact', 'Unknown')})"
-                )
+            seen_findings = set()
+            for risk in risk_assessment.get('key_risks', []):
+                finding = f"{risk.get('risk', 'Risk identified')} (Likelihood: {risk.get('likelihood', 'Unknown')}, Impact: {risk.get('impact', 'Unknown')})"
+                # Deduplicate by checking if we've seen this finding before
+                if finding not in seen_findings:
+                    key_findings.append(finding)
+                    seen_findings.add(finding)
+                    if len(key_findings) >= 5:
+                        break
 
-            # Extract immediate actions from recommended actions
-            immediate_actions = [
-                action.get('action', 'Action required')
-                for action in risk_assessment.get('recommended_actions', [])[:5]
-                if action.get('priority', '').upper() in ['CRITICAL', 'HIGH']
-            ]
+            # Extract immediate actions from recommended actions (deduplicated)
+            immediate_actions = []
+            seen_actions = set()
+            for action in risk_assessment.get('recommended_actions', []):
+                if action.get('priority', '').upper() in ['CRITICAL', 'HIGH']:
+                    action_text = action.get('action', 'Action required')
+                    # Deduplicate by checking if we've seen this action before
+                    if action_text not in seen_actions:
+                        immediate_actions.append(action_text)
+                        seen_actions.add(action_text)
+                        if len(immediate_actions) >= 5:
+                            break
 
             # Determine compliance impact
             compliance_concerns = risk_assessment.get('compliance_concerns', [])
