@@ -1,0 +1,1074 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d18" for="edge" attr.name="detected_version" attr.type="string" />
+  <key id="d17" for="edge" attr.name="edge_type" attr.type="string" />
+  <key id="d16" for="node" attr.name="is_fix" attr.type="boolean" />
+  <key id="d15" for="node" attr.name="ecosystem" attr.type="string" />
+  <key id="d14" for="node" attr.name="version" attr.type="string" />
+  <key id="d13" for="node" attr.name="name" attr.type="string" />
+  <key id="d12" for="node" attr.name="urls" attr.type="string" />
+  <key id="d11" for="node" attr.name="description" attr.type="string" />
+  <key id="d10" for="node" attr.name="cvss_score" attr.type="double" />
+  <key id="d9" for="node" attr.name="severity" attr.type="string" />
+  <key id="d8" for="node" attr.name="cve_id" attr.type="string" />
+  <key id="d7" for="node" attr.name="timestamp" attr.type="string" />
+  <key id="d6" for="node" attr.name="low_count" attr.type="long" />
+  <key id="d5" for="node" attr.name="medium_count" attr.type="long" />
+  <key id="d4" for="node" attr.name="high_count" attr.type="long" />
+  <key id="d3" for="node" attr.name="critical_count" attr.type="long" />
+  <key id="d2" for="node" attr.name="total_vulnerabilities" attr.type="long" />
+  <key id="d1" for="node" attr.name="target" attr.type="string" />
+  <key id="d0" for="node" attr.name="node_type" attr.type="string" />
+  <graph edgedefault="directed">
+    <node id="scan:us-central1-docker.pkg.dev/google-samples/microservices-demo/emailservice:v0.10.3:1764037522.766381">
+      <data key="d0">scan_result</data>
+      <data key="d1">us-central1-docker.pkg.dev/google-samples/microservices-demo/emailservice:v0.10.3</data>
+      <data key="d2">50</data>
+      <data key="d3">3</data>
+      <data key="d4">13</data>
+      <data key="d5">26</data>
+      <data key="d6">8</data>
+      <data key="d7">2025-11-24T18:25:22.766390</data>
+    </node>
+    <node id="cve:GHSA-248v-346w-9cwc">
+      <data key="d0">vulnerability</data>
+      <data key="d8">GHSA-248v-346w-9cwc</data>
+      <data key="d9">low</data>
+      <data key="d10">7.5</data>
+      <data key="d11">Certifi removes GLOBALTRUST root certificate</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:certifi@2023.7.22">
+      <data key="d0">package</data>
+      <data key="d13">certifi</data>
+      <data key="d14">2023.7.22</data>
+      <data key="d15">python</data>
+    </node>
+    <node id="package:certifi@2024.7.4">
+      <data key="d0">package</data>
+      <data key="d13">certifi</data>
+      <data key="d14">2024.7.4</data>
+      <data key="d15">python</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:CVE-2025-0938">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2025-0938</data>
+      <data key="d9">medium</data>
+      <data key="d10">6.3</data>
+      <data key="d11">The Python standard library functions `urllib.parse.urlsplit` and `urlparse` accepted domain names that included square brackets which isn't valid according to RFC 3986. Square brackets are only meant to be used as delimiters for specifying IPv6 and IPvFuture hosts in URLs. This could result in differential parsing across the Python URL parser and other specification-compliant URL parsers.</data>
+      <data key="d12">["https://github.com/python/cpython/commit/526617ed68cde460236c973e5d0a8bad4de896ba", "https://github.com/python/cpython/commit/90e526ae67b172ed7c6c56e7edad36263b0f9403", "https://github.com/python/cpython/commit/a7084f6075c9595ba60119ce8c62f1496f50c568", "https://github.com/python/cpython/commit/b8b4b713c5f8ec0958c7ef8d29d6711889bc94ab", "https://github.com/python/cpython/commit/d89a5f6a6e65511a5f6e0618c4c30a7aa5aba56a", "https://github.com/python/cpython/commit/ff4e5c25666f63544071a6b075ae8b25c98b7a32", "https://github.com/python/cpython/issues/105704", "https://github.com/python/cpython/pull/129418", "https://mail.python.org/archives/list/security-announce@python.org/thread/K4EUG6EKV6JYFIC24BASYOZS4M5XOQIB/", "https://lists.debian.org/debian-lts-announce/2025/03/msg00013.html", "https://security.netapp.com/advisory/ntap-20250314-0002/"]</data>
+    </node>
+    <node id="package:python@3.12.7">
+      <data key="d0">package</data>
+      <data key="d13">python</data>
+      <data key="d14">3.12.7</data>
+      <data key="d15">binary</data>
+    </node>
+    <node id="package:python@3.9.22">
+      <data key="d0">package</data>
+      <data key="d13">python</data>
+      <data key="d14">3.9.22</data>
+      <data key="d15">binary</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:CVE-2024-12797">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2024-12797</data>
+      <data key="d9">medium</data>
+      <data key="d10">6.3</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:libcrypto3@3.3.2-r1">
+      <data key="d0">package</data>
+      <data key="d13">libcrypto3</data>
+      <data key="d14">3.3.2-r1</data>
+      <data key="d15">apk</data>
+    </node>
+    <node id="package:libcrypto3@3.3.3-r0">
+      <data key="d0">package</data>
+      <data key="d13">libcrypto3</data>
+      <data key="d14">3.3.3-r0</data>
+      <data key="d15">apk</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="package:libssl3@3.3.2-r1">
+      <data key="d0">package</data>
+      <data key="d13">libssl3</data>
+      <data key="d14">3.3.2-r1</data>
+      <data key="d15">apk</data>
+    </node>
+    <node id="package:libssl3@3.3.3-r0">
+      <data key="d0">package</data>
+      <data key="d13">libssl3</data>
+      <data key="d14">3.3.3-r0</data>
+      <data key="d15">apk</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:GHSA-h75v-3vvj-5mfj">
+      <data key="d0">vulnerability</data>
+      <data key="d8">GHSA-h75v-3vvj-5mfj</data>
+      <data key="d9">medium</data>
+      <data key="d10">5.4</data>
+      <data key="d11">Jinja vulnerable to HTML attribute injection when passing user input as keys to xmlattr filter</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:jinja2@3.1.2">
+      <data key="d0">package</data>
+      <data key="d13">jinja2</data>
+      <data key="d14">3.1.2</data>
+      <data key="d15">python</data>
+    </node>
+    <node id="package:jinja2@3.1.4">
+      <data key="d0">package</data>
+      <data key="d13">jinja2</data>
+      <data key="d14">3.1.4</data>
+      <data key="d15">python</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:GHSA-jjg7-2v4v-x38h">
+      <data key="d0">vulnerability</data>
+      <data key="d8">GHSA-jjg7-2v4v-x38h</data>
+      <data key="d9">medium</data>
+      <data key="d10">7.5</data>
+      <data key="d11">Internationalized Domain Names in Applications (IDNA) vulnerable to denial of service from specially crafted inputs to idna.encode</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:idna@3.4">
+      <data key="d0">package</data>
+      <data key="d13">idna</data>
+      <data key="d14">3.4</data>
+      <data key="d15">python</data>
+    </node>
+    <node id="package:idna@3.7">
+      <data key="d0">package</data>
+      <data key="d13">idna</data>
+      <data key="d14">3.7</data>
+      <data key="d15">python</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:CVE-2024-12254">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2024-12254</data>
+      <data key="d9">high</data>
+      <data key="d10">8.7</data>
+      <data key="d11">Starting in Python 3.12.0, the asyncio._SelectorSocketTransport.writelines()
+ method would not "pause" writing and signal to the Protocol to drain 
+the buffer to the wire once the write buffer reached the "high-water 
+mark". Because of this, Protocols would not periodically drain the write
+ buffer potentially leading to memory exhaustion.
+
+
+
+
+
+This
+ vulnerability likely impacts a small number of users, you must be using
+ Python 3.12.0 or later, on macOS or Linux, using the asyncio module 
+with protocols, and using .writelines() method which had new 
+zero-copy-on-write behavior in Python 3.12.0 and later. If not all of 
+these factors are true then your usage of Python is unaffected.</data>
+      <data key="d12">["https://github.com/python/cpython/commit/71e8429ac8e2adc10084ab5ec29a62f4b6671a82", "https://github.com/python/cpython/commit/9aa0deb2eef2655a1029ba228527b152353135b5", "https://github.com/python/cpython/commit/e991ac8f2037d78140e417cc9a9486223eb3e786", "https://github.com/python/cpython/issues/127655", "https://github.com/python/cpython/pull/127656", "https://mail.python.org/archives/list/security-announce@python.org/thread/H4O3UBAOAQQXGT4RE3E4XQYR5XLROORB/", "http://www.openwall.com/lists/oss-security/2024/12/06/1", "https://security.netapp.com/advisory/ntap-20250404-0010/"]</data>
+    </node>
+    <node id="package:python@3.12.9">
+      <data key="d0">package</data>
+      <data key="d13">python</data>
+      <data key="d14">3.12.9</data>
+      <data key="d15">binary</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:CVE-2025-31115">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2025-31115</data>
+      <data key="d9">high</data>
+      <data key="d10">8.7</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:xz-libs@5.6.2-r0">
+      <data key="d0">package</data>
+      <data key="d13">xz-libs</data>
+      <data key="d14">5.6.2-r0</data>
+      <data key="d15">apk</data>
+    </node>
+    <node id="package:xz-libs@5.6.2-r1">
+      <data key="d0">package</data>
+      <data key="d13">xz-libs</data>
+      <data key="d14">5.6.2-r1</data>
+      <data key="d15">apk</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:CVE-2025-8194">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2025-8194</data>
+      <data key="d9">high</data>
+      <data key="d10">7.5</data>
+      <data key="d11">There is a defect in the CPython “tarfile” module affecting the “TarFile” extraction and entry enumeration APIs. The tar implementation would process tar archives with negative offsets without error, resulting in an infinite loop and deadlock during the parsing of maliciously crafted tar archives. 
+
+This vulnerability can be mitigated by including the following patch after importing the “tarfile” module:  https://gist.github.com/sethmlarson/1716ac5b82b73dbcbf23ad2eff8b33e1</data>
+      <data key="d12">["https://gist.github.com/sethmlarson/1716ac5b82b73dbcbf23ad2eff8b33e1", "https://github.com/python/cpython/commit/57f5981d6260ed21266e0c26951b8564cc252bc2", "https://github.com/python/cpython/commit/7040aa54f14676938970e10c5f74ea93cd56aa38", "https://github.com/python/cpython/commit/73f03e4808206f71eb6b92c579505a220942ef19", "https://github.com/python/cpython/commit/b4ec17488eedec36d3c05fec127df71c0071f6cb", "https://github.com/python/cpython/commit/c9d9f78feb1467e73fd29356c040bde1c104f29f", "https://github.com/python/cpython/commit/cdae923ffe187d6ef916c0f665a31249619193fe", "https://github.com/python/cpython/commit/fbc2a0ca9ac8aff6887f8ddf79b87b4510277227", "https://github.com/python/cpython/issues/130577", "https://github.com/python/cpython/pull/137027", "https://mail.python.org/archives/list/security-announce@python.org/thread/ZULLF3IZ726XP5EY7XJ7YIN3K5MDYR2D/", "http://www.openwall.com/lists/oss-security/2025/07/28/1", "http://www.openwall.com/lists/oss-security/2025/07/28/2"]</data>
+    </node>
+    <node id="package:python@3.9.24">
+      <data key="d0">package</data>
+      <data key="d13">python</data>
+      <data key="d14">3.9.24</data>
+      <data key="d15">binary</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:CVE-2025-3277">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2025-3277</data>
+      <data key="d9">critical</data>
+      <data key="d10">9.8</data>
+      <data key="d11">An integer overflow can be triggered in SQLite’s `concat_ws()` function. The resulting, truncated integer is then used to allocate a buffer. When SQLite then writes the resulting string to the buffer, it uses the original, untruncated size and thus a wild Heap Buffer overflow of size ~4GB can be triggered. This can result in arbitrary code execution.</data>
+      <data key="d12">["https://sqlite.org/src/info/498e3f1cf57f164f"]</data>
+    </node>
+    <node id="package:sqlite-libs@3.45.3-r1">
+      <data key="d0">package</data>
+      <data key="d13">sqlite-libs</data>
+      <data key="d14">3.45.3-r1</data>
+      <data key="d15">apk</data>
+    </node>
+    <node id="cve:GHSA-34jh-p97f-mpxf">
+      <data key="d0">vulnerability</data>
+      <data key="d8">GHSA-34jh-p97f-mpxf</data>
+      <data key="d9">medium</data>
+      <data key="d10">4.4</data>
+      <data key="d11">urllib3's Proxy-Authorization request header isn't stripped during cross-origin redirects</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:urllib3@2.0.7">
+      <data key="d0">package</data>
+      <data key="d13">urllib3</data>
+      <data key="d14">2.0.7</data>
+      <data key="d15">python</data>
+    </node>
+    <node id="package:urllib3@2.2.2">
+      <data key="d0">package</data>
+      <data key="d13">urllib3</data>
+      <data key="d14">2.2.2</data>
+      <data key="d15">python</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:GHSA-cpwx-vrp4-4pq7">
+      <data key="d0">vulnerability</data>
+      <data key="d8">GHSA-cpwx-vrp4-4pq7</data>
+      <data key="d9">medium</data>
+      <data key="d10">8.8</data>
+      <data key="d11">Jinja2 vulnerable to sandbox breakout through attr filter selecting format method</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:jinja2@3.1.6">
+      <data key="d0">package</data>
+      <data key="d13">jinja2</data>
+      <data key="d14">3.1.6</data>
+      <data key="d15">python</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:CVE-2025-4330">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2025-4330</data>
+      <data key="d9">high</data>
+      <data key="d10">7.5</data>
+      <data key="d11">Allows the extraction filter to be ignored, allowing symlink targets to point outside the destination directory, and the modification of some file metadata.
+
+
+You are affected by this vulnerability if using the tarfile module to extract untrusted tar archives using TarFile.extractall() or TarFile.extract() using the filter= parameter with a value of "data" or "tar". See the tarfile  extraction filters documentation https://docs.python.org/3/library/tarfile.html#tarfile-extraction-filter  for more information.
+
+Note that for Python 3.14 or later the default value of filter= changed from "no filtering" to `"data", so if you are relying on this new default behavior then your usage is also affected.
+
+Note that none of these vulnerabilities significantly affect the installation of source distributions which are tar archives as source distributions already allow arbitrary code execution during the build process. However when evaluating source distributions it's important to avoid installing source distributions with suspicious links.</data>
+      <data key="d12">["https://gist.github.com/sethmlarson/52398e33eff261329a0180ac1d54f42f", "https://github.com/python/cpython/commit/19de092debb3d7e832e5672cc2f7b788d35951da", "https://github.com/python/cpython/commit/28463dba112af719df1e8b0391c46787ad756dd9", "https://github.com/python/cpython/commit/3612d8f51741b11f36f8fb0494d79086bac9390a", "https://github.com/python/cpython/commit/4633f3f497b1ff70e4a35b6fe2c907cbe2d4cb2e", "https://github.com/python/cpython/commit/9c1110ef6652687d7c55f590f909720eddde965a", "https://github.com/python/cpython/commit/9e0ac76d96cf80b49055f6d6b9a6763fb9215c2a", "https://github.com/python/cpython/commit/aa9eb5f757ceff461e6e996f12c89e5d9b583b01", "https://github.com/python/cpython/commit/dd8f187d0746da151e0025c51680979ac5b4cfb1", "https://github.com/python/cpython/issues/135034", "https://github.com/python/cpython/pull/135037", "https://mail.python.org/archives/list/security-announce@python.org/thread/MAXIJJCUUMCL7ATZNDVEGGHUMQMUUKLG/"]</data>
+    </node>
+    <node id="package:python@3.9.23">
+      <data key="d0">package</data>
+      <data key="d13">python</data>
+      <data key="d14">3.9.23</data>
+      <data key="d15">binary</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:CVE-2025-4138">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2025-4138</data>
+      <data key="d9">high</data>
+      <data key="d10">7.5</data>
+      <data key="d11">Allows the extraction filter to be ignored, allowing symlink targets to point outside the destination directory, and the modification of some file metadata.
+
+
+You are affected by this vulnerability if using the tarfile module to extract untrusted tar archives using TarFile.extractall() or TarFile.extract() using the filter= parameter with a value of "data" or "tar". See the tarfile  extraction filters documentation https://docs.python.org/3/library/tarfile.html#tarfile-extraction-filter  for more information.
+
+Note that for Python 3.14 or later the default value of filter= changed from "no filtering" to `"data", so if you are relying on this new default behavior then your usage is also affected.
+
+Note that none of these vulnerabilities significantly affect the installation of source distributions which are tar archives as source distributions already allow arbitrary code execution during the build process. However when evaluating source distributions it's important to avoid installing source distributions with suspicious links.</data>
+      <data key="d12">["https://gist.github.com/sethmlarson/52398e33eff261329a0180ac1d54f42f", "https://github.com/python/cpython/commit/19de092debb3d7e832e5672cc2f7b788d35951da", "https://github.com/python/cpython/commit/28463dba112af719df1e8b0391c46787ad756dd9", "https://github.com/python/cpython/commit/3612d8f51741b11f36f8fb0494d79086bac9390a", "https://github.com/python/cpython/commit/4633f3f497b1ff70e4a35b6fe2c907cbe2d4cb2e", "https://github.com/python/cpython/commit/9c1110ef6652687d7c55f590f909720eddde965a", "https://github.com/python/cpython/commit/9e0ac76d96cf80b49055f6d6b9a6763fb9215c2a", "https://github.com/python/cpython/commit/aa9eb5f757ceff461e6e996f12c89e5d9b583b01", "https://github.com/python/cpython/commit/dd8f187d0746da151e0025c51680979ac5b4cfb1", "https://github.com/python/cpython/issues/135034", "https://github.com/python/cpython/pull/135037", "https://mail.python.org/archives/list/security-announce@python.org/thread/MAXIJJCUUMCL7ATZNDVEGGHUMQMUUKLG/"]</data>
+    </node>
+    <node id="cve:CVE-2025-8291">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2025-8291</data>
+      <data key="d9">medium</data>
+      <data key="d10">4.3</data>
+      <data key="d11">The 'zipfile' module would not check the validity of the ZIP64 End of
+Central Directory (EOCD) Locator record offset value would not be used to
+locate the ZIP64 EOCD record, instead the ZIP64 EOCD record would be
+assumed to be the previous record in the ZIP archive. This could be abused
+to create ZIP archives that are handled differently by the 'zipfile' module
+compared to other ZIP implementations.
+
+
+Remediation maintains this behavior, but checks that the offset specified
+in the ZIP64 EOCD Locator record matches the expected value.</data>
+      <data key="d12">["https://github.com/python/cpython/commit/162997bb70e067668c039700141770687bc8f267", "https://github.com/python/cpython/commit/1d29afb0d6218aa8fb5e1e4a6133a4778d89bb46", "https://github.com/python/cpython/commit/333d4a6f4967d3ace91492a39ededbcf3faa76a6", "https://github.com/python/cpython/commit/76437ac248ad8ca44e9bf697b02b1e2241df2196", "https://github.com/python/cpython/commit/8392b2f0d35678407d9ce7d95655a5b77de161b4", "https://github.com/python/cpython/commit/bca11ae7d575d87ed93f5dd6a313be6246e3e388", "https://github.com/python/cpython/commit/d11e69d6203080e3ec450446bfed0516727b85c3", "https://github.com/python/cpython/issues/139700", "https://github.com/python/cpython/pull/139702", "https://mail.python.org/archives/list/security-announce@python.org/thread/QECOPWMTH4VPPJAXAH2BGTA4XADOP62G/", "https://github.com/google/security-research/security/advisories/GHSA-hhv7-p4pg-wm6p", "https://github.com/psf/advisory-database/blob/main/advisories/python/PSF-2025-12.json"]</data>
+    </node>
+    <node id="cve:GHSA-q2x7-8rv6-6q7h">
+      <data key="d0">vulnerability</data>
+      <data key="d8">GHSA-q2x7-8rv6-6q7h</data>
+      <data key="d9">medium</data>
+      <data key="d10">7.8</data>
+      <data key="d11">Jinja has a sandbox breakout through indirect reference to format method</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:jinja2@3.1.5">
+      <data key="d0">package</data>
+      <data key="d13">jinja2</data>
+      <data key="d14">3.1.5</data>
+      <data key="d15">python</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:CVE-2024-50602">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2024-50602</data>
+      <data key="d9">medium</data>
+      <data key="d10">5.9</data>
+      <data key="d11">An issue was discovered in libexpat before 2.6.4. There is a crash within the XML_ResumeParser function because XML_StopParser can stop/suspend an unstarted parser.</data>
+      <data key="d12">["https://github.com/libexpat/libexpat/pull/915", "https://lists.debian.org/debian-lts-announce/2025/04/msg00040.html", "https://security.netapp.com/advisory/ntap-20250404-0008/"]</data>
+    </node>
+    <node id="package:python@3.9.21">
+      <data key="d0">package</data>
+      <data key="d13">python</data>
+      <data key="d14">3.9.21</data>
+      <data key="d15">binary</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:GHSA-h5c8-rqwp-cp95">
+      <data key="d0">vulnerability</data>
+      <data key="d8">GHSA-h5c8-rqwp-cp95</data>
+      <data key="d9">medium</data>
+      <data key="d10">6.1</data>
+      <data key="d11">Jinja vulnerable to HTML attribute injection when passing user input as keys to xmlattr filter</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:jinja2@3.1.3">
+      <data key="d0">package</data>
+      <data key="d13">jinja2</data>
+      <data key="d14">3.1.3</data>
+      <data key="d15">python</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:CVE-2025-6069">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2025-6069</data>
+      <data key="d9">medium</data>
+      <data key="d10">4.3</data>
+      <data key="d11">The html.parser.HTMLParser class had worse-case quadratic complexity when processing certain crafted malformed inputs potentially leading to amplified denial-of-service.</data>
+      <data key="d12">["https://github.com/python/cpython/commit/4455cbabf991e202185a25a631af206f60bbc949", "https://github.com/python/cpython/commit/6eb6c5dbfb528bd07d77b60fd71fd05d81d45c41", "https://github.com/python/cpython/commit/8d1b3dfa09135affbbf27fb8babcf3c11415df49", "https://github.com/python/cpython/commit/ab0893fd5c579d9cea30841680e6d35fc478afb5", "https://github.com/python/cpython/commit/d851f8e258c7328814943e923a7df81bca15df4b", "https://github.com/python/cpython/commit/f3c6f882cddc8dc30320d2e73edf019e201394fc", "https://github.com/python/cpython/commit/fdc9d214c01cb4588f540cfa03726bbf2a33fc15", "https://github.com/python/cpython/issues/135462", "https://github.com/python/cpython/pull/135464", "https://mail.python.org/archives/list/security-announce@python.org/thread/K5PIYLR6EP3WR7ZOKKYQUWEDNQVUXOYM/"]</data>
+    </node>
+    <node id="cve:CVE-2025-4435">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2025-4435</data>
+      <data key="d9">high</data>
+      <data key="d10">7.5</data>
+      <data key="d11">When using a TarFile.errorlevel = 0 and extracting with a filter the documented behavior is that any filtered members would be skipped and not extracted. However the actual behavior of TarFile.errorlevel = 0 in affected versions is that the member would still be extracted and not skipped.</data>
+      <data key="d12">["https://github.com/python/cpython/commit/19de092debb3d7e832e5672cc2f7b788d35951da", "https://github.com/python/cpython/commit/28463dba112af719df1e8b0391c46787ad756dd9", "https://github.com/python/cpython/commit/3612d8f51741b11f36f8fb0494d79086bac9390a", "https://github.com/python/cpython/commit/4633f3f497b1ff70e4a35b6fe2c907cbe2d4cb2e", "https://github.com/python/cpython/commit/9c1110ef6652687d7c55f590f909720eddde965a", "https://github.com/python/cpython/commit/9e0ac76d96cf80b49055f6d6b9a6763fb9215c2a", "https://github.com/python/cpython/commit/aa9eb5f757ceff461e6e996f12c89e5d9b583b01", "https://github.com/python/cpython/commit/dd8f187d0746da151e0025c51680979ac5b4cfb1", "https://github.com/python/cpython/issues/135034", "https://github.com/python/cpython/pull/135037", "https://mail.python.org/archives/list/security-announce@python.org/thread/MAXIJJCUUMCL7ATZNDVEGGHUMQMUUKLG/"]</data>
+    </node>
+    <node id="cve:CVE-2024-13176">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2024-13176</data>
+      <data key="d9">medium</data>
+      <data key="d10">4.1</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:libcrypto3@3.3.2-r2">
+      <data key="d0">package</data>
+      <data key="d13">libcrypto3</data>
+      <data key="d14">3.3.2-r2</data>
+      <data key="d15">apk</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="package:libssl3@3.3.2-r2">
+      <data key="d0">package</data>
+      <data key="d13">libssl3</data>
+      <data key="d14">3.3.2-r2</data>
+      <data key="d15">apk</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:CVE-2024-12718">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2024-12718</data>
+      <data key="d9">medium</data>
+      <data key="d10">5.3</data>
+      <data key="d11">Allows modifying some file metadata (e.g. last modified) with filter="data" or file permissions (chmod) with filter="tar" of files outside the extraction directory.
+You are affected by this vulnerability if using the tarfile module to extract untrusted tar archives using TarFile.extractall() or TarFile.extract() using the filter= parameter with a value of "data" or "tar". See the tarfile  extraction filters documentation https://docs.python.org/3/library/tarfile.html#tarfile-extraction-filter  for more information. Only Python versions 3.12 or later are affected by these vulnerabilities, earlier versions don't include the extraction filter feature.
+
+Note that for Python 3.14 or later the default value of filter= changed from "no filtering" to `"data", so if you are relying on this new default behavior then your usage is also affected.
+
+Note that none of these vulnerabilities significantly affect the installation of source distributions which are tar archives as source distributions already allow arbitrary code execution during the build process. However when evaluating source distributions it's important to avoid installing source distributions with suspicious links.</data>
+      <data key="d12">["https://gist.github.com/sethmlarson/52398e33eff261329a0180ac1d54f42f", "https://github.com/python/cpython/commit/19de092debb3d7e832e5672cc2f7b788d35951da", "https://github.com/python/cpython/commit/28463dba112af719df1e8b0391c46787ad756dd9", "https://github.com/python/cpython/commit/3612d8f51741b11f36f8fb0494d79086bac9390a", "https://github.com/python/cpython/commit/4633f3f497b1ff70e4a35b6fe2c907cbe2d4cb2e", "https://github.com/python/cpython/commit/9c1110ef6652687d7c55f590f909720eddde965a", "https://github.com/python/cpython/commit/9e0ac76d96cf80b49055f6d6b9a6763fb9215c2a", "https://github.com/python/cpython/commit/aa9eb5f757ceff461e6e996f12c89e5d9b583b01", "https://github.com/python/cpython/commit/dd8f187d0746da151e0025c51680979ac5b4cfb1", "https://github.com/python/cpython/issues/127987", "https://github.com/python/cpython/issues/135034", "https://github.com/python/cpython/pull/135037", "https://mail.python.org/archives/list/security-announce@python.org/thread/MAXIJJCUUMCL7ATZNDVEGGHUMQMUUKLG/"]</data>
+    </node>
+    <node id="cve:CVE-2024-9287">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2024-9287</data>
+      <data key="d9">high</data>
+      <data key="d10">7.8</data>
+      <data key="d11">A vulnerability has been found in the CPython `venv` module and CLI where path names provided when creating a virtual environment were not quoted properly, allowing the creator to inject commands into virtual environment "activation" scripts (ie "source venv/bin/activate"). This means that attacker-controlled virtual environments are able to run commands when the virtual environment is activated. Virtual environments which are not created by an attacker or which aren't activated before being used (ie "./venv/bin/python") are not affected.</data>
+      <data key="d12">["https://github.com/python/cpython/commit/633555735a023d3e4d92ba31da35b1205f9ecbd7", "https://github.com/python/cpython/commit/8450b2482586857d689b6658f08de9c8179af7db", "https://github.com/python/cpython/commit/9286ab3a107ea41bd3f3c3682ce2512692bdded8", "https://github.com/python/cpython/commit/ae961ae94bf19c8f8c7fbea3d1c25cc55ce8ae97", "https://github.com/python/cpython/commit/d48cc82ed25e26b02eb97c6263d95dcaa1e9111b", "https://github.com/python/cpython/commit/e52095a0c1005a87eed2276af7a1f2f66e2b6483", "https://github.com/python/cpython/issues/124651", "https://github.com/python/cpython/pull/124712", "https://mail.python.org/archives/list/security-announce@python.org/thread/RSPJ2B5JL22FG3TKUJ7D7DQ4N5JRRBZL/", "https://lists.debian.org/debian-lts-announce/2024/11/msg00024.html", "https://lists.debian.org/debian-lts-announce/2024/12/msg00000.html", "https://security.netapp.com/advisory/ntap-20250425-0006/"]</data>
+    </node>
+    <node id="cve:GHSA-9hjg-9r4m-mvj7">
+      <data key="d0">vulnerability</data>
+      <data key="d8">GHSA-9hjg-9r4m-mvj7</data>
+      <data key="d9">medium</data>
+      <data key="d10">5.3</data>
+      <data key="d11">Requests vulnerable to .netrc credentials leak via malicious URLs</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:requests@2.31.0">
+      <data key="d0">package</data>
+      <data key="d13">requests</data>
+      <data key="d14">2.31.0</data>
+      <data key="d15">python</data>
+    </node>
+    <node id="package:requests@2.32.4">
+      <data key="d0">package</data>
+      <data key="d13">requests</data>
+      <data key="d14">2.32.4</data>
+      <data key="d15">python</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:CVE-2025-4517">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2025-4517</data>
+      <data key="d9">critical</data>
+      <data key="d10">9.4</data>
+      <data key="d11">Allows arbitrary filesystem writes outside the extraction directory during extraction with filter="data".
+
+
+You are affected by this vulnerability if using the tarfile module to extract untrusted tar archives using TarFile.extractall() or TarFile.extract() using the filter= parameter with a value of "data" or "tar". See the tarfile  extraction filters documentation https://docs.python.org/3/library/tarfile.html#tarfile-extraction-filter  for more information.
+
+Note that for Python 3.14 or later the default value of filter= changed from "no filtering" to `"data", so if you are relying on this new default behavior then your usage is also affected.
+
+Note that none of these vulnerabilities significantly affect the installation of source distributions which are tar archives as source distributions already allow arbitrary code execution during the build process. However when evaluating source distributions it's important to avoid installing source distributions with suspicious links.</data>
+      <data key="d12">["https://gist.github.com/sethmlarson/52398e33eff261329a0180ac1d54f42f", "https://github.com/python/cpython/commit/19de092debb3d7e832e5672cc2f7b788d35951da", "https://github.com/python/cpython/commit/28463dba112af719df1e8b0391c46787ad756dd9", "https://github.com/python/cpython/commit/3612d8f51741b11f36f8fb0494d79086bac9390a", "https://github.com/python/cpython/commit/4633f3f497b1ff70e4a35b6fe2c907cbe2d4cb2e", "https://github.com/python/cpython/commit/9c1110ef6652687d7c55f590f909720eddde965a", "https://github.com/python/cpython/commit/9e0ac76d96cf80b49055f6d6b9a6763fb9215c2a", "https://github.com/python/cpython/commit/aa9eb5f757ceff461e6e996f12c89e5d9b583b01", "https://github.com/python/cpython/commit/dd8f187d0746da151e0025c51680979ac5b4cfb1", "https://github.com/python/cpython/issues/135034", "https://github.com/python/cpython/pull/135037", "https://mail.python.org/archives/list/security-announce@python.org/thread/MAXIJJCUUMCL7ATZNDVEGGHUMQMUUKLG/"]</data>
+    </node>
+    <node id="cve:CVE-2025-6965">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2025-6965</data>
+      <data key="d9">critical</data>
+      <data key="d10">9.8</data>
+      <data key="d11">There exists a vulnerability in SQLite versions before 3.50.2 where the number of aggregate terms could exceed the number of columns available. This could lead to a memory corruption issue. We recommend upgrading to version 3.50.2 or above.</data>
+      <data key="d12">["https://www.sqlite.org/src/info/5508b56fd24016c13981ec280ecdd833007c9d8dd595edb295b984c2b487b5c8", "http://seclists.org/fulldisclosure/2025/Sep/49", "http://seclists.org/fulldisclosure/2025/Sep/53", "http://seclists.org/fulldisclosure/2025/Sep/56", "http://seclists.org/fulldisclosure/2025/Sep/57", "http://seclists.org/fulldisclosure/2025/Sep/58", "http://www.openwall.com/lists/oss-security/2025/09/06/1"]</data>
+    </node>
+    <node id="cve:CVE-2025-29087">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2025-29087</data>
+      <data key="d9">high</data>
+      <data key="d10">7.5</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:sqlite-libs@3.45.3-r2">
+      <data key="d0">package</data>
+      <data key="d13">sqlite-libs</data>
+      <data key="d14">3.45.3-r2</data>
+      <data key="d15">apk</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:GHSA-9wx4-h78v-vm56">
+      <data key="d0">vulnerability</data>
+      <data key="d8">GHSA-9wx4-h78v-vm56</data>
+      <data key="d9">medium</data>
+      <data key="d10">5.6</data>
+      <data key="d11">Requests `Session` object does not verify requests after making first request with verify=False</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:requests@2.32.0">
+      <data key="d0">package</data>
+      <data key="d13">requests</data>
+      <data key="d14">2.32.0</data>
+      <data key="d15">python</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:GHSA-gmj6-6f8f-6699">
+      <data key="d0">vulnerability</data>
+      <data key="d8">GHSA-gmj6-6f8f-6699</data>
+      <data key="d9">medium</data>
+      <data key="d10">8.8</data>
+      <data key="d11">Jinja has a sandbox breakout through malicious filenames</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="cve:CVE-2025-9230">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2025-9230</data>
+      <data key="d9">high</data>
+      <data key="d10">7.5</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:libcrypto3@3.3.5-r0">
+      <data key="d0">package</data>
+      <data key="d13">libcrypto3</data>
+      <data key="d14">3.3.5-r0</data>
+      <data key="d15">apk</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="package:libssl3@3.3.5-r0">
+      <data key="d0">package</data>
+      <data key="d13">libssl3</data>
+      <data key="d14">3.3.5-r0</data>
+      <data key="d15">apk</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:CVE-2025-9232">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2025-9232</data>
+      <data key="d9">medium</data>
+      <data key="d10">5.9</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="cve:CVE-2025-26519">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2025-26519</data>
+      <data key="d9">high</data>
+      <data key="d10">8.1</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:musl@1.2.5-r0">
+      <data key="d0">package</data>
+      <data key="d13">musl</data>
+      <data key="d14">1.2.5-r0</data>
+      <data key="d15">apk</data>
+    </node>
+    <node id="package:musl@1.2.5-r1">
+      <data key="d0">package</data>
+      <data key="d13">musl</data>
+      <data key="d14">1.2.5-r1</data>
+      <data key="d15">apk</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="package:musl-utils@1.2.5-r0">
+      <data key="d0">package</data>
+      <data key="d13">musl-utils</data>
+      <data key="d14">1.2.5-r0</data>
+      <data key="d15">apk</data>
+    </node>
+    <node id="package:musl-utils@1.2.5-r1">
+      <data key="d0">package</data>
+      <data key="d13">musl-utils</data>
+      <data key="d14">1.2.5-r1</data>
+      <data key="d15">apk</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:GHSA-8qvm-5x2c-j2w7">
+      <data key="d0">vulnerability</data>
+      <data key="d8">GHSA-8qvm-5x2c-j2w7</data>
+      <data key="d9">high</data>
+      <data key="d10">8.2</data>
+      <data key="d11">protobuf-python has a potential Denial of Service issue</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:protobuf@4.25.0">
+      <data key="d0">package</data>
+      <data key="d13">protobuf</data>
+      <data key="d14">4.25.0</data>
+      <data key="d15">python</data>
+    </node>
+    <node id="package:protobuf@4.25.8">
+      <data key="d0">package</data>
+      <data key="d13">protobuf</data>
+      <data key="d14">4.25.8</data>
+      <data key="d15">python</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:CVE-2025-4516">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2025-4516</data>
+      <data key="d9">medium</data>
+      <data key="d10">5.9</data>
+      <data key="d11">There is an issue in CPython when using `bytes.decode("unicode_escape", error="ignore|replace")`. If you are not using the "unicode_escape" encoding or an error handler your usage is not affected. To work-around this issue you may stop using the error= handler and instead wrap the bytes.decode() call in a try-except catching the DecodeError.</data>
+      <data key="d12">["https://github.com/python/cpython/commit/4398b788ffc1f954a2c552da285477d42a571292", "https://github.com/python/cpython/commit/6279eb8c076d89d3739a6edb393e43c7929b429d", "https://github.com/python/cpython/commit/69b4387f78f413e8c47572a85b3478c47eba8142", "https://github.com/python/cpython/commit/73b3040f592436385007918887b7e2132aa8431f", "https://github.com/python/cpython/commit/8d35fd1b34935221aff23a1ab69a429dd156be77", "https://github.com/python/cpython/commit/9f69a58623bd01349a18ba0c7a9cb1dad6a51e8e", "https://github.com/python/cpython/commit/ab9893c40609935e0d40a6d2a7307ea51aec598b", "https://github.com/python/cpython/issues/133767", "https://github.com/python/cpython/pull/129648", "https://mail.python.org/archives/list/security-announce@python.org/thread/L75IPBBTSCYEF56I2M4KIW353BB3AY74/", "http://www.openwall.com/lists/oss-security/2025/05/16/4", "http://www.openwall.com/lists/oss-security/2025/05/19/1"]</data>
+    </node>
+    <node id="cve:GHSA-4xh5-x5gv-qwph">
+      <data key="d0">vulnerability</data>
+      <data key="d8">GHSA-4xh5-x5gv-qwph</data>
+      <data key="d9">medium</data>
+      <data key="d10">5.9</data>
+      <data key="d11">pip's fallback tar extraction doesn't check symbolic links point to extraction directory</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:pip@24.2">
+      <data key="d0">package</data>
+      <data key="d13">pip</data>
+      <data key="d14">24.2</data>
+      <data key="d15">python</data>
+    </node>
+    <node id="package:pip@25.3">
+      <data key="d0">package</data>
+      <data key="d13">pip</data>
+      <data key="d14">25.3</data>
+      <data key="d15">python</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:GHSA-jfmj-5v4g-7637">
+      <data key="d0">vulnerability</data>
+      <data key="d8">GHSA-jfmj-5v4g-7637</data>
+      <data key="d9">medium</data>
+      <data key="d10">6.2</data>
+      <data key="d11">zipp Denial of Service vulnerability</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:zipp@3.17.0">
+      <data key="d0">package</data>
+      <data key="d13">zipp</data>
+      <data key="d14">3.17.0</data>
+      <data key="d15">python</data>
+    </node>
+    <node id="package:zipp@3.19.1">
+      <data key="d0">package</data>
+      <data key="d13">zipp</data>
+      <data key="d14">3.19.1</data>
+      <data key="d15">python</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:CVE-2025-9231">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2025-9231</data>
+      <data key="d9">medium</data>
+      <data key="d10">6.5</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="cve:GHSA-pq67-6m6q-mj2v">
+      <data key="d0">vulnerability</data>
+      <data key="d8">GHSA-pq67-6m6q-mj2v</data>
+      <data key="d9">medium</data>
+      <data key="d10">6.1</data>
+      <data key="d11">urllib3 redirects are not disabled when retries are disabled on PoolManager instantiation</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:urllib3@2.5.0">
+      <data key="d0">package</data>
+      <data key="d13">urllib3</data>
+      <data key="d14">2.5.0</data>
+      <data key="d15">python</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:CVE-2024-58251">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2024-58251</data>
+      <data key="d9">low</data>
+      <data key="d10">2.5</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="package:busybox@1.36.1-r29">
+      <data key="d0">package</data>
+      <data key="d13">busybox</data>
+      <data key="d14">1.36.1-r29</data>
+      <data key="d15">apk</data>
+    </node>
+    <node id="package:busybox@1.36.1-r31">
+      <data key="d0">package</data>
+      <data key="d13">busybox</data>
+      <data key="d14">1.36.1-r31</data>
+      <data key="d15">apk</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="package:busybox-binsh@1.36.1-r29">
+      <data key="d0">package</data>
+      <data key="d13">busybox-binsh</data>
+      <data key="d14">1.36.1-r29</data>
+      <data key="d15">apk</data>
+    </node>
+    <node id="package:busybox-binsh@1.36.1-r31">
+      <data key="d0">package</data>
+      <data key="d13">busybox-binsh</data>
+      <data key="d14">1.36.1-r31</data>
+      <data key="d15">apk</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="package:ssl_client@1.36.1-r29">
+      <data key="d0">package</data>
+      <data key="d13">ssl_client</data>
+      <data key="d14">1.36.1-r29</data>
+      <data key="d15">apk</data>
+    </node>
+    <node id="package:ssl_client@1.36.1-r31">
+      <data key="d0">package</data>
+      <data key="d13">ssl_client</data>
+      <data key="d14">1.36.1-r31</data>
+      <data key="d15">apk</data>
+      <data key="d16">True</data>
+    </node>
+    <node id="cve:CVE-2025-46394">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2025-46394</data>
+      <data key="d9">low</data>
+      <data key="d10">3.3</data>
+      <data key="d12">[]</data>
+    </node>
+    <node id="cve:CVE-2025-6075">
+      <data key="d0">vulnerability</data>
+      <data key="d8">CVE-2025-6075</data>
+      <data key="d9">low</data>
+      <data key="d10">1.8</data>
+      <data key="d11">If the value passed to os.path.expandvars() is user-controlled a 
+performance degradation is possible when expanding environment 
+variables.</data>
+      <data key="d12">["https://github.com/python/cpython/commit/2e6150adccaaf5bd95d4c19dfd04a36e0b325d8c", "https://github.com/python/cpython/commit/631ba3407e3348ccd56ce5160c4fb2c5dc5f4d84", "https://github.com/python/cpython/commit/892747b4cf0f95ba8beb51c0d0658bfaa381ebca", "https://github.com/python/cpython/commit/9ab89c026aa9611c4b0b67c288b8303a480fe742", "https://github.com/python/cpython/commit/c8a5f3435c342964e0a432cc9fb448b7dbecd1ba", "https://github.com/python/cpython/commit/f029e8db626ddc6e3a3beea4eff511a71aaceb5c", "https://github.com/python/cpython/issues/136065", "https://mail.python.org/archives/list/security-announce@python.org/thread/IUP5QJ6D4KK6ULHOMPC7DPNKRYQTQNLA/"]</data>
+    </node>
+    <node id="package:python@3.15.0">
+      <data key="d0">package</data>
+      <data key="d13">python</data>
+      <data key="d14">3.15.0</data>
+      <data key="d15">binary</data>
+      <data key="d16">True</data>
+    </node>
+    <edge source="cve:GHSA-248v-346w-9cwc" target="package:certifi@2024.7.4">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="package:certifi@2023.7.22" target="cve:GHSA-248v-346w-9cwc">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">2023.7.22</data>
+    </edge>
+    <edge source="cve:CVE-2025-0938" target="package:python@3.9.22">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="package:python@3.12.7" target="cve:CVE-2025-0938">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.12.7</data>
+    </edge>
+    <edge source="package:python@3.12.7" target="cve:CVE-2024-12254">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.12.7</data>
+    </edge>
+    <edge source="package:python@3.12.7" target="cve:CVE-2025-8194">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.12.7</data>
+    </edge>
+    <edge source="package:python@3.12.7" target="cve:CVE-2025-4330">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.12.7</data>
+    </edge>
+    <edge source="package:python@3.12.7" target="cve:CVE-2025-4138">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.12.7</data>
+    </edge>
+    <edge source="package:python@3.12.7" target="cve:CVE-2025-8291">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.12.7</data>
+    </edge>
+    <edge source="package:python@3.12.7" target="cve:CVE-2024-50602">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.12.7</data>
+    </edge>
+    <edge source="package:python@3.12.7" target="cve:CVE-2025-6069">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.12.7</data>
+    </edge>
+    <edge source="package:python@3.12.7" target="cve:CVE-2025-4435">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.12.7</data>
+    </edge>
+    <edge source="package:python@3.12.7" target="cve:CVE-2024-12718">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.12.7</data>
+    </edge>
+    <edge source="package:python@3.12.7" target="cve:CVE-2024-9287">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.12.7</data>
+    </edge>
+    <edge source="package:python@3.12.7" target="cve:CVE-2025-4517">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.12.7</data>
+    </edge>
+    <edge source="package:python@3.12.7" target="cve:CVE-2025-4516">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.12.7</data>
+    </edge>
+    <edge source="package:python@3.12.7" target="cve:CVE-2025-6075">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.12.7</data>
+    </edge>
+    <edge source="cve:CVE-2024-12797" target="package:libcrypto3@3.3.3-r0">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2024-12797" target="package:libssl3@3.3.3-r0">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="package:libcrypto3@3.3.2-r1" target="cve:CVE-2024-12797">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.3.2-r1</data>
+    </edge>
+    <edge source="package:libcrypto3@3.3.2-r1" target="cve:CVE-2024-13176">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.3.2-r1</data>
+    </edge>
+    <edge source="package:libcrypto3@3.3.2-r1" target="cve:CVE-2025-9230">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.3.2-r1</data>
+    </edge>
+    <edge source="package:libcrypto3@3.3.2-r1" target="cve:CVE-2025-9232">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.3.2-r1</data>
+    </edge>
+    <edge source="package:libcrypto3@3.3.2-r1" target="cve:CVE-2025-9231">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.3.2-r1</data>
+    </edge>
+    <edge source="package:libssl3@3.3.2-r1" target="cve:CVE-2024-12797">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.3.2-r1</data>
+    </edge>
+    <edge source="package:libssl3@3.3.2-r1" target="cve:CVE-2024-13176">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.3.2-r1</data>
+    </edge>
+    <edge source="package:libssl3@3.3.2-r1" target="cve:CVE-2025-9230">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.3.2-r1</data>
+    </edge>
+    <edge source="package:libssl3@3.3.2-r1" target="cve:CVE-2025-9232">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.3.2-r1</data>
+    </edge>
+    <edge source="package:libssl3@3.3.2-r1" target="cve:CVE-2025-9231">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.3.2-r1</data>
+    </edge>
+    <edge source="cve:GHSA-h75v-3vvj-5mfj" target="package:jinja2@3.1.4">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="package:jinja2@3.1.2" target="cve:GHSA-h75v-3vvj-5mfj">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.1.2</data>
+    </edge>
+    <edge source="package:jinja2@3.1.2" target="cve:GHSA-cpwx-vrp4-4pq7">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.1.2</data>
+    </edge>
+    <edge source="package:jinja2@3.1.2" target="cve:GHSA-q2x7-8rv6-6q7h">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.1.2</data>
+    </edge>
+    <edge source="package:jinja2@3.1.2" target="cve:GHSA-h5c8-rqwp-cp95">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.1.2</data>
+    </edge>
+    <edge source="package:jinja2@3.1.2" target="cve:GHSA-gmj6-6f8f-6699">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.1.2</data>
+    </edge>
+    <edge source="cve:GHSA-jjg7-2v4v-x38h" target="package:idna@3.7">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="package:idna@3.4" target="cve:GHSA-jjg7-2v4v-x38h">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.4</data>
+    </edge>
+    <edge source="cve:CVE-2024-12254" target="package:python@3.12.9">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2025-31115" target="package:xz-libs@5.6.2-r1">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="package:xz-libs@5.6.2-r0" target="cve:CVE-2025-31115">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">5.6.2-r0</data>
+    </edge>
+    <edge source="cve:CVE-2025-8194" target="package:python@3.9.24">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="package:sqlite-libs@3.45.3-r1" target="cve:CVE-2025-3277">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.45.3-r1</data>
+    </edge>
+    <edge source="package:sqlite-libs@3.45.3-r1" target="cve:CVE-2025-6965">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.45.3-r1</data>
+    </edge>
+    <edge source="package:sqlite-libs@3.45.3-r1" target="cve:CVE-2025-29087">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.45.3-r1</data>
+    </edge>
+    <edge source="cve:GHSA-34jh-p97f-mpxf" target="package:urllib3@2.2.2">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="package:urllib3@2.0.7" target="cve:GHSA-34jh-p97f-mpxf">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">2.0.7</data>
+    </edge>
+    <edge source="package:urllib3@2.0.7" target="cve:GHSA-pq67-6m6q-mj2v">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">2.0.7</data>
+    </edge>
+    <edge source="cve:GHSA-cpwx-vrp4-4pq7" target="package:jinja2@3.1.6">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2025-4330" target="package:python@3.9.23">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2025-4138" target="package:python@3.9.23">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2025-8291" target="package:python@3.9.24">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:GHSA-q2x7-8rv6-6q7h" target="package:jinja2@3.1.5">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2024-50602" target="package:python@3.9.21">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:GHSA-h5c8-rqwp-cp95" target="package:jinja2@3.1.3">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2025-6069" target="package:python@3.9.24">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2025-4435" target="package:python@3.9.23">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2024-13176" target="package:libcrypto3@3.3.2-r2">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2024-13176" target="package:libssl3@3.3.2-r2">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2024-12718" target="package:python@3.9.23">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2024-9287" target="package:python@3.9.21">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:GHSA-9hjg-9r4m-mvj7" target="package:requests@2.32.4">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="package:requests@2.31.0" target="cve:GHSA-9hjg-9r4m-mvj7">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">2.31.0</data>
+    </edge>
+    <edge source="package:requests@2.31.0" target="cve:GHSA-9wx4-h78v-vm56">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">2.31.0</data>
+    </edge>
+    <edge source="cve:CVE-2025-4517" target="package:python@3.9.23">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2025-29087" target="package:sqlite-libs@3.45.3-r2">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:GHSA-9wx4-h78v-vm56" target="package:requests@2.32.0">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:GHSA-gmj6-6f8f-6699" target="package:jinja2@3.1.5">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2025-9230" target="package:libcrypto3@3.3.5-r0">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2025-9230" target="package:libssl3@3.3.5-r0">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2025-9232" target="package:libcrypto3@3.3.5-r0">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2025-9232" target="package:libssl3@3.3.5-r0">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2025-26519" target="package:musl@1.2.5-r1">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2025-26519" target="package:musl-utils@1.2.5-r1">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="package:musl@1.2.5-r0" target="cve:CVE-2025-26519">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">1.2.5-r0</data>
+    </edge>
+    <edge source="package:musl-utils@1.2.5-r0" target="cve:CVE-2025-26519">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">1.2.5-r0</data>
+    </edge>
+    <edge source="cve:GHSA-8qvm-5x2c-j2w7" target="package:protobuf@4.25.8">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="package:protobuf@4.25.0" target="cve:GHSA-8qvm-5x2c-j2w7">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">4.25.0</data>
+    </edge>
+    <edge source="cve:CVE-2025-4516" target="package:python@3.9.23">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:GHSA-4xh5-x5gv-qwph" target="package:pip@25.3">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="package:pip@24.2" target="cve:GHSA-4xh5-x5gv-qwph">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">24.2</data>
+    </edge>
+    <edge source="cve:GHSA-jfmj-5v4g-7637" target="package:zipp@3.19.1">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="package:zipp@3.17.0" target="cve:GHSA-jfmj-5v4g-7637">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">3.17.0</data>
+    </edge>
+    <edge source="cve:CVE-2025-9231" target="package:libcrypto3@3.3.5-r0">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2025-9231" target="package:libssl3@3.3.5-r0">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:GHSA-pq67-6m6q-mj2v" target="package:urllib3@2.5.0">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2024-58251" target="package:busybox@1.36.1-r31">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2024-58251" target="package:busybox-binsh@1.36.1-r31">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2024-58251" target="package:ssl_client@1.36.1-r31">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="package:busybox@1.36.1-r29" target="cve:CVE-2024-58251">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">1.36.1-r29</data>
+    </edge>
+    <edge source="package:busybox@1.36.1-r29" target="cve:CVE-2025-46394">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">1.36.1-r29</data>
+    </edge>
+    <edge source="package:busybox-binsh@1.36.1-r29" target="cve:CVE-2024-58251">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">1.36.1-r29</data>
+    </edge>
+    <edge source="package:busybox-binsh@1.36.1-r29" target="cve:CVE-2025-46394">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">1.36.1-r29</data>
+    </edge>
+    <edge source="package:ssl_client@1.36.1-r29" target="cve:CVE-2024-58251">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">1.36.1-r29</data>
+    </edge>
+    <edge source="package:ssl_client@1.36.1-r29" target="cve:CVE-2025-46394">
+      <data key="d17">HAS_VULNERABILITY</data>
+      <data key="d18">1.36.1-r29</data>
+    </edge>
+    <edge source="cve:CVE-2025-46394" target="package:busybox@1.36.1-r31">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2025-46394" target="package:busybox-binsh@1.36.1-r31">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2025-46394" target="package:ssl_client@1.36.1-r31">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+    <edge source="cve:CVE-2025-6075" target="package:python@3.15.0">
+      <data key="d17">FIXED_BY</data>
+    </edge>
+  </graph>
+</graphml>

@@ -144,19 +144,30 @@ class ConfigManager:
     def _apply_env_overrides(self):
         """Apply environment variable overrides to configuration."""
         # Scan defaults
-        if os.getenv('THREAT_RADAR_SEVERITY'):
+        if os.getenv('THREAT_RADAR_SCAN_SEVERITY'):
+            self.config.scan.severity = os.getenv('THREAT_RADAR_SCAN_SEVERITY')
+        elif os.getenv('THREAT_RADAR_SEVERITY'):  # Backward compatibility
             self.config.scan.severity = os.getenv('THREAT_RADAR_SEVERITY')
         if os.getenv('THREAT_RADAR_AUTO_SAVE'):
             self.config.scan.auto_save = os.getenv('THREAT_RADAR_AUTO_SAVE').lower() == 'true'
 
         # AI defaults
-        if os.getenv('AI_PROVIDER'):
+        if os.getenv('THREAT_RADAR_AI_PROVIDER'):
+            self.config.ai.provider = os.getenv('THREAT_RADAR_AI_PROVIDER')
+        elif os.getenv('AI_PROVIDER'):  # Backward compatibility
             self.config.ai.provider = os.getenv('AI_PROVIDER')
-        if os.getenv('AI_MODEL'):
+        if os.getenv('THREAT_RADAR_AI_MODEL'):
+            self.config.ai.model = os.getenv('THREAT_RADAR_AI_MODEL')
+        elif os.getenv('AI_MODEL'):  # Backward compatibility
             self.config.ai.model = os.getenv('AI_MODEL')
 
         # Output defaults
-        if os.getenv('THREAT_RADAR_VERBOSITY'):
+        if os.getenv('THREAT_RADAR_OUTPUT_VERBOSITY'):
+            try:
+                self.config.output.verbosity = int(os.getenv('THREAT_RADAR_OUTPUT_VERBOSITY'))
+            except ValueError:
+                pass
+        elif os.getenv('THREAT_RADAR_VERBOSITY'):  # Backward compatibility
             try:
                 self.config.output.verbosity = int(os.getenv('THREAT_RADAR_VERBOSITY'))
             except ValueError:
@@ -164,6 +175,45 @@ class ConfigManager:
 
         if os.getenv('THREAT_RADAR_OUTPUT_FORMAT'):
             self.config.output.format = os.getenv('THREAT_RADAR_OUTPUT_FORMAT')
+
+    def load_from_file(self, path: Path):
+        """
+        Load configuration from a specific file.
+
+        Args:
+            path: Path to configuration file
+
+        Raises:
+            FileNotFoundError: If file doesn't exist
+            ValueError: If JSON is invalid
+        """
+        if not path.exists():
+            raise FileNotFoundError(f"Configuration file not found: {path}")
+
+        try:
+            with open(path, 'r') as f:
+                data = json.load(f)
+
+            self.config = ThreatRadarConfig.from_dict(data)
+            logger.info(f"Loaded configuration from: {path}")
+
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON in config file {path}: {e}")
+        except Exception as e:
+            raise ValueError(f"Error loading config file {path}: {e}")
+
+    def load_from_env(self):
+        """Load configuration from environment variables."""
+        self._apply_env_overrides()
+
+    def find_config_file(self) -> Optional[Path]:
+        """
+        Find configuration file in default locations.
+
+        Returns:
+            Path to config file if found, None otherwise
+        """
+        return self._find_config_file()
 
     def save_config(self, path: Optional[Path] = None):
         """
@@ -184,6 +234,15 @@ class ConfigManager:
 
         logger.info(f"Saved configuration to: {path}")
         return path
+
+    def save_to_file(self, path: Path):
+        """
+        Save current configuration to a specific file.
+
+        Args:
+            path: Path to save config file
+        """
+        return self.save_config(path)
 
     def get(self, key: str, default: Any = None) -> Any:
         """
@@ -214,6 +273,9 @@ class ConfigManager:
         Args:
             key: Configuration key (e.g., 'scan.severity')
             value: Value to set
+
+        Raises:
+            KeyError: If configuration key is invalid
         """
         parts = key.split('.')
         obj = self.config
@@ -223,14 +285,87 @@ class ConfigManager:
             if hasattr(obj, part):
                 obj = getattr(obj, part)
             else:
-                raise ValueError(f"Invalid configuration key: {key}")
+                raise KeyError(f"Invalid configuration key: {key}")
 
         # Set final attribute
         final_key = parts[-1]
         if hasattr(obj, final_key):
             setattr(obj, final_key, value)
         else:
-            raise ValueError(f"Invalid configuration key: {key}")
+            raise KeyError(f"Invalid configuration key: {key}")
+
+    def validate(self) -> tuple[bool, list[str]]:
+        """
+        Validate current configuration.
+
+        Returns:
+            Tuple of (is_valid, list_of_errors)
+        """
+        errors = []
+
+        # Validate verbosity level
+        if self.config.output.verbosity < 0 or self.config.output.verbosity > 3:
+            errors.append(f"Invalid verbosity level: {self.config.output.verbosity}. Must be 0-3.")
+
+        # Validate severity if set
+        valid_severities = ["NEGLIGIBLE", "LOW", "MEDIUM", "HIGH", "CRITICAL", None]
+        if self.config.scan.severity and self.config.scan.severity not in valid_severities:
+            errors.append(f"Invalid severity: {self.config.scan.severity}. Must be one of {valid_severities}")
+
+        # Validate AI provider if set
+        valid_providers = ["openai", "anthropic", "ollama", "openrouter", None]
+        if self.config.ai.provider and self.config.ai.provider not in valid_providers:
+            errors.append(f"Invalid AI provider: {self.config.ai.provider}. Must be one of {valid_providers}")
+
+        # Validate output format
+        valid_formats = ["table", "json", "yaml", "csv"]
+        if self.config.output.format not in valid_formats:
+            errors.append(f"Invalid output format: {self.config.output.format}. Must be one of {valid_formats}")
+
+        # Validate report format
+        valid_report_formats = ["json", "markdown", "html", "pdf"]
+        if self.config.report.format not in valid_report_formats:
+            errors.append(f"Invalid report format: {self.config.report.format}. Must be one of {valid_report_formats}")
+
+        return len(errors) == 0, errors
+
+    def reset_to_defaults(self):
+        """Reset configuration to default values."""
+        self.config = ThreatRadarConfig()
+        logger.info("Configuration reset to defaults")
+
+    def merge(self, override_dict: Dict[str, Any]):
+        """
+        Merge override configuration with current config.
+
+        Args:
+            override_dict: Dictionary with configuration overrides
+        """
+        # Create temporary config from override
+        override_config = ThreatRadarConfig.from_dict(override_dict)
+
+        # Merge each section
+        for section in ['scan', 'ai', 'report', 'output', 'paths']:
+            override_section = getattr(override_config, section)
+            current_section = getattr(self.config, section)
+
+            # Update only non-None values from override
+            for attr in vars(override_section):
+                override_value = getattr(override_section, attr)
+                # Only override if explicitly set in override dict
+                if section in override_dict and attr in override_dict[section]:
+                    setattr(current_section, attr, override_value)
+
+        logger.info("Configuration merged with overrides")
+
+    def get_config_dict(self) -> Dict[str, Any]:
+        """
+        Get full configuration as dictionary.
+
+        Returns:
+            Configuration dictionary
+        """
+        return self.config.to_dict()
 
 
 # Global configuration instance

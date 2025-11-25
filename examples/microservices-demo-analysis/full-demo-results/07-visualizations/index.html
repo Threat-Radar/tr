@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Threat Radar - Visualization Index</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+            margin-top: 0;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+            border-left: 4px solid #667eea;
+            padding-left: 15px;
+        }
+        .section {
+            margin: 20px 0;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            background: #f9f9f9;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+            background: white;
+        }
+        .card h3 {
+            margin-top: 0;
+            color: #667eea;
+            font-size: 18px;
+        }
+        .card p {
+            color: #666;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        .links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+        .btn:hover {
+            background: #5568d3;
+        }
+        .btn-secondary {
+            background: #764ba2;
+        }
+        .btn-secondary:hover {
+            background: #63407a;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #666;
+            margin-left: 8px;
+        }
+        .infrastructure-section {
+            background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            flex: 1;
+            min-width: 200px;
+            border-left: 4px solid #667eea;
+        }
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Threat Radar - Visualization Index</h1>
+        <p style="color: #666; font-size: 16px;">
+            Interactive visualizations of vulnerability analysis for Google Cloud Online Boutique microservices demo.
+        </p>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">12</div>
+                <div class="stat-label">Services Analyzed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">52+</div>
+                <div class="stat-label">Visualizations</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">4</div>
+                <div class="stat-label">Views Per Service</div>
+            </div>
+        </div>
+
+        <div class="infrastructure-section">
+            <h2>🏗️ Infrastructure-Level Visualizations</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Network Topology</h3>
+                    <p>Complete infrastructure view with security zones, network relationships, and service dependencies.</p>
+                    <div class="links">
+                        <a href="topology.html" class="btn">View Topology</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Critical Infrastructure View</h3>
+                    <p>Filtered composite view showing only CRITICAL vulnerabilities across all services.</p>
+                    <div class="links">
+                        <a href="infrastructure-critical.html" class="btn btn-secondary">Critical Only</a>
+                        <a href="infrastructure-critical-hierarchical.html" class="btn">Hierarchical</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Attack Paths</h3>
+                    <p>Discovered attack paths showing potential routes from entry points to high-value targets.</p>
+                    <div class="links">
+                        <a href="attack-paths.html" class="btn">View Attack Paths</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2>🔬 Individual Service Visualizations</h2>
+        <p style="color: #666; margin-bottom: 20px;">
+            Each service has four different visualization types for comprehensive analysis.
+        </p>
+
+        <div class="grid">
+            <div class="card">
+                <h3>adservice</h3>
+                <p>Vulnerability analysis and relationship visualization</p>
+                <div class="links">
+                    <a href="adservice_graph.html" class="btn">Basic Graph</a>
+                    <a href="adservice_critical.html" class="btn btn-secondary">Critical Only</a>
+                </div>
+                <div class="links" style="margin-top: 10px;">
+                    <a href="adservice_spring.html" class="btn">Spring Layout</a>
+                    <a href="adservice_export.png" class="btn btn-secondary" download>📥 PNG Export</a>
+                </div>
+            </div>
+            <div class="card">
+                <h3>cartservice</h3>
+                <p>Vulnerability analysis and relationship visualization</p>
+                <div class="links">
+                    <a href="cartservice_graph.html" class="btn">Basic Graph</a>
+                    <a href="cartservice_critical.html" class="btn btn-secondary">Critical Only</a>
+                </div>
+                <div class="links" style="margin-top: 10px;">
+                    <a href="cartservice_spring.html" class="btn">Spring Layout</a>
+                    <a href="cartservice_export.png" class="btn btn-secondary" download>📥 PNG Export</a>
+                </div>
+            </div>
+            <div class="card">
+                <h3>checkoutservice</h3>
+                <p>Vulnerability analysis and relationship visualization</p>
+                <div class="links">
+                    <a href="checkoutservice_graph.html" class="btn">Basic Graph</a>
+                    <a href="checkoutservice_critical.html" class="btn btn-secondary">Critical Only</a>
+                </div>
+                <div class="links" style="margin-top: 10px;">
+                    <a href="checkoutservice_spring.html" class="btn">Spring Layout</a>
+                    <a href="checkoutservice_export.png" class="btn btn-secondary" download>📥 PNG Export</a>
+                </div>
+            </div>
+            <div class="card">
+                <h3>currencyservice</h3>
+                <p>Vulnerability analysis and relationship visualization</p>
+                <div class="links">
+                    <a href="currencyservice_graph.html" class="btn">Basic Graph</a>
+                    <a href="currencyservice_critical.html" class="btn btn-secondary">Critical Only</a>
+                </div>
+                <div class="links" style="margin-top: 10px;">
+                    <a href="currencyservice_spring.html" class="btn">Spring Layout</a>
+                    <a href="currencyservice_export.png" class="btn btn-secondary" download>📥 PNG Export</a>
+                </div>
+            </div>
+            <div class="card">
+                <h3>emailservice</h3>
+                <p>Vulnerability analysis and relationship visualization</p>
+                <div class="links">
+                    <a href="emailservice_graph.html" class="btn">Basic Graph</a>
+                    <a href="emailservice_critical.html" class="btn btn-secondary">Critical Only</a>
+                </div>
+                <div class="links" style="margin-top: 10px;">
+                    <a href="emailservice_spring.html" class="btn">Spring Layout</a>
+                    <a href="emailservice_export.png" class="btn btn-secondary" download>📥 PNG Export</a>
+                </div>
+            </div>
+            <div class="card">
+                <h3>frontend</h3>
+                <p>Vulnerability analysis and relationship visualization</p>
+                <div class="links">
+                    <a href="frontend_graph.html" class="btn">Basic Graph</a>
+                    <a href="frontend_critical.html" class="btn btn-secondary">Critical Only</a>
+                </div>
+                <div class="links" style="margin-top: 10px;">
+                    <a href="frontend_spring.html" class="btn">Spring Layout</a>
+                    <a href="frontend_export.png" class="btn btn-secondary" download>📥 PNG Export</a>
+                </div>
+            </div>
+            <div class="card">
+                <h3>loadgenerator</h3>
+                <p>Vulnerability analysis and relationship visualization</p>
+                <div class="links">
+                    <a href="loadgenerator_graph.html" class="btn">Basic Graph</a>
+                    <a href="loadgenerator_critical.html" class="btn btn-secondary">Critical Only</a>
+                </div>
+                <div class="links" style="margin-top: 10px;">
+                    <a href="loadgenerator_spring.html" class="btn">Spring Layout</a>
+                    <a href="loadgenerator_export.png" class="btn btn-secondary" download>📥 PNG Export</a>
+                </div>
+            </div>
+            <div class="card">
+                <h3>paymentservice</h3>
+                <p>Vulnerability analysis and relationship visualization</p>
+                <div class="links">
+                    <a href="paymentservice_graph.html" class="btn">Basic Graph</a>
+                    <a href="paymentservice_critical.html" class="btn btn-secondary">Critical Only</a>
+                </div>
+                <div class="links" style="margin-top: 10px;">
+                    <a href="paymentservice_spring.html" class="btn">Spring Layout</a>
+                    <a href="paymentservice_export.png" class="btn btn-secondary" download>📥 PNG Export</a>
+                </div>
+            </div>
+            <div class="card">
+                <h3>productcatalogservice</h3>
+                <p>Vulnerability analysis and relationship visualization</p>
+                <div class="links">
+                    <a href="productcatalogservice_graph.html" class="btn">Basic Graph</a>
+                    <a href="productcatalogservice_critical.html" class="btn btn-secondary">Critical Only</a>
+                </div>
+                <div class="links" style="margin-top: 10px;">
+                    <a href="productcatalogservice_spring.html" class="btn">Spring Layout</a>
+                    <a href="productcatalogservice_export.png" class="btn btn-secondary" download>📥 PNG Export</a>
+                </div>
+            </div>
+            <div class="card">
+                <h3>recommendationservice</h3>
+                <p>Vulnerability analysis and relationship visualization</p>
+                <div class="links">
+                    <a href="recommendationservice_graph.html" class="btn">Basic Graph</a>
+                    <a href="recommendationservice_critical.html" class="btn btn-secondary">Critical Only</a>
+                </div>
+                <div class="links" style="margin-top: 10px;">
+                    <a href="recommendationservice_spring.html" class="btn">Spring Layout</a>
+                    <a href="recommendationservice_export.png" class="btn btn-secondary" download>📥 PNG Export</a>
+                </div>
+            </div>
+            <div class="card">
+                <h3>redis-cart</h3>
+                <p>Vulnerability analysis and relationship visualization</p>
+                <div class="links">
+                    <a href="redis-cart_graph.html" class="btn">Basic Graph</a>
+                    <a href="redis-cart_critical.html" class="btn btn-secondary">Critical Only</a>
+                </div>
+                <div class="links" style="margin-top: 10px;">
+                    <a href="redis-cart_spring.html" class="btn">Spring Layout</a>
+                    <a href="redis-cart_export.png" class="btn btn-secondary" download>📥 PNG Export</a>
+                </div>
+            </div>
+            <div class="card">
+                <h3>shippingservice</h3>
+                <p>Vulnerability analysis and relationship visualization</p>
+                <div class="links">
+                    <a href="shippingservice_graph.html" class="btn">Basic Graph</a>
+                    <a href="shippingservice_critical.html" class="btn btn-secondary">Critical Only</a>
+                </div>
+                <div class="links" style="margin-top: 10px;">
+                    <a href="shippingservice_spring.html" class="btn">Spring Layout</a>
+                    <a href="shippingservice_export.png" class="btn btn-secondary" download>📥 PNG Export</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="section" style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e0e0e0;">
+            <h2>📖 Visualization Types Explained</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Basic Graph <span class="badge">Hierarchical</span></h3>
+                    <p>Hierarchical layout showing vulnerability relationships. Color-coded by severity: red (critical), orange (high), yellow (medium), blue (low).</p>
+                </div>
+                <div class="card">
+                    <h3>Critical Only <span class="badge">Filtered</span></h3>
+                    <p>Filtered view showing only HIGH and CRITICAL severity vulnerabilities. Focus on urgent issues requiring immediate attention.</p>
+                </div>
+                <div class="card">
+                    <h3>Spring Layout <span class="badge">Natural</span></h3>
+                    <p>Force-directed layout revealing natural clustering patterns. Color-coded by node type (vulnerability, package, container).</p>
+                </div>
+                <div class="card">
+                    <h3>PNG Export <span class="badge">Reports</span></h3>
+                    <p>High-resolution PNG export using circular layout. Excellent node separation, perfect for presentations, reports, and print documentation.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section" style="margin-top: 30px; background: #f0f4ff; padding: 20px; border-radius: 8px;">
+            <h3 style="margin-top: 0; color: #667eea;">💡 Quick Tips</h3>
+            <ul style="color: #666;">
+                <li><strong>Interactive:</strong> All visualizations support zoom, pan, and hover for details</li>
+                <li><strong>Click nodes:</strong> Explore individual vulnerabilities and packages</li>
+                <li><strong>Compare views:</strong> Use different layouts to identify patterns</li>
+                <li><strong>Focus on critical:</strong> Start with "Critical Only" views for priority issues</li>
+                <li><strong>Export:</strong> Use PNG exports for reports and presentations</li>
+            </ul>
+        </div>
+
+        <div style="margin-top: 40px; text-align: center; color: #999; font-size: 14px;">
+            Generated by Threat Radar | <a href="https://github.com/Threat-Radar/threat-radar" style="color: #667eea;">GitHub</a>
+        </div>
+    </div>
+</body>
+</html>
