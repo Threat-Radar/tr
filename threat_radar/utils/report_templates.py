@@ -153,6 +153,8 @@ class ExecutiveSummary:
     critical_items_requiring_attention: int = 0
     estimated_remediation_effort: str = "Unknown"  # LOW, MEDIUM, HIGH
     days_to_patch_critical: Optional[int] = None
+    fix_available_percentage: float = 0.0
+    internet_facing_assets: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""

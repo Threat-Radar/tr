@@ -88,6 +88,14 @@ class ComprehensiveReportGenerator:
             scan_metadata=scan_result.scan_metadata or {},
         )
 
+        # Add attack path data if provided (must be loaded before executive summary)
+        if attack_paths_file:
+            try:
+                logger.info(f"Loading attack path data from {attack_paths_file}...")
+                report.attack_surface_data = self._load_attack_paths(attack_paths_file)
+            except Exception as e:
+                logger.warning(f"Failed to load attack paths: {e}")
+
         # Add executive summary if requested
         if include_executive_summary and self.ai_provider:
             try:
@@ -100,14 +108,6 @@ class ComprehensiveReportGenerator:
         if include_dashboard_data:
             logger.info("Generating dashboard visualization data...")
             report.dashboard_data = self._generate_dashboard_data(report)
-
-        # Add attack path data if provided
-        if attack_paths_file:
-            try:
-                logger.info(f"Loading attack path data from {attack_paths_file}...")
-                report.attack_surface_data = self._load_attack_paths(attack_paths_file)
-            except Exception as e:
-                logger.warning(f"Failed to load attack paths: {e}")
 
         # Generate remediation recommendations
         report.remediation_recommendations = self._generate_remediation_recommendations(packages)
@@ -331,6 +331,15 @@ class ComprehensiveReportGenerator:
                 remediation_effort = "LOW"
                 days_to_patch = 7
 
+            # Calculate fix availability percentage
+            total_vulns = report.summary.total_vulnerabilities
+            fix_percentage = (report.summary.vulnerabilities_with_fix / total_vulns * 100) if total_vulns > 0 else 0.0
+
+            # Get internet-facing assets count from attack surface data if available
+            internet_facing = 0
+            if report.attack_surface_data:
+                internet_facing = report.attack_surface_data.entry_points_count
+
             return ExecutiveSummary(
                 overall_risk_rating=risk_level,
                 key_findings=key_findings if key_findings else ["Vulnerability assessment completed"],
@@ -341,6 +350,8 @@ class ComprehensiveReportGenerator:
                 critical_items_requiring_attention=total_critical_high,
                 estimated_remediation_effort=remediation_effort,
                 days_to_patch_critical=days_to_patch,
+                fix_available_percentage=fix_percentage,
+                internet_facing_assets=internet_facing,
             )
 
         except Exception as e:
@@ -379,6 +390,15 @@ class ComprehensiveReportGenerator:
             "Implement compensating controls for vulnerabilities without fixes",
         ]
 
+        # Calculate fix availability percentage
+        total_vulns = report.summary.total_vulnerabilities
+        fix_percentage = (report.summary.vulnerabilities_with_fix / total_vulns * 100) if total_vulns > 0 else 0.0
+
+        # Get internet-facing assets count from attack surface data if available
+        internet_facing = 0
+        if report.attack_surface_data:
+            internet_facing = report.attack_surface_data.entry_points_count
+
         return ExecutiveSummary(
             overall_risk_rating=risk_rating,
             key_findings=key_findings,
@@ -389,6 +409,8 @@ class ComprehensiveReportGenerator:
             critical_items_requiring_attention=critical_high_count,
             estimated_remediation_effort="MEDIUM",
             days_to_patch_critical=14,
+            fix_available_percentage=fix_percentage,
+            internet_facing_assets=internet_facing,
         )
 
     def _generate_dashboard_data(self, report: ComprehensiveReport) -> DashboardData:
