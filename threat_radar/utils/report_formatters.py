@@ -88,6 +88,13 @@ class MarkdownFormatter(ReportFormatter):
         md.append(f"| Highest CVSS Score | {summary.highest_cvss_score:.2f} |")
         md.append(f"| Vulnerabilities with Fix | ✅ {summary.vulnerabilities_with_fix} |")
         md.append(f"| Vulnerabilities without Fix | ❌ {summary.vulnerabilities_without_fix} |")
+
+        # Add new metrics from executive summary if available
+        if report.executive_summary:
+            exec_sum = report.executive_summary
+            md.append(f"| Fix Availability | {exec_sum.fix_available_percentage:.1f}% |")
+            md.append(f"| Internet-Facing Assets | 🌐 {exec_sum.internet_facing_assets} |")
+
         md.append("")
 
         # Severity Distribution Chart (text-based)
@@ -519,6 +526,12 @@ class HTMLFormatter(ReportFormatter):
             ("Average CVSS", f"{summary.average_cvss_score:.2f}", None),
             ("Highest CVSS", f"{summary.highest_cvss_score:.2f}", None),
         ]
+
+        # Add new metrics from executive summary if available
+        if report.executive_summary:
+            exec_sum = report.executive_summary
+            stats.append(("Fix Availability", f"{exec_sum.fix_available_percentage:.1f}%", None))
+            stats.append(("Internet-Facing Assets", exec_sum.internet_facing_assets, None))
 
         for title, value, badge_class in stats:
             badge_html = f' <span class="badge badge-{badge_class}">{badge_class.upper()}</span>' if badge_class else ''
