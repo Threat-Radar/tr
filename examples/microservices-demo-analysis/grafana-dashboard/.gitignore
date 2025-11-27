@@ -1,0 +1,8 @@
+# Environment variables
+.env
+
+# Test exports
+test-exports/
+
+# Grafana data (if not using volume)
+grafana-data/
