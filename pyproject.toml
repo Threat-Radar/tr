@@ -47,7 +47,6 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "PyGithub==2.1.1",
     "python-dotenv==1.0.0",
     "typer>=0.9.0",
     "docker>=7.0.0",

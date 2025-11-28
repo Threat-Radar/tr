@@ -77,9 +77,8 @@ pip install -r requirements-ai.txt
 # Copy example configuration
 cp .env.example .env
 
-# Edit .env and add your API keys (optional):
-# - OPENAI_API_KEY=sk-your-key-here (for AI features)
-# - GITHUB_ACCESS_TOKEN=your-token (for GitHub integration)
+# Edit .env and add your API keys (optional, for AI features):
+# - OPENAI_API_KEY=sk-your-key-here
 # - AI_PROVIDER=openai (or 'ollama' for local AI)
 # - AI_MODEL=gpt-4o (or 'gpt-4-turbo', 'llama2' for Ollama)
 ```
@@ -279,12 +278,6 @@ threat-radar sbom compare myapp:v1.0 myapp:v2.0
 ### Environment Variables (.env)
 
 ```bash
-# GitHub Integration (optional)
-GITHUB_ACCESS_TOKEN=your_github_personal_access_token
-
-# NVD API (optional - for higher rate limits)
-NVD_API_KEY=your_nvd_api_key
-
 # AI Configuration (optional)
 # Option 1: OpenAI (cloud)
 OPENAI_API_KEY=sk-your-openai-api-key

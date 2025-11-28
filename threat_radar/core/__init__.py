@@ -1,6 +1,5 @@
 """Core business logic and integrations"""
 
-from .github_integration import GitHubIntegration
 from .grype_integration import (
     GrypeClient,
     GrypeVulnerability,
@@ -11,7 +10,6 @@ from .grype_integration import (
 from .syft_integration import SyftClient, SyftPackage, SBOMFormat
 
 __all__ = [
-    "GitHubIntegration",
     "GrypeClient",
     "GrypeVulnerability",
     "GrypeScanResult",
