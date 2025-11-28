@@ -36,7 +36,6 @@ from .core.grype_integration import (
 from .core.syft_integration import SyftClient, SBOMFormat
 from .core.container_analyzer import ContainerAnalyzer, ContainerAnalysis
 from .core.docker_integration import DockerClient
-from .core.github_integration import GitHubIntegration
 from .core.package_extractors import Package
 
 # AI-powered analysis
@@ -73,7 +72,6 @@ __all__ = [
     "ContainerAnalyzer",
     "ContainerAnalysis",
     "DockerClient",
-    "GitHubIntegration",
     "Package",
     # AI analysis
     "VulnerabilityAnalyzer",

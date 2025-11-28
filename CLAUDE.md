@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Threat Radar (tr) is a threat assessment and analysis platform for security vulnerability management. It provides Docker container analysis, SBOM generation, package extraction, and GitHub integration for security analysis.
+Threat Radar (tr) is a threat assessment and analysis platform for security vulnerability management. It provides Docker container analysis, SBOM generation, and package extraction for security analysis.
 
 ## Quick Reference
 
@@ -73,9 +73,9 @@ pip install -e .
 # Install with dev dependencies
 pip install -e ".[dev]"
 
-# Set up environment variables
+# Set up environment variables (for AI features)
 cp .env.example .env
-# Edit .env and add your GITHUB_ACCESS_TOKEN
+# Edit .env and add your AI provider API keys
 ```
 
 ### Running the CLI
@@ -310,13 +310,6 @@ The CLI is built with Typer and uses a modular command structure in `threat_rada
   - Extracts pip packages from containers
   - Generates CycloneDX SBOM format
   - Supports JSON and text output formats
-
-#### GitHub Integration (`threat_radar/core/`)
-- **`github_integration.py`** - `GitHubIntegration` class using PyGithub
-  - Repository analysis and metadata extraction
-  - Security issue detection (labels: security, vulnerability, cve)
-  - Dependency file extraction (requirements.txt, package.json, etc.)
-  - Requires `GITHUB_ACCESS_TOKEN` environment variable
 
 #### CVE Vulnerability Scanning (`threat_radar/core/`)
 - **`grype_integration.py`** - `GrypeClient` wrapper for Grype vulnerability scanner
@@ -3581,7 +3574,6 @@ The project uses organized storage directories (git-ignored):
 ### Dependencies
 
 **Core Python dependencies:**
-- `PyGithub==2.1.1` - GitHub API integration
 - `python-dotenv==1.0.0` - Environment variable management
 - `typer>=0.9.0` - CLI framework (argument parsing and commands)
 - `docker>=7.0.0` - Docker SDK for Python
@@ -3617,8 +3609,6 @@ The project uses organized storage directories (git-ignored):
 
 Create `.env` file from `.env.example`:
 ```
-GITHUB_ACCESS_TOKEN=your_github_personal_access_token_here
-
 # AI Configuration
 # Option 1: OpenAI
 OPENAI_API_KEY=your_openai_api_key_here
@@ -3636,7 +3626,6 @@ AI_MODEL=gpt-4o  # Recommended: gpt-4o, gpt-4-turbo, or gpt-3.5-turbo-1106 (JSON
 LOCAL_MODEL_ENDPOINT=http://localhost:11434
 ```
 
-- `GITHUB_ACCESS_TOKEN` - Required for GitHub integration features
 - `OPENAI_API_KEY` - Required for AI features with OpenAI
 - `ANTHROPIC_API_KEY` - Required for AI features with Anthropic Claude
 - `AI_PROVIDER` - Set to `openai`, `anthropic`, or `ollama` for AI provider selection
