@@ -386,12 +386,6 @@ AI_MODEL=llama2
 LOCAL_MODEL_ENDPOINT=http://localhost:11434
 ```
 
-**Optional:**
-```bash
-# GitHub integration
-GITHUB_ACCESS_TOKEN=your_github_token_here
-```
-
 ### 2. Grype Database Update
 
 Update Grype's vulnerability database:
