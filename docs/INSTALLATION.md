@@ -559,7 +559,7 @@ ollama list
 pip install --upgrade threat-radar
 
 # Or specific version
-pip install threat-radar==0.3.0
+pip install threat-radar==0.4.0
 ```
 
 ### Upgrade from Source
