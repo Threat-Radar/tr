@@ -557,9 +557,6 @@ ollama list
 ```bash
 # Upgrade to latest version
 pip install --upgrade threat-radar
-
-# Or specific version
-pip install threat-radar==0.4.0
 ```
 
 ### Upgrade from Source
