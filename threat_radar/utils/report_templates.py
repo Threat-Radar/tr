@@ -1,4 +1,5 @@
 """Comprehensive report templates and data structures for vulnerability reporting."""
+
 from dataclasses import dataclass, field, asdict
 from typing import Dict, List, Optional, Any
 from datetime import datetime
@@ -8,6 +9,7 @@ from enum import Enum
 @dataclass
 class AttackPathSummary:
     """Summary of attack path analysis for reporting."""
+
     path_id: str
     entry_point: str
     target: str
@@ -28,6 +30,7 @@ class AttackPathSummary:
 @dataclass
 class AttackSurfaceData:
     """Attack surface analysis data for reporting."""
+
     total_attack_paths: int = 0
     critical_paths: int = 0
     high_paths: int = 0
@@ -44,20 +47,22 @@ class AttackSurfaceData:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         data = asdict(self)
-        data['attack_paths'] = [ap.to_dict() for ap in self.attack_paths]
+        data["attack_paths"] = [ap.to_dict() for ap in self.attack_paths]
         return data
 
 
 class ReportLevel(Enum):
     """Report detail levels."""
+
     EXECUTIVE = "executive"  # High-level summary for executives
-    SUMMARY = "summary"      # Summary with key findings
-    DETAILED = "detailed"    # Full detailed report
+    SUMMARY = "summary"  # Summary with key findings
+    DETAILED = "detailed"  # Full detailed report
     CRITICAL_ONLY = "critical_only"  # Only critical/high severity findings
 
 
 class ReportFormat(Enum):
     """Supported report output formats."""
+
     JSON = "json"
     MARKDOWN = "markdown"
     HTML = "html"
@@ -67,6 +72,7 @@ class ReportFormat(Enum):
 @dataclass
 class VulnerabilitySummary:
     """Summary statistics for vulnerabilities."""
+
     total_vulnerabilities: int = 0
     critical: int = 0
     high: int = 0
@@ -94,6 +100,7 @@ class VulnerabilitySummary:
 @dataclass
 class VulnerabilityFinding:
     """Individual vulnerability finding."""
+
     cve_id: str
     severity: str
     cvss_score: Optional[float]
@@ -123,6 +130,7 @@ class VulnerabilityFinding:
 @dataclass
 class PackageVulnerabilities:
     """Vulnerabilities grouped by package."""
+
     package_name: str
     package_version: str
     package_type: str
@@ -135,13 +143,14 @@ class PackageVulnerabilities:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         data = asdict(self)
-        data['vulnerabilities'] = [v.to_dict() for v in self.vulnerabilities]
+        data["vulnerabilities"] = [v.to_dict() for v in self.vulnerabilities]
         return data
 
 
 @dataclass
 class ExecutiveSummary:
     """AI-generated executive summary."""
+
     overall_risk_rating: str  # CRITICAL, HIGH, MEDIUM, LOW
     key_findings: List[str]
     immediate_actions: List[str]
@@ -164,6 +173,7 @@ class ExecutiveSummary:
 @dataclass
 class TrendData:
     """Trend data for dashboard visualization."""
+
     severity_trend: Dict[str, List[Dict[str, Any]]] = field(default_factory=dict)
     package_vulnerability_trend: List[Dict[str, Any]] = field(default_factory=list)
     cvss_distribution: List[Dict[str, Any]] = field(default_factory=list)
@@ -177,6 +187,7 @@ class TrendData:
 @dataclass
 class DashboardData:
     """Dashboard-ready data structures for visualization."""
+
     # High-level metrics
     summary_cards: Dict[str, Any] = field(default_factory=dict)
 
@@ -197,7 +208,7 @@ class DashboardData:
         """Convert to dictionary."""
         data = asdict(self)
         if self.trend_data:
-            data['trend_data'] = self.trend_data.to_dict()
+            data["trend_data"] = self.trend_data.to_dict()
         return data
 
 
@@ -233,43 +244,46 @@ class ComprehensiveReport:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         data = {
-            'report_id': self.report_id,
-            'generated_at': self.generated_at,
-            'report_level': self.report_level,
-            'target': self.target,
-            'target_type': self.target_type,
-            'summary': self.summary.to_dict(),
-            'findings': [f.to_dict() for f in self.findings],
-            'packages': [p.to_dict() for p in self.packages],
-            'scan_metadata': self.scan_metadata,
-            'remediation_recommendations': self.remediation_recommendations,
+            "report_id": self.report_id,
+            "generated_at": self.generated_at,
+            "report_level": self.report_level,
+            "target": self.target,
+            "target_type": self.target_type,
+            "summary": self.summary.to_dict(),
+            "findings": [f.to_dict() for f in self.findings],
+            "packages": [p.to_dict() for p in self.packages],
+            "scan_metadata": self.scan_metadata,
+            "remediation_recommendations": self.remediation_recommendations,
         }
 
         if self.executive_summary:
-            data['executive_summary'] = self.executive_summary.to_dict()
+            data["executive_summary"] = self.executive_summary.to_dict()
 
         if self.attack_surface_data:
-            data['attack_surface_data'] = self.attack_surface_data.to_dict()
+            data["attack_surface_data"] = self.attack_surface_data.to_dict()
 
         if self.dashboard_data:
-            data['dashboard_data'] = self.dashboard_data.to_dict()
+            data["dashboard_data"] = self.dashboard_data.to_dict()
 
         return data
 
-    def filter_critical_only(self) -> 'ComprehensiveReport':
+    def filter_critical_only(self) -> "ComprehensiveReport":
         """Return a copy with only critical/high severity findings."""
         critical_findings = [
-            f for f in self.findings
-            if f.severity.lower() in ['critical', 'high']
+            f for f in self.findings if f.severity.lower() in ["critical", "high"]
         ]
 
         # Recalculate summary for critical only
         critical_summary = VulnerabilitySummary(
             total_vulnerabilities=len(critical_findings),
-            critical=sum(1 for f in critical_findings if f.severity.lower() == 'critical'),
-            high=sum(1 for f in critical_findings if f.severity.lower() == 'high'),
+            critical=sum(
+                1 for f in critical_findings if f.severity.lower() == "critical"
+            ),
+            high=sum(1 for f in critical_findings if f.severity.lower() == "high"),
             vulnerabilities_with_fix=sum(1 for f in critical_findings if f.has_fix),
-            vulnerabilities_without_fix=sum(1 for f in critical_findings if not f.has_fix),
+            vulnerabilities_without_fix=sum(
+                1 for f in critical_findings if not f.has_fix
+            ),
         )
 
         # Calculate CVSS scores
@@ -282,8 +296,9 @@ class ComprehensiveReport:
         critical_packages = []
         for pkg in self.packages:
             critical_vulns = [
-                v for v in pkg.vulnerabilities
-                if v.severity.lower() in ['critical', 'high']
+                v
+                for v in pkg.vulnerabilities
+                if v.severity.lower() in ["critical", "high"]
             ]
             if critical_vulns:
                 critical_pkg = PackageVulnerabilities(
@@ -302,13 +317,16 @@ class ComprehensiveReport:
         filtered_attack_surface = None
         if self.attack_surface_data:
             filtered_paths = [
-                ap for ap in self.attack_surface_data.attack_paths
-                if ap.threat_level in ['critical', 'high']
+                ap
+                for ap in self.attack_surface_data.attack_paths
+                if ap.threat_level in ["critical", "high"]
             ]
             filtered_attack_surface = AttackSurfaceData(
                 total_attack_paths=len(filtered_paths),
-                critical_paths=sum(1 for ap in filtered_paths if ap.threat_level == 'critical'),
-                high_paths=sum(1 for ap in filtered_paths if ap.threat_level == 'high'),
+                critical_paths=sum(
+                    1 for ap in filtered_paths if ap.threat_level == "critical"
+                ),
+                high_paths=sum(1 for ap in filtered_paths if ap.threat_level == "high"),
                 entry_points_count=self.attack_surface_data.entry_points_count,
                 high_value_targets_count=self.attack_surface_data.high_value_targets_count,
                 privilege_escalation_opportunities=self.attack_surface_data.privilege_escalation_opportunities,
@@ -339,26 +357,31 @@ class ComprehensiveReport:
     def get_summary_view(self) -> Dict[str, Any]:
         """Get a summary view suitable for quick overview."""
         return {
-            'report_id': self.report_id,
-            'generated_at': self.generated_at,
-            'target': self.target,
-            'summary': self.summary.to_dict(),
-            'top_5_critical_findings': [
-                f.to_dict() for f in sorted(
+            "report_id": self.report_id,
+            "generated_at": self.generated_at,
+            "target": self.target,
+            "summary": self.summary.to_dict(),
+            "top_5_critical_findings": [
+                f.to_dict()
+                for f in sorted(
                     self.findings,
                     key=lambda x: (
-                        {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}.get(x.severity.lower(), 4),
-                        -(x.cvss_score or 0)
-                    )
+                        {"critical": 0, "high": 1, "medium": 2, "low": 3}.get(
+                            x.severity.lower(), 4
+                        ),
+                        -(x.cvss_score or 0),
+                    ),
                 )[:5]
             ],
-            'most_vulnerable_packages': [
+            "most_vulnerable_packages": [
                 {
-                    'package': p.package_name,
-                    'version': p.package_version,
-                    'vulnerability_count': p.vulnerability_count,
-                    'highest_severity': p.highest_severity,
+                    "package": p.package_name,
+                    "version": p.package_version,
+                    "vulnerability_count": p.vulnerability_count,
+                    "highest_severity": p.highest_severity,
                 }
-                for p in sorted(self.packages, key=lambda x: x.vulnerability_count, reverse=True)[:5]
+                for p in sorted(
+                    self.packages, key=lambda x: x.vulnerability_count, reverse=True
+                )[:5]
             ],
         }

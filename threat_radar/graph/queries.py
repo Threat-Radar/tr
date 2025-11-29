@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 @contextmanager
 def timeout_handler(seconds: int):
     """Context manager for operation timeout."""
+
     def timeout_signal_handler(signum, frame):
         raise TimeoutExceeded(f"Operation exceeded {seconds} second timeout")
 
@@ -74,19 +75,9 @@ class GraphAnalyzer:
         cve_node = f"cve:{cve_id}"
         if cve_node not in self.graph:
             logger.warning(f"CVE not found in graph: {cve_id}")
-            return {
-                "packages": [],
-                "containers": [],
-                "services": [],
-                "hosts": []
-            }
+            return {"packages": [], "containers": [], "services": [], "hosts": []}
 
-        affected = {
-            "packages": [],
-            "containers": [],
-            "services": [],
-            "hosts": []
-        }
+        affected = {"packages": [], "containers": [], "services": [], "hosts": []}
 
         # Get all packages affected by this CVE (incoming HAS_VULNERABILITY edges)
         for node in self.graph.predecessors(cve_node):
@@ -104,14 +95,18 @@ class GraphAnalyzer:
 
                         # Find services exposed by these containers
                         for successor in self.graph.successors(container):
-                            successor_type = self.graph.nodes[successor].get("node_type")
+                            successor_type = self.graph.nodes[successor].get(
+                                "node_type"
+                            )
                             if successor_type == NodeType.SERVICE.value:
                                 if successor not in affected["services"]:
                                     affected["services"].append(successor)
 
                         # Find hosts running these containers
                         for successor in self.graph.successors(container):
-                            successor_type = self.graph.nodes[successor].get("node_type")
+                            successor_type = self.graph.nodes[successor].get(
+                                "node_type"
+                            )
                             if successor_type == NodeType.HOST.value:
                                 if successor not in affected["hosts"]:
                                     affected["hosts"].append(successor)
@@ -158,31 +153,25 @@ class GraphAnalyzer:
                             except (ValueError, TypeError):
                                 pass
 
-                    avg_cvss = sum(cvss_scores) / len(cvss_scores) if cvss_scores else 0.0
+                    avg_cvss = (
+                        sum(cvss_scores) / len(cvss_scores) if cvss_scores else 0.0
+                    )
 
                     vuln_counts[node] = (len(vulns), avg_cvss)
 
         # Sort by vulnerability count descending, then by CVSS score
         sorted_packages = sorted(
-            vuln_counts.items(),
-            key=lambda x: (x[1][0], x[1][1]),
-            reverse=True
+            vuln_counts.items(), key=lambda x: (x[1][0], x[1][1]), reverse=True
         )[:top_n]
 
         # Format results
-        results = [
-            (pkg, count, cvss)
-            for pkg, (count, cvss) in sorted_packages
-        ]
+        results = [(pkg, count, cvss) for pkg, (count, cvss) in sorted_packages]
 
         logger.info(f"Found {len(results)} most vulnerable packages")
         return results
 
     def critical_path(
-        self,
-        source: str,
-        target: str,
-        max_length: int = 10
+        self, source: str, target: str, max_length: int = 10
     ) -> List[List[str]]:
         """
         Find all paths from source to target (attack paths).
@@ -202,12 +191,11 @@ class GraphAnalyzer:
             return []
 
         try:
-            paths = list(nx.all_simple_paths(
-                self.graph,
-                source=source,
-                target=target,
-                cutoff=max_length
-            ))
+            paths = list(
+                nx.all_simple_paths(
+                    self.graph, source=source, target=target, cutoff=max_length
+                )
+            )
             logger.info(f"Found {len(paths)} paths from {source} to {target}")
             return paths
         except nx.NetworkXNoPath:
@@ -261,18 +249,24 @@ class GraphAnalyzer:
                     if edge_data.get("edge_type") == EdgeType.FIXED_BY.value:
                         # Get affected packages (predecessors)
                         affected_packages = [
-                            pred for pred in self.graph.predecessors(node)
-                            if self.graph.nodes[pred].get("node_type") == NodeType.PACKAGE.value
+                            pred
+                            for pred in self.graph.predecessors(node)
+                            if self.graph.nodes[pred].get("node_type")
+                            == NodeType.PACKAGE.value
                         ]
 
-                        fix_candidates.append({
-                            "cve_id": self.graph.nodes[node].get("cve_id"),
-                            "severity": vuln_severity,
-                            "cvss_score": self.graph.nodes[node].get("cvss_score"),
-                            "affected_packages": affected_packages,
-                            "fix_package": successor,
-                            "fix_version": self.graph.nodes[successor].get("version"),
-                        })
+                        fix_candidates.append(
+                            {
+                                "cve_id": self.graph.nodes[node].get("cve_id"),
+                                "severity": vuln_severity,
+                                "cvss_score": self.graph.nodes[node].get("cvss_score"),
+                                "affected_packages": affected_packages,
+                                "fix_package": successor,
+                                "fix_version": self.graph.nodes[successor].get(
+                                    "version"
+                                ),
+                            }
+                        )
 
         logger.info(f"Found {len(fix_candidates)} fix candidates")
         return fix_candidates
@@ -311,7 +305,8 @@ class GraphAnalyzer:
 
                 # Check for fixes
                 has_fix = any(
-                    self.graph.get_edge_data(node, succ).get("edge_type") == EdgeType.FIXED_BY.value
+                    self.graph.get_edge_data(node, succ).get("edge_type")
+                    == EdgeType.FIXED_BY.value
                     for succ in self.graph.successors(node)
                 )
 
@@ -350,8 +345,10 @@ class GraphAnalyzer:
 
                 # Count incoming CONTAINS edges from containers
                 container_count = sum(
-                    1 for pred in self.graph.predecessors(node)
-                    if self.graph.nodes[pred].get("node_type") == NodeType.CONTAINER.value
+                    1
+                    for pred in self.graph.predecessors(node)
+                    if self.graph.nodes[pred].get("node_type")
+                    == NodeType.CONTAINER.value
                 )
 
                 if pkg_name in package_counts:
@@ -387,7 +384,10 @@ class GraphAnalyzer:
                 if self.graph.nodes[pkg].get("node_type") == NodeType.PACKAGE.value:
                     # Get vulnerabilities in package
                     for vuln in self.graph.successors(pkg):
-                        if self.graph.nodes[vuln].get("node_type") == NodeType.VULNERABILITY.value:
+                        if (
+                            self.graph.nodes[vuln].get("node_type")
+                            == NodeType.VULNERABILITY.value
+                        ):
                             vulns.add(vuln)
 
             container_vulns.append(vulns)
@@ -472,7 +472,10 @@ class GraphAnalyzer:
                 continue
 
             # Check compliance scope
-            if node_data.get("pci_scope") is True or node_data.get("hipaa_scope") is True:
+            if (
+                node_data.get("pci_scope") is True
+                or node_data.get("hipaa_scope") is True
+            ):
                 high_value_targets.append(node)
                 continue
 
@@ -484,7 +487,10 @@ class GraphAnalyzer:
 
             # Check for database or payment processing functions
             function = node_data.get("function", "").lower()
-            if any(keyword in function for keyword in ["database", "payment", "auth", "credential"]):
+            if any(
+                keyword in function
+                for keyword in ["database", "payment", "auth", "credential"]
+            ):
                 high_value_targets.append(node)
 
         logger.info(f"Identified {len(high_value_targets)} high-value targets")
@@ -495,7 +501,7 @@ class GraphAnalyzer:
         entry_points: Optional[List[str]] = None,
         targets: Optional[List[str]] = None,
         max_length: Optional[int] = None,
-        max_paths: Optional[int] = None
+        max_paths: Optional[int] = None,
     ) -> List[AttackPath]:
         """
         Find shortest attack paths from entry points to high-value targets.
@@ -577,9 +583,7 @@ class GraphAnalyzer:
                     try:
                         # Use NetworkX shortest path algorithm
                         shortest_path = nx.shortest_path(
-                            self.graph,
-                            source=entry,
-                            target=target
+                            self.graph, source=entry, target=target
                         )
 
                         if len(shortest_path) <= max_length:
@@ -587,7 +591,7 @@ class GraphAnalyzer:
                                 path_id=f"path_{path_id}",
                                 node_path=shortest_path,
                                 entry_point=entry,
-                                target=target
+                                target=target,
                             )
                             attack_paths.append(attack_path)
                             path_id += 1
@@ -599,7 +603,9 @@ class GraphAnalyzer:
                         logger.warning(f"Node not found: {e}")
                         continue
                     except Exception as e:
-                        logger.error(f"Unexpected error finding path {entry} -> {target}: {e}")
+                        logger.error(
+                            f"Unexpected error finding path {entry} -> {target}: {e}"
+                        )
                         continue
 
                 # Break outer loop if max paths reached
@@ -618,20 +624,16 @@ class GraphAnalyzer:
             key=lambda p: (
                 p.threat_level == ThreatLevel.CRITICAL,
                 -p.total_cvss,
-                p.path_length
+                p.path_length,
             ),
-            reverse=True
+            reverse=True,
         )
 
         logger.info(f"Found {len(attack_paths)} attack paths")
         return attack_paths
 
     def _convert_to_attack_path(
-        self,
-        path_id: str,
-        node_path: List[str],
-        entry_point: str,
-        target: str
+        self, path_id: str, node_path: List[str], entry_point: str, target: str
     ) -> AttackPath:
         """
         Convert a node path to an AttackPath with detailed steps.
@@ -659,9 +661,9 @@ class GraphAnalyzer:
                 step_type = AttackStepType.TARGET_ACCESS
             else:
                 # Check if this is a privilege escalation or lateral movement
-                if self._is_privilege_escalation_step(node_path[i-1], node_id):
+                if self._is_privilege_escalation_step(node_path[i - 1], node_id):
                     step_type = AttackStepType.PRIVILEGE_ESCALATION
-                elif self._is_lateral_movement_step(node_path[i-1], node_id):
+                elif self._is_lateral_movement_step(node_path[i - 1], node_id):
                     step_type = AttackStepType.LATERAL_MOVEMENT
                 else:
                     step_type = AttackStepType.EXPLOIT_VULNERABILITY
@@ -720,15 +722,20 @@ class GraphAnalyzer:
             step = AttackStep(
                 node_id=node_id,
                 step_type=step_type,
-                description=self._generate_step_description(node_id, step_type, node_data),
+                description=self._generate_step_description(
+                    node_id, step_type, node_data
+                ),
                 vulnerabilities=node_vulns,
-                cvss_score=cvss_score
+                cvss_score=cvss_score,
             )
             steps.append(step)
 
         # Determine threat level based on maximum CVSS in the path
         # An attack path is as dangerous as its most critical vulnerability
-        max_cvss = max((step.cvss_score for step in steps if step.cvss_score is not None), default=0.0)
+        max_cvss = max(
+            (step.cvss_score for step in steps if step.cvss_score is not None),
+            default=0.0,
+        )
 
         # Apply business context multipliers to CVSS
         target_data = self.graph.nodes.get(target, {})
@@ -751,8 +758,9 @@ class GraphAnalyzer:
             constants.MIN_EXPLOITABILITY,
             min(
                 constants.MAX_EXPLOITABILITY,
-                constants.MAX_EXPLOITABILITY - (len(node_path) * constants.EXPLOITABILITY_STEP_PENALTY)
-            )
+                constants.MAX_EXPLOITABILITY
+                - (len(node_path) * constants.EXPLOITABILITY_STEP_PENALTY),
+            ),
         )
 
         return AttackPath(
@@ -764,7 +772,7 @@ class GraphAnalyzer:
             threat_level=threat_level,
             exploitability=exploitability,
             path_length=len(node_path),
-            description=f"Attack path from {entry_point} to {target} via {len(node_path)-2} intermediate nodes"
+            description=f"Attack path from {entry_point} to {target} via {len(node_path)-2} intermediate nodes",
         )
 
     def _calculate_business_multiplier(self, target_data: Dict) -> float:
@@ -835,7 +843,10 @@ class GraphAnalyzer:
         to_type = self.graph.nodes[to_node].get("node_type")
 
         # Movement between containers/assets in same zone is lateral movement
-        if from_type == to_type and from_type in [NodeType.CONTAINER.value, NodeType.HOST.value]:
+        if from_type == to_type and from_type in [
+            NodeType.CONTAINER.value,
+            NodeType.HOST.value,
+        ]:
             from_zone = self.graph.nodes[from_node].get("zone", "")
             to_zone = self.graph.nodes[to_node].get("zone", "")
 
@@ -844,7 +855,9 @@ class GraphAnalyzer:
 
         return False
 
-    def _generate_step_description(self, node_id: str, step_type: AttackStepType, node_data: Dict) -> str:
+    def _generate_step_description(
+        self, node_id: str, step_type: AttackStepType, node_data: Dict
+    ) -> str:
         """Generate human-readable description for an attack step."""
         node_name = node_data.get("name", node_id)
         node_type = node_data.get("node_type", "unknown")
@@ -863,8 +876,7 @@ class GraphAnalyzer:
             return f"Access {node_name}"
 
     def detect_privilege_escalation_paths(
-        self,
-        max_paths: int = 20
+        self, max_paths: int = 20
     ) -> List[PrivilegeEscalationPath]:
         """
         Detect privilege escalation opportunities in the infrastructure.
@@ -897,7 +909,9 @@ class GraphAnalyzer:
             if zone in ["internal", "trusted"] or priv_level in ["admin", "root"]:
                 high_priv_nodes.append(node)
 
-        logger.info(f"Analyzing {len(low_priv_nodes)} low-priv -> {len(high_priv_nodes)} high-priv combinations")
+        logger.info(
+            f"Analyzing {len(low_priv_nodes)} low-priv -> {len(high_priv_nodes)} high-priv combinations"
+        )
 
         # Find paths from low to high privilege
         for low_node in low_priv_nodes:
@@ -912,7 +926,7 @@ class GraphAnalyzer:
                     # Check if path actually involves privilege escalation
                     has_escalation = False
                     for i in range(len(path) - 1):
-                        if self._is_privilege_escalation_step(path[i], path[i+1]):
+                        if self._is_privilege_escalation_step(path[i], path[i + 1]):
                             has_escalation = True
                             break
 
@@ -922,7 +936,7 @@ class GraphAnalyzer:
                             path_id=f"privesc_{len(escalation_paths)}",
                             node_path=path,
                             entry_point=low_node,
-                            target=high_node
+                            target=high_node,
                         )
 
                         # Determine difficulty using constants
@@ -934,18 +948,27 @@ class GraphAnalyzer:
                             difficulty = "hard"
 
                         # Extract unique vulnerabilities
-                        vulns = list(set([
-                            vuln for step in attack_path.steps
-                            for vuln in step.vulnerabilities
-                        ]))
+                        vulns = list(
+                            set(
+                                [
+                                    vuln
+                                    for step in attack_path.steps
+                                    for vuln in step.vulnerabilities
+                                ]
+                            )
+                        )
 
                         escalation_path = PrivilegeEscalationPath(
-                            from_privilege=self.graph.nodes[low_node].get("zone", "public"),
-                            to_privilege=self.graph.nodes[high_node].get("zone", "internal"),
+                            from_privilege=self.graph.nodes[low_node].get(
+                                "zone", "public"
+                            ),
+                            to_privilege=self.graph.nodes[high_node].get(
+                                "zone", "internal"
+                            ),
                             path=attack_path,
                             vulnerabilities=vulns,
                             difficulty=difficulty,
-                            mitigation=self._generate_mitigation_steps(attack_path)
+                            mitigation=self._generate_mitigation_steps(attack_path),
                         )
 
                         escalation_paths.append(escalation_path)
@@ -963,8 +986,7 @@ class GraphAnalyzer:
         return escalation_paths
 
     def identify_lateral_movement_opportunities(
-        self,
-        max_opportunities: int = 50
+        self, max_opportunities: int = 50
     ) -> List[LateralMovementOpportunity]:
         """
         Identify lateral movement opportunities between assets.
@@ -982,18 +1004,17 @@ class GraphAnalyzer:
 
         # Get all container and host nodes
         assets = [
-            node for node in self.graph.nodes()
-            if self.graph.nodes[node].get("node_type") in [
-                NodeType.CONTAINER.value,
-                NodeType.HOST.value
-            ]
+            node
+            for node in self.graph.nodes()
+            if self.graph.nodes[node].get("node_type")
+            in [NodeType.CONTAINER.value, NodeType.HOST.value]
         ]
 
         logger.info(f"Analyzing {len(assets)} assets for lateral movement")
 
         # Check pairs of assets in the same zone
         for i, asset1 in enumerate(assets):
-            for asset2 in assets[i+1:]:
+            for asset2 in assets[i + 1 :]:
                 if asset1 == asset2:
                     continue
 
@@ -1009,27 +1030,37 @@ class GraphAnalyzer:
                     try:
                         path = nx.shortest_path(self.graph, asset1, asset2)
 
-                        if len(path) <= 5:  # Short paths more likely for lateral movement
+                        if (
+                            len(path) <= 5
+                        ):  # Short paths more likely for lateral movement
                             # Convert to attack path
                             attack_path = self._convert_to_attack_path(
                                 path_id=f"lateral_{len(opportunities)}",
                                 node_path=path,
                                 entry_point=asset1,
-                                target=asset2
+                                target=asset2,
                             )
 
                             # Determine movement type
-                            if any("COMMUNICATES_WITH" in str(self.graph.get_edge_data(path[i], path[i+1]))
-                                   for i in range(len(path)-1)):
+                            if any(
+                                "COMMUNICATES_WITH"
+                                in str(self.graph.get_edge_data(path[i], path[i + 1]))
+                                for i in range(len(path) - 1)
+                            ):
                                 movement_type = "network"
                             else:
                                 movement_type = "vulnerability"
 
                             # Extract vulnerabilities
-                            vulns = list(set([
-                                vuln for step in attack_path.steps
-                                for vuln in step.vulnerabilities
-                            ]))
+                            vulns = list(
+                                set(
+                                    [
+                                        vuln
+                                        for step in attack_path.steps
+                                        for vuln in step.vulnerabilities
+                                    ]
+                                )
+                            )
 
                             opportunity = LateralMovementOpportunity(
                                 from_asset=asset1,
@@ -1038,12 +1069,20 @@ class GraphAnalyzer:
                                 path=attack_path,
                                 vulnerabilities=vulns,
                                 network_requirements=[f"Access to {zone1} zone"],
-                                prerequisites=[f"Compromise of {asset1_data.get('name', asset1)}"],
+                                prerequisites=[
+                                    f"Compromise of {asset1_data.get('name', asset1)}"
+                                ],
                                 detection_difficulty=(
-                                    "easy" if len(path) <= constants.LATERAL_MOVEMENT_EASY_MAX_STEPS
-                                    else "medium" if len(path) <= constants.LATERAL_MOVEMENT_MEDIUM_MAX_STEPS
-                                    else "hard"
-                                )
+                                    "easy"
+                                    if len(path)
+                                    <= constants.LATERAL_MOVEMENT_EASY_MAX_STEPS
+                                    else (
+                                        "medium"
+                                        if len(path)
+                                        <= constants.LATERAL_MOVEMENT_MEDIUM_MAX_STEPS
+                                        else "hard"
+                                    )
+                                ),
                             )
 
                             opportunities.append(opportunity)
@@ -1064,7 +1103,7 @@ class GraphAnalyzer:
         self,
         entry_points: Optional[List[str]] = None,
         targets: Optional[List[str]] = None,
-        max_paths: int = 50
+        max_paths: int = 50,
     ) -> AttackSurface:
         """
         Comprehensive attack surface analysis.
@@ -1091,9 +1130,7 @@ class GraphAnalyzer:
 
         # Find attack paths
         attack_paths = self.find_shortest_attack_paths(
-            entry_points=entry_points,
-            targets=targets,
-            max_length=10
+            entry_points=entry_points, targets=targets, max_length=10
         )[:max_paths]
 
         # Detect privilege escalations
@@ -1110,14 +1147,14 @@ class GraphAnalyzer:
         total_risk_score = self._calculate_total_risk(
             attack_paths=attack_paths,
             privilege_escalations=privilege_escalations,
-            lateral_movements=lateral_movements
+            lateral_movements=lateral_movements,
         )
 
         # Generate recommendations
         recommendations = self._generate_security_recommendations(
             attack_paths=attack_paths,
             privilege_escalations=privilege_escalations,
-            lateral_movements=lateral_movements
+            lateral_movements=lateral_movements,
         )
 
         attack_surface = AttackSurface(
@@ -1127,7 +1164,7 @@ class GraphAnalyzer:
             privilege_escalations=privilege_escalations,
             lateral_movements=lateral_movements,
             total_risk_score=total_risk_score,
-            recommendations=recommendations
+            recommendations=recommendations,
         )
 
         logger.info(
@@ -1143,25 +1180,29 @@ class GraphAnalyzer:
         self,
         attack_paths: List[AttackPath],
         privilege_escalations: List[PrivilegeEscalationPath],
-        lateral_movements: List[LateralMovementOpportunity]
+        lateral_movements: List[LateralMovementOpportunity],
     ) -> float:
         """Calculate overall risk score from attack surface analysis."""
         if not attack_paths:
             return 0.0
 
         # Weight factors
-        critical_paths = sum(1 for p in attack_paths if p.threat_level == ThreatLevel.CRITICAL)
+        critical_paths = sum(
+            1 for p in attack_paths if p.threat_level == ThreatLevel.CRITICAL
+        )
         high_paths = sum(1 for p in attack_paths if p.threat_level == ThreatLevel.HIGH)
         avg_cvss = sum(p.total_cvss for p in attack_paths) / len(attack_paths)
-        avg_exploitability = sum(p.exploitability for p in attack_paths) / len(attack_paths)
+        avg_exploitability = sum(p.exploitability for p in attack_paths) / len(
+            attack_paths
+        )
 
         # Risk formula using configured weights
         risk_score = (
-            (critical_paths * constants.RISK_WEIGHT_CRITICAL) +
-            (high_paths * constants.RISK_WEIGHT_HIGH) +
-            (len(privilege_escalations) * constants.RISK_WEIGHT_PRIVILEGE_ESCALATION) +
-            (len(lateral_movements) * constants.RISK_WEIGHT_LATERAL_MOVEMENT) +
-            (avg_cvss * avg_exploitability)
+            (critical_paths * constants.RISK_WEIGHT_CRITICAL)
+            + (high_paths * constants.RISK_WEIGHT_HIGH)
+            + (len(privilege_escalations) * constants.RISK_WEIGHT_PRIVILEGE_ESCALATION)
+            + (len(lateral_movements) * constants.RISK_WEIGHT_LATERAL_MOVEMENT)
+            + (avg_cvss * avg_exploitability)
         )
 
         # Normalize to 0-100 scale using logarithmic scaling to prevent saturation
@@ -1171,6 +1212,7 @@ class GraphAnalyzer:
         # - High risk (60-85): 8-15 critical paths, significant escalation
         # - Critical risk (85-100): 15+ critical paths, extensive attack surface
         import math
+
         if risk_score < 10:
             # Linear scaling for low risk
             normalized_risk = risk_score * 5.0  # Max ~50 for risk_score=10
@@ -1194,15 +1236,24 @@ class GraphAnalyzer:
             unique_vulns.update(step.vulnerabilities)
 
         if unique_vulns:
-            mitigations.append(f"Patch {len(unique_vulns)} vulnerabilities: {', '.join(list(unique_vulns)[:5])}")
+            mitigations.append(
+                f"Patch {len(unique_vulns)} vulnerabilities: {', '.join(list(unique_vulns)[:5])}"
+            )
 
         # Network segmentation
-        if any(step.step_type == AttackStepType.LATERAL_MOVEMENT for step in attack_path.steps):
-            mitigations.append("Implement network segmentation to prevent lateral movement")
+        if any(
+            step.step_type == AttackStepType.LATERAL_MOVEMENT
+            for step in attack_path.steps
+        ):
+            mitigations.append(
+                "Implement network segmentation to prevent lateral movement"
+            )
 
         # Privilege management
         if attack_path.requires_privileges:
-            mitigations.append("Implement principle of least privilege and restrict privilege escalation vectors")
+            mitigations.append(
+                "Implement principle of least privilege and restrict privilege escalation vectors"
+            )
 
         # Monitoring
         mitigations.append("Deploy monitoring and detection for this attack pattern")
@@ -1213,13 +1264,15 @@ class GraphAnalyzer:
         self,
         attack_paths: List[AttackPath],
         privilege_escalations: List[PrivilegeEscalationPath],
-        lateral_movements: List[LateralMovementOpportunity]
+        lateral_movements: List[LateralMovementOpportunity],
     ) -> List[str]:
         """Generate overall security recommendations."""
         recommendations = []
 
         # Critical path recommendations
-        critical_paths = [p for p in attack_paths if p.threat_level == ThreatLevel.CRITICAL]
+        critical_paths = [
+            p for p in attack_paths if p.threat_level == ThreatLevel.CRITICAL
+        ]
         if critical_paths:
             recommendations.append(
                 f"URGENT: Address {len(critical_paths)} critical attack paths immediately"

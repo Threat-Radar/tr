@@ -1,4 +1,5 @@
 """CVE vulnerability scanning operations using Grype."""
+
 import typer
 from typing import Optional
 from pathlib import Path
@@ -15,14 +16,40 @@ console = Console()
 
 @app.command("scan-image")
 def scan_docker_image(
-    image: str = typer.Argument(..., help="Docker image to scan (e.g., alpine:3.18, python:3.11)"),
-    severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Filter by minimum severity (LOW, MEDIUM, HIGH, CRITICAL)"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
-    only_fixed: bool = typer.Option(False, "--only-fixed", help="Only show vulnerabilities with fixes available"),
-    fail_on: Optional[str] = typer.Option(None, "--fail-on", help="Exit with error if vulnerabilities of this severity or higher are found"),
-    scope: str = typer.Option("squashed", "--scope", help="Scope for Docker images (squashed, all-layers)"),
-    cleanup: bool = typer.Option(False, "--cleanup", help="Remove Docker image after scan (only if pulled during this scan)"),
-    auto_save: bool = typer.Option(False, "--auto-save", "--as", help="Automatically save results to storage/cve_storage/ directory"),
+    image: str = typer.Argument(
+        ..., help="Docker image to scan (e.g., alpine:3.18, python:3.11)"
+    ),
+    severity: Optional[str] = typer.Option(
+        None,
+        "--severity",
+        "-s",
+        help="Filter by minimum severity (LOW, MEDIUM, HIGH, CRITICAL)",
+    ),
+    output: Optional[str] = typer.Option(
+        None, "--output", "-o", help="Save results to JSON file"
+    ),
+    only_fixed: bool = typer.Option(
+        False, "--only-fixed", help="Only show vulnerabilities with fixes available"
+    ),
+    fail_on: Optional[str] = typer.Option(
+        None,
+        "--fail-on",
+        help="Exit with error if vulnerabilities of this severity or higher are found",
+    ),
+    scope: str = typer.Option(
+        "squashed", "--scope", help="Scope for Docker images (squashed, all-layers)"
+    ),
+    cleanup: bool = typer.Option(
+        False,
+        "--cleanup",
+        help="Remove Docker image after scan (only if pulled during this scan)",
+    ),
+    auto_save: bool = typer.Option(
+        False,
+        "--auto-save",
+        "--as",
+        help="Automatically save results to storage/cve_storage/ directory",
+    ),
 ):
     """
     Scan Docker image for CVE vulnerabilities using Grype.
@@ -64,7 +91,9 @@ def scan_docker_image(
                     try:
                         fail_on_severity = GrypeSeverity(fail_on.lower())
                     except ValueError:
-                        console.print(f"[red]Invalid severity: {fail_on}. Use: NEGLIGIBLE, LOW, MEDIUM, HIGH, CRITICAL[/red]")
+                        console.print(
+                            f"[red]Invalid severity: {fail_on}. Use: NEGLIGIBLE, LOW, MEDIUM, HIGH, CRITICAL[/red]"
+                        )
                         return
 
                 # Run scan
@@ -72,13 +101,15 @@ def scan_docker_image(
                     image,
                     output_format=GrypeOutputFormat.JSON,
                     scope=scope,
-                    fail_on_severity=fail_on_severity
+                    fail_on_severity=fail_on_severity,
                 )
 
                 progress.update(task, completed=True, description="Scan complete!")
 
             if cleanup:
-                console.print(f"[dim]Cleanup: Image will be removed if it was pulled during scan[/dim]")
+                console.print(
+                    f"[dim]Cleanup: Image will be removed if it was pulled during scan[/dim]"
+                )
 
         # Filter by severity if requested
         if severity:
@@ -86,12 +117,16 @@ def scan_docker_image(
                 min_severity = GrypeSeverity(severity.lower())
                 result = result.filter_by_severity(min_severity)
             except ValueError:
-                console.print(f"[red]Invalid severity: {severity}. Use: NEGLIGIBLE, LOW, MEDIUM, HIGH, CRITICAL[/red]")
+                console.print(
+                    f"[red]Invalid severity: {severity}. Use: NEGLIGIBLE, LOW, MEDIUM, HIGH, CRITICAL[/red]"
+                )
                 return
 
         # Filter by only-fixed if requested
         if only_fixed:
-            result.vulnerabilities = [v for v in result.vulnerabilities if v.fixed_in_version]
+            result.vulnerabilities = [
+                v for v in result.vulnerabilities if v.fixed_in_version
+            ]
             result.total_count = len(result.vulnerabilities)
             result.__post_init__()  # Recalculate counts
 
@@ -109,18 +144,20 @@ def scan_docker_image(
                     "fixed_in": v.fixed_in_version,
                     "description": v.description,
                     "cvss_score": v.cvss_score,
-                    "urls": v.urls
+                    "urls": v.urls,
                 }
                 for v in result.vulnerabilities
             ],
-            "scan_metadata": result.scan_metadata
+            "scan_metadata": result.scan_metadata,
         }
 
         # Display results
         if not result.vulnerabilities:
             console.print(f"\n[green]✓ No vulnerabilities found in {image}![/green]")
         else:
-            console.print(f"\n[red]⚠ Found {result.total_count} vulnerabilities in {image}:[/red]\n")
+            console.print(
+                f"\n[red]⚠ Found {result.total_count} vulnerabilities in {image}:[/red]\n"
+            )
 
             # Display severity breakdown
             _display_severity_summary(result.severity_counts)
@@ -141,14 +178,42 @@ def scan_docker_image(
 
 @app.command("scan-sbom")
 def scan_sbom_file(
-    sbom_path: Path = typer.Argument(..., exists=True, help="Path to SBOM file (CycloneDX, SPDX, or Syft JSON)"),
-    severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Filter by minimum severity (LOW, MEDIUM, HIGH, CRITICAL)"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
-    only_fixed: bool = typer.Option(False, "--only-fixed", help="Only show vulnerabilities with fixes available"),
-    fail_on: Optional[str] = typer.Option(None, "--fail-on", help="Exit with error if vulnerabilities of this severity or higher are found"),
-    cleanup: bool = typer.Option(False, "--cleanup", help="Remove source Docker image after scan (if SBOM was from Docker image)"),
-    image: Optional[str] = typer.Option(None, "--image", help="Specify source Docker image name for cleanup (e.g., alpine:3.18)"),
-    auto_save: bool = typer.Option(False, "--auto-save", "--as", help="Automatically save results to storage/cve_storage/ directory"),
+    sbom_path: Path = typer.Argument(
+        ..., exists=True, help="Path to SBOM file (CycloneDX, SPDX, or Syft JSON)"
+    ),
+    severity: Optional[str] = typer.Option(
+        None,
+        "--severity",
+        "-s",
+        help="Filter by minimum severity (LOW, MEDIUM, HIGH, CRITICAL)",
+    ),
+    output: Optional[str] = typer.Option(
+        None, "--output", "-o", help="Save results to JSON file"
+    ),
+    only_fixed: bool = typer.Option(
+        False, "--only-fixed", help="Only show vulnerabilities with fixes available"
+    ),
+    fail_on: Optional[str] = typer.Option(
+        None,
+        "--fail-on",
+        help="Exit with error if vulnerabilities of this severity or higher are found",
+    ),
+    cleanup: bool = typer.Option(
+        False,
+        "--cleanup",
+        help="Remove source Docker image after scan (if SBOM was from Docker image)",
+    ),
+    image: Optional[str] = typer.Option(
+        None,
+        "--image",
+        help="Specify source Docker image name for cleanup (e.g., alpine:3.18)",
+    ),
+    auto_save: bool = typer.Option(
+        False,
+        "--auto-save",
+        "--as",
+        help="Automatically save results to storage/cve_storage/ directory",
+    ),
 ):
     """
     Scan a pre-generated SBOM file for CVE vulnerabilities using Grype.
@@ -176,10 +241,16 @@ def scan_sbom_file(
         if cleanup and image:
             cleanup_image = image
         elif cleanup:
-            console.print("[yellow]Warning: --cleanup specified but no --image provided. Skipping cleanup.[/yellow]")
+            console.print(
+                "[yellow]Warning: --cleanup specified but no --image provided. Skipping cleanup.[/yellow]"
+            )
 
         # Use cleanup context if we have an image to cleanup
-        cleanup_ctx = ScanCleanupContext(cleanup_image, cleanup=cleanup) if cleanup_image else None
+        cleanup_ctx = (
+            ScanCleanupContext(cleanup_image, cleanup=cleanup)
+            if cleanup_image
+            else None
+        )
 
         try:
             if cleanup_ctx:
@@ -190,7 +261,9 @@ def scan_sbom_file(
                 TextColumn("[progress.description]{task.description}"),
                 console=console,
             ) as progress:
-                task = progress.add_task(f"Scanning SBOM {sbom_path.name} with Grype...", total=None)
+                task = progress.add_task(
+                    f"Scanning SBOM {sbom_path.name} with Grype...", total=None
+                )
 
                 # Initialize Grype client
                 grype = GrypeClient()
@@ -201,20 +274,24 @@ def scan_sbom_file(
                     try:
                         fail_on_severity = GrypeSeverity(fail_on.lower())
                     except ValueError:
-                        console.print(f"[red]Invalid severity: {fail_on}. Use: NEGLIGIBLE, LOW, MEDIUM, HIGH, CRITICAL[/red]")
+                        console.print(
+                            f"[red]Invalid severity: {fail_on}. Use: NEGLIGIBLE, LOW, MEDIUM, HIGH, CRITICAL[/red]"
+                        )
                         return
 
                 # Run scan
                 result = grype.scan_sbom(
                     sbom_path,
                     output_format=GrypeOutputFormat.JSON,
-                    fail_on_severity=fail_on_severity
+                    fail_on_severity=fail_on_severity,
                 )
 
                 progress.update(task, completed=True, description="Scan complete!")
 
             if cleanup_image:
-                console.print(f"[dim]Cleanup: Image {cleanup_image} will be removed if it was pulled during scan[/dim]")
+                console.print(
+                    f"[dim]Cleanup: Image {cleanup_image} will be removed if it was pulled during scan[/dim]"
+                )
 
         finally:
             if cleanup_ctx:
@@ -226,12 +303,16 @@ def scan_sbom_file(
                 min_severity = GrypeSeverity(severity.lower())
                 result = result.filter_by_severity(min_severity)
             except ValueError:
-                console.print(f"[red]Invalid severity: {severity}. Use: NEGLIGIBLE, LOW, MEDIUM, HIGH, CRITICAL[/red]")
+                console.print(
+                    f"[red]Invalid severity: {severity}. Use: NEGLIGIBLE, LOW, MEDIUM, HIGH, CRITICAL[/red]"
+                )
                 return
 
         # Filter by only-fixed if requested
         if only_fixed:
-            result.vulnerabilities = [v for v in result.vulnerabilities if v.fixed_in_version]
+            result.vulnerabilities = [
+                v for v in result.vulnerabilities if v.fixed_in_version
+            ]
             result.total_count = len(result.vulnerabilities)
             result.__post_init__()  # Recalculate counts
 
@@ -249,18 +330,22 @@ def scan_sbom_file(
                     "fixed_in": v.fixed_in_version,
                     "description": v.description,
                     "cvss_score": v.cvss_score,
-                    "urls": v.urls
+                    "urls": v.urls,
                 }
                 for v in result.vulnerabilities
             ],
-            "scan_metadata": result.scan_metadata
+            "scan_metadata": result.scan_metadata,
         }
 
         # Display results
         if not result.vulnerabilities:
-            console.print(f"\n[green]✓ No vulnerabilities found in {sbom_path.name}![/green]")
+            console.print(
+                f"\n[green]✓ No vulnerabilities found in {sbom_path.name}![/green]"
+            )
         else:
-            console.print(f"\n[red]⚠ Found {result.total_count} vulnerabilities in SBOM:[/red]\n")
+            console.print(
+                f"\n[red]⚠ Found {result.total_count} vulnerabilities in SBOM:[/red]\n"
+            )
 
             # Display severity breakdown
             _display_severity_summary(result.severity_counts)
@@ -282,12 +367,32 @@ def scan_sbom_file(
 
 @app.command("scan-directory")
 def scan_directory(
-    directory: Path = typer.Argument(..., exists=True, help="Path to directory to scan"),
-    severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Filter by minimum severity (LOW, MEDIUM, HIGH, CRITICAL)"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
-    only_fixed: bool = typer.Option(False, "--only-fixed", help="Only show vulnerabilities with fixes available"),
-    fail_on: Optional[str] = typer.Option(None, "--fail-on", help="Exit with error if vulnerabilities of this severity or higher are found"),
-    auto_save: bool = typer.Option(False, "--auto-save", "--as", help="Automatically save results to storage/cve_storage/ directory"),
+    directory: Path = typer.Argument(
+        ..., exists=True, help="Path to directory to scan"
+    ),
+    severity: Optional[str] = typer.Option(
+        None,
+        "--severity",
+        "-s",
+        help="Filter by minimum severity (LOW, MEDIUM, HIGH, CRITICAL)",
+    ),
+    output: Optional[str] = typer.Option(
+        None, "--output", "-o", help="Save results to JSON file"
+    ),
+    only_fixed: bool = typer.Option(
+        False, "--only-fixed", help="Only show vulnerabilities with fixes available"
+    ),
+    fail_on: Optional[str] = typer.Option(
+        None,
+        "--fail-on",
+        help="Exit with error if vulnerabilities of this severity or higher are found",
+    ),
+    auto_save: bool = typer.Option(
+        False,
+        "--auto-save",
+        "--as",
+        help="Automatically save results to storage/cve_storage/ directory",
+    ),
 ):
     """
     Scan a local directory for CVE vulnerabilities using Grype.
@@ -321,14 +426,16 @@ def scan_directory(
                 try:
                     fail_on_severity = GrypeSeverity(fail_on.lower())
                 except ValueError:
-                    console.print(f"[red]Invalid severity: {fail_on}. Use: NEGLIGIBLE, LOW, MEDIUM, HIGH, CRITICAL[/red]")
+                    console.print(
+                        f"[red]Invalid severity: {fail_on}. Use: NEGLIGIBLE, LOW, MEDIUM, HIGH, CRITICAL[/red]"
+                    )
                     return
 
             # Run scan
             result = grype.scan_directory(
                 directory,
                 output_format=GrypeOutputFormat.JSON,
-                fail_on_severity=fail_on_severity
+                fail_on_severity=fail_on_severity,
             )
 
             progress.update(task, completed=True, description="Scan complete!")
@@ -339,12 +446,16 @@ def scan_directory(
                 min_severity = GrypeSeverity(severity.lower())
                 result = result.filter_by_severity(min_severity)
             except ValueError:
-                console.print(f"[red]Invalid severity: {severity}. Use: NEGLIGIBLE, LOW, MEDIUM, HIGH, CRITICAL[/red]")
+                console.print(
+                    f"[red]Invalid severity: {severity}. Use: NEGLIGIBLE, LOW, MEDIUM, HIGH, CRITICAL[/red]"
+                )
                 return
 
         # Filter by only-fixed if requested
         if only_fixed:
-            result.vulnerabilities = [v for v in result.vulnerabilities if v.fixed_in_version]
+            result.vulnerabilities = [
+                v for v in result.vulnerabilities if v.fixed_in_version
+            ]
             result.total_count = len(result.vulnerabilities)
             result.__post_init__()  # Recalculate counts
 
@@ -362,18 +473,22 @@ def scan_directory(
                     "fixed_in": v.fixed_in_version,
                     "description": v.description,
                     "cvss_score": v.cvss_score,
-                    "urls": v.urls
+                    "urls": v.urls,
                 }
                 for v in result.vulnerabilities
             ],
-            "scan_metadata": result.scan_metadata
+            "scan_metadata": result.scan_metadata,
         }
 
         # Display results
         if not result.vulnerabilities:
-            console.print(f"\n[green]✓ No vulnerabilities found in {directory}![/green]")
+            console.print(
+                f"\n[green]✓ No vulnerabilities found in {directory}![/green]"
+            )
         else:
-            console.print(f"\n[red]⚠ Found {result.total_count} vulnerabilities:[/red]\n")
+            console.print(
+                f"\n[red]⚠ Found {result.total_count} vulnerabilities:[/red]\n"
+            )
 
             # Display severity breakdown
             _display_severity_summary(result.severity_counts)
@@ -389,7 +504,9 @@ def scan_directory(
         if auto_save:
             storage = get_cve_storage()
             target_name = directory.name if directory.name != "." else "current_dir"
-            saved_path = storage.save_report(output_data, target_name, scan_type="directory")
+            saved_path = storage.save_report(
+                output_data, target_name, scan_type="directory"
+            )
             console.print(f"\n[green]💾 Auto-saved to: {saved_path}[/green]")
 
 
@@ -410,14 +527,18 @@ def update_database():
             TextColumn("[progress.description]{task.description}"),
             console=console,
         ) as progress:
-            task = progress.add_task("Updating Grype vulnerability database...", total=None)
+            task = progress.add_task(
+                "Updating Grype vulnerability database...", total=None
+            )
 
             grype = GrypeClient()
             grype.update_database()
 
             progress.update(task, completed=True, description="Database updated!")
 
-        console.print("[green]✓ Grype vulnerability database updated successfully[/green]")
+        console.print(
+            "[green]✓ Grype vulnerability database updated successfully[/green]"
+        )
 
 
 @app.command("db-status")
@@ -443,7 +564,7 @@ def database_status():
 
         for key, value in status.items():
             # Format key to be more readable
-            readable_key = key.replace('_', ' ').title()
+            readable_key = key.replace("_", " ").title()
             info_table.add_row(readable_key, str(value))
 
         console.print(info_table)
@@ -464,10 +585,7 @@ def _display_severity_summary(severity_counts: dict) -> None:
         count = severity_counts.get(severity, 0)
         if count > 0:
             color = _get_severity_color(severity)
-            summary_table.add_row(
-                f"[{color}]{severity.upper()}[/{color}]",
-                f"{count}"
-            )
+            summary_table.add_row(f"[{color}]{severity.upper()}[/{color}]", f"{count}")
 
     console.print(summary_table)
     console.print()
@@ -475,7 +593,9 @@ def _display_severity_summary(severity_counts: dict) -> None:
 
 def _display_vulnerability_table(vulnerabilities: list, limit: int = 20) -> None:
     """Display detailed vulnerability table."""
-    console.print(f"[bold]Vulnerabilities (showing top {min(len(vulnerabilities), limit)}):[/bold]\n")
+    console.print(
+        f"[bold]Vulnerabilities (showing top {min(len(vulnerabilities), limit)}):[/bold]\n"
+    )
 
     table = Table()
     table.add_column("CVE ID", style="cyan", no_wrap=True)
@@ -486,14 +606,20 @@ def _display_vulnerability_table(vulnerabilities: list, limit: int = 20) -> None
     table.add_column("CVSS", style="magenta", justify="right")
 
     # Sort by severity (critical first) then by CVSS score
-    severity_priority = {"critical": 0, "high": 1, "medium": 2, "low": 3, "negligible": 4}
+    severity_priority = {
+        "critical": 0,
+        "high": 1,
+        "medium": 2,
+        "low": 3,
+        "negligible": 4,
+    }
 
     sorted_vulns = sorted(
         vulnerabilities,
         key=lambda v: (
             severity_priority.get(v.severity.lower(), 5),
-            -(v.cvss_score or 0)
-        )
+            -(v.cvss_score or 0),
+        ),
     )
 
     for vuln in sorted_vulns[:limit]:
@@ -506,13 +632,15 @@ def _display_vulnerability_table(vulnerabilities: list, limit: int = 20) -> None
             vuln.package_name,
             vuln.package_version,
             fixed_version,
-            f"{vuln.cvss_score:.1f}" if vuln.cvss_score else "N/A"
+            f"{vuln.cvss_score:.1f}" if vuln.cvss_score else "N/A",
         )
 
     console.print(table)
 
     if len(vulnerabilities) > limit:
-        console.print(f"\n[dim]... and {len(vulnerabilities) - limit} more vulnerabilities[/dim]")
+        console.print(
+            f"\n[dim]... and {len(vulnerabilities) - limit} more vulnerabilities[/dim]"
+        )
 
 
 def _get_severity_color(severity: str) -> str:
@@ -530,12 +658,27 @@ def _get_severity_color(severity: str) -> str:
 
 @app.command("list-scans")
 def list_scans(
-    type: str = typer.Option("all", "--type", "-t", help="Filter by scan type (image, sbom, directory, all)"),
-    severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Filter scans with minimum severity (critical, high, medium, low)"),
-    limit: Optional[int] = typer.Option(None, "--limit", "-n", help="Limit number of results shown"),
-    sort_by: str = typer.Option("date", "--sort-by", help="Sort by: date, vulnerabilities, critical, name"),
-    details: bool = typer.Option(False, "--details", "-d", help="Show detailed view with severity breakdown"),
-    format: str = typer.Option("table", "--format", "-f", help="Output format: table, json"),
+    type: str = typer.Option(
+        "all", "--type", "-t", help="Filter by scan type (image, sbom, directory, all)"
+    ),
+    severity: Optional[str] = typer.Option(
+        None,
+        "--severity",
+        "-s",
+        help="Filter scans with minimum severity (critical, high, medium, low)",
+    ),
+    limit: Optional[int] = typer.Option(
+        None, "--limit", "-n", help="Limit number of results shown"
+    ),
+    sort_by: str = typer.Option(
+        "date", "--sort-by", help="Sort by: date, vulnerabilities, critical, name"
+    ),
+    details: bool = typer.Option(
+        False, "--details", "-d", help="Show detailed view with severity breakdown"
+    ),
+    format: str = typer.Option(
+        "table", "--format", "-f", help="Output format: table, json"
+    ),
 ):
     """
     List all stored CVE scan results.
@@ -559,14 +702,12 @@ def list_scans(
 
         # Get scans
         scans = manager.list_scans(
-            type_filter=type,
-            severity_filter=severity,
-            limit=limit,
-            sort_by=sort_by
+            type_filter=type, severity_filter=severity, limit=limit, sort_by=sort_by
         )
 
         if format == "json":
             import json
+
             scans_data = [
                 {
                     "filename": s.filename,
@@ -586,16 +727,39 @@ def list_scans(
 
 @app.command("show")
 def show_scan(
-    scan_file: Path = typer.Argument(..., help="CVE scan file to display (can use wildcards)"),
-    severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Filter by severity (critical, high, medium, low, all)"),
-    package: Optional[str] = typer.Option(None, "--package", "-p", help="Filter by package name (partial match)"),
-    cve_id: Optional[str] = typer.Option(None, "--cve-id", "-c", help="Filter by specific CVE ID"),
-    fixed_only: bool = typer.Option(False, "--fixed-only", help="Show only vulnerabilities with fixes"),
-    no_fix: bool = typer.Option(False, "--no-fix", help="Show only vulnerabilities without fixes"),
-    limit: Optional[int] = typer.Option(20, "--limit", "-n", help="Limit vulnerabilities shown"),
-    format: str = typer.Option("table", "--format", "-f", help="Output: table, json, summary, detailed"),
-    group_by: Optional[str] = typer.Option(None, "--group-by", "-g", help="Group by: package, severity, type"),
-    export: Optional[Path] = typer.Option(None, "--export", "-o", help="Export filtered results to file"),
+    scan_file: Path = typer.Argument(
+        ..., help="CVE scan file to display (can use wildcards)"
+    ),
+    severity: Optional[str] = typer.Option(
+        None,
+        "--severity",
+        "-s",
+        help="Filter by severity (critical, high, medium, low, all)",
+    ),
+    package: Optional[str] = typer.Option(
+        None, "--package", "-p", help="Filter by package name (partial match)"
+    ),
+    cve_id: Optional[str] = typer.Option(
+        None, "--cve-id", "-c", help="Filter by specific CVE ID"
+    ),
+    fixed_only: bool = typer.Option(
+        False, "--fixed-only", help="Show only vulnerabilities with fixes"
+    ),
+    no_fix: bool = typer.Option(
+        False, "--no-fix", help="Show only vulnerabilities without fixes"
+    ),
+    limit: Optional[int] = typer.Option(
+        20, "--limit", "-n", help="Limit vulnerabilities shown"
+    ),
+    format: str = typer.Option(
+        "table", "--format", "-f", help="Output: table, json, summary, detailed"
+    ),
+    group_by: Optional[str] = typer.Option(
+        None, "--group-by", "-g", help="Group by: package, severity, type"
+    ),
+    export: Optional[Path] = typer.Option(
+        None, "--export", "-o", help="Export filtered results to file"
+    ),
 ):
     """
     Display detailed information about a specific CVE scan.
@@ -615,7 +779,7 @@ def show_scan(
     from ..utils.cve_utils import (
         display_scan_summary,
         display_vulnerabilities_table,
-        display_vulnerabilities_grouped_by_package
+        display_vulnerabilities_grouped_by_package,
     )
     import glob
 
@@ -625,11 +789,15 @@ def show_scan(
         matching_files = glob.glob(scan_path_str)
 
         if not matching_files:
-            console.print(f"[red]Error: No files found matching '{scan_path_str}'[/red]")
+            console.print(
+                f"[red]Error: No files found matching '{scan_path_str}'[/red]"
+            )
             raise typer.Exit(code=1)
 
         if len(matching_files) > 1:
-            console.print(f"[yellow]Warning: Multiple files match. Using first: {matching_files[0]}[/yellow]")
+            console.print(
+                f"[yellow]Warning: Multiple files match. Using first: {matching_files[0]}[/yellow]"
+            )
 
         scan_path = Path(matching_files[0])
 
@@ -646,25 +814,32 @@ def show_scan(
 
         # Severity filter
         if severity:
-            severity_priority = {"critical": 0, "high": 1, "medium": 2, "low": 3, "negligible": 4}
+            severity_priority = {
+                "critical": 0,
+                "high": 1,
+                "medium": 2,
+                "low": 3,
+                "negligible": 4,
+            }
             min_level = severity_priority.get(severity.lower(), 5)
             filtered_vulns = [
-                v for v in filtered_vulns
+                v
+                for v in filtered_vulns
                 if severity_priority.get(v.get("severity", "").lower(), 5) <= min_level
             ]
 
         # Package filter
         if package:
             filtered_vulns = [
-                v for v in filtered_vulns
+                v
+                for v in filtered_vulns
                 if package.lower() in v.get("package", "").lower()
             ]
 
         # CVE ID filter
         if cve_id:
             filtered_vulns = [
-                v for v in filtered_vulns
-                if cve_id.upper() in v.get("id", "").upper()
+                v for v in filtered_vulns if cve_id.upper() in v.get("id", "").upper()
             ]
 
         # Fix availability filters
@@ -681,14 +856,20 @@ def show_scan(
             save_json(export_data, export, console)
 
         # Display based on format
-        target = scan_data.get("target") or scan_data.get("sbom_file") or scan_data.get("directory", scan_path.name)
+        target = (
+            scan_data.get("target")
+            or scan_data.get("sbom_file")
+            or scan_data.get("directory", scan_path.name)
+        )
 
         if format == "json":
             console.print_json(data=scan_data)
         elif format == "summary":
             display_scan_summary(scan_data, target, console)
         elif format == "detailed" or group_by == "package":
-            display_vulnerabilities_grouped_by_package(filtered_vulns, console, severity)
+            display_vulnerabilities_grouped_by_package(
+                filtered_vulns, console, severity
+            )
         else:  # table
             if format != "detailed":
                 # Show summary first
@@ -701,14 +882,33 @@ def show_scan(
 
 @app.command("search")
 def search_scans(
-    query: str = typer.Argument(..., help="Search query (CVE ID, package name, or description text)"),
-    query_type: str = typer.Option("auto", "--query-type", "-t", help="Search type: auto, cve-id, package, description"),
-    severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Filter by minimum severity"),
-    scans: str = typer.Option("*", "--scans", help="Limit to specific scans (glob pattern)"),
-    case_sensitive: bool = typer.Option(False, "--case-sensitive", help="Case-sensitive search"),
-    exact_match: bool = typer.Option(False, "--exact-match", help="Exact match only (no partial)"),
-    show_scan_info: bool = typer.Option(True, "--show-scan-info", help="Show which scan each result came from"),
-    format: str = typer.Option("table", "--format", "-f", help="Output format: table, json"),
+    query: str = typer.Argument(
+        ..., help="Search query (CVE ID, package name, or description text)"
+    ),
+    query_type: str = typer.Option(
+        "auto",
+        "--query-type",
+        "-t",
+        help="Search type: auto, cve-id, package, description",
+    ),
+    severity: Optional[str] = typer.Option(
+        None, "--severity", "-s", help="Filter by minimum severity"
+    ),
+    scans: str = typer.Option(
+        "*", "--scans", help="Limit to specific scans (glob pattern)"
+    ),
+    case_sensitive: bool = typer.Option(
+        False, "--case-sensitive", help="Case-sensitive search"
+    ),
+    exact_match: bool = typer.Option(
+        False, "--exact-match", help="Exact match only (no partial)"
+    ),
+    show_scan_info: bool = typer.Option(
+        True, "--show-scan-info", help="Show which scan each result came from"
+    ),
+    format: str = typer.Option(
+        "table", "--format", "-f", help="Output format: table, json"
+    ),
 ):
     """
     Search across ALL stored CVE scans for specific vulnerabilities, packages, or patterns.
@@ -736,11 +936,12 @@ def search_scans(
             severity_filter=severity,
             scan_pattern=scans,
             case_sensitive=case_sensitive,
-            exact_match=exact_match
+            exact_match=exact_match,
         )
 
         if format == "json":
             import json
+
             results_data = [
                 {
                     "scan": {
@@ -749,7 +950,7 @@ def search_scans(
                         "scan_date": r.scan_metadata.scan_date.isoformat(),
                     },
                     "matches": r.total_matches,
-                    "vulnerabilities": r.matching_vulnerabilities
+                    "vulnerabilities": r.matching_vulnerabilities,
                 }
                 for r in results
             ]
@@ -761,8 +962,12 @@ def search_scans(
 @app.command("stats")
 def show_stats(
     scans: str = typer.Option("*", "--scans", help="Filter scans (glob pattern)"),
-    type: str = typer.Option("all", "--type", "-t", help="Scan type filter (image, sbom, directory, all)"),
-    format: str = typer.Option("table", "--format", "-f", help="Output format: table, json"),
+    type: str = typer.Option(
+        "all", "--type", "-t", help="Scan type filter (image, sbom, directory, all)"
+    ),
+    format: str = typer.Option(
+        "table", "--format", "-f", help="Output format: table, json"
+    ),
 ):
     """
     Show aggregate statistics across all stored CVE scans.
@@ -782,13 +987,11 @@ def show_stats(
         manager = CVEStorageManager()
 
         # Get aggregate stats
-        stats = manager.get_aggregate_stats(
-            scan_pattern=scans,
-            type_filter=type
-        )
+        stats = manager.get_aggregate_stats(scan_pattern=scans, type_filter=type)
 
         if format == "json":
             import json
+
             stats_data = {
                 "total_scans": stats.total_scans,
                 "total_storage_size_bytes": stats.total_storage_size,

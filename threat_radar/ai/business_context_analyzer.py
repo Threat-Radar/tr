@@ -5,7 +5,10 @@ from typing import List, Dict, Any, Optional
 import logging
 
 from threat_radar.ai.llm_client import LLMClient, get_llm_client
-from threat_radar.ai.vulnerability_analyzer import VulnerabilityAnalyzer, VulnerabilityAnalysis
+from threat_radar.ai.vulnerability_analyzer import (
+    VulnerabilityAnalyzer,
+    VulnerabilityAnalysis,
+)
 from threat_radar.core.grype_integration import GrypeScanResult, GrypeVulnerability
 from threat_radar.environment.models import Environment, Asset
 
@@ -24,7 +27,9 @@ class BusinessRiskAssessment:
     cvss_score: float
     business_risk_score: int  # 0-100, computed from technical + business context
     business_risk_level: str  # CRITICAL, HIGH, MEDIUM, LOW
-    risk_factors: List[str]  # Contributing factors (e.g., "Internet-facing", "PII data", "Critical asset")
+    risk_factors: List[
+        str
+    ]  # Contributing factors (e.g., "Internet-facing", "PII data", "Critical asset")
     business_impact: str  # Detailed business impact description
     compliance_impact: List[str]  # Affected compliance frameworks
     recommended_priority: str  # CRITICAL, HIGH, MEDIUM, LOW
@@ -105,7 +110,9 @@ class BusinessContextAnalyzer:
         Returns:
             BusinessContextAnalysis with business risk assessments
         """
-        logger.info(f"Analyzing {len(scan_result.vulnerabilities)} vulnerabilities with business context")
+        logger.info(
+            f"Analyzing {len(scan_result.vulnerabilities)} vulnerabilities with business context"
+        )
 
         # Step 1: Perform base technical analysis
         base_analysis = self.vulnerability_analyzer.analyze_scan_result(
@@ -118,7 +125,9 @@ class BusinessContextAnalyzer:
         asset = self._identify_asset(scan_result.target, environment, asset_mapping)
 
         if not asset:
-            logger.warning(f"Could not map scan target '{scan_result.target}' to environment asset")
+            logger.warning(
+                f"Could not map scan target '{scan_result.target}' to environment asset"
+            )
             # Return base analysis without business context
             return self._create_fallback_analysis(base_analysis, environment)
 
@@ -151,7 +160,9 @@ class BusinessContextAnalyzer:
         except Exception as e:
             logger.warning(f"Failed to generate business context summary: {e}")
             overall_risk_rating = self._compute_overall_risk(business_assessments)
-            environment_summary = self._generate_fallback_env_summary(asset, environment)
+            environment_summary = self._generate_fallback_env_summary(
+                asset, environment
+            )
             compliance_summary = self._generate_fallback_compliance_summary(asset)
             prioritized_actions = []
 
@@ -161,9 +172,17 @@ class BusinessContextAnalyzer:
             "asset_name": asset.name,
             "asset_criticality": asset.business_context.criticality.value,
             "criticality_score": asset.business_context.criticality_score,
-            "data_classification": asset.business_context.data_classification.value if asset.business_context.data_classification else None,
+            "data_classification": (
+                asset.business_context.data_classification.value
+                if asset.business_context.data_classification
+                else None
+            ),
             "internet_facing": self._is_internet_facing(asset),
-            "compliance_scope": [f.value for f in asset.business_context.compliance_scope] if asset.business_context.compliance_scope else [],
+            "compliance_scope": (
+                [f.value for f in asset.business_context.compliance_scope]
+                if asset.business_context.compliance_scope
+                else []
+            ),
             "environment_name": environment.environment.name,
             "environment_type": environment.environment.type.value,
             **base_analysis.metadata,
@@ -213,7 +232,10 @@ class BusinessContextAnalyzer:
                     return asset
 
             # Match by asset name
-            if asset.name.lower() in scan_target.lower() or scan_target.lower() in asset.name.lower():
+            if (
+                asset.name.lower() in scan_target.lower()
+                or scan_target.lower() in asset.name.lower()
+            ):
                 return asset
 
         # If single asset in environment, use it
@@ -275,7 +297,11 @@ class BusinessContextAnalyzer:
 
         # Calculate total business risk score (0-100)
         business_risk_score = int(
-            base_score + cvss_contribution + criticality_contribution + exposure_contribution + sensitivity_contribution
+            base_score
+            + cvss_contribution
+            + criticality_contribution
+            + exposure_contribution
+            + sensitivity_contribution
         )
         business_risk_score = min(business_risk_score, 100)
 
@@ -300,11 +326,15 @@ class BusinessContextAnalyzer:
         if vuln.cvss_score and vuln.cvss_score >= 7.0:
             risk_factors.append(f"CVSS score: {vuln.cvss_score}")
         if asset.business_context.criticality.value in ["critical", "high"]:
-            risk_factors.append(f"Asset criticality: {asset.business_context.criticality.value.upper()}")
+            risk_factors.append(
+                f"Asset criticality: {asset.business_context.criticality.value.upper()}"
+            )
         if self._is_internet_facing(asset):
             risk_factors.append("Internet-facing asset")
         if asset.business_context.data_classification:
-            risk_factors.append(f"Sensitive data: {asset.business_context.data_classification.value.upper()}")
+            risk_factors.append(
+                f"Sensitive data: {asset.business_context.data_classification.value.upper()}"
+            )
         if asset.business_context.customer_facing:
             risk_factors.append("Customer-facing service")
 
@@ -314,7 +344,9 @@ class BusinessContextAnalyzer:
         # Compliance impact
         compliance_impact = []
         if asset.business_context.compliance_scope:
-            compliance_impact = [f.value.upper() for f in asset.business_context.compliance_scope]
+            compliance_impact = [
+                f.value.upper() for f in asset.business_context.compliance_scope
+            ]
 
         return BusinessRiskAssessment(
             cve_id=vuln.id,
@@ -367,7 +399,10 @@ class BusinessContextAnalyzer:
             impact_parts.append(f"potential exposure of {data_type} data")
 
         # Revenue impact
-        if hasattr(asset.business_context, "revenue_impact") and asset.business_context.revenue_impact:
+        if (
+            hasattr(asset.business_context, "revenue_impact")
+            and asset.business_context.revenue_impact
+        ):
             if asset.business_context.revenue_impact.lower() == "high":
                 impact_parts.append("high revenue impact")
 
@@ -389,8 +424,12 @@ class BusinessContextAnalyzer:
     ) -> str:
         """Create prompt for business context analysis"""
         # Compute summary statistics
-        critical_count = sum(1 for a in business_assessments if a.business_risk_level == "CRITICAL")
-        high_count = sum(1 for a in business_assessments if a.business_risk_level == "HIGH")
+        critical_count = sum(
+            1 for a in business_assessments if a.business_risk_level == "CRITICAL"
+        )
+        high_count = sum(
+            1 for a in business_assessments if a.business_risk_level == "HIGH"
+        )
 
         # Collect unique compliance frameworks
         compliance_frameworks = set()
@@ -440,14 +479,20 @@ Respond in JSON format:
 """
         return prompt
 
-    def _compute_overall_risk(self, business_assessments: List[BusinessRiskAssessment]) -> str:
+    def _compute_overall_risk(
+        self, business_assessments: List[BusinessRiskAssessment]
+    ) -> str:
         """Compute overall risk rating from assessments"""
         if not business_assessments:
             return "LOW"
 
         # Count by business risk level
-        critical_count = sum(1 for a in business_assessments if a.business_risk_level == "CRITICAL")
-        high_count = sum(1 for a in business_assessments if a.business_risk_level == "HIGH")
+        critical_count = sum(
+            1 for a in business_assessments if a.business_risk_level == "CRITICAL"
+        )
+        high_count = sum(
+            1 for a in business_assessments if a.business_risk_level == "HIGH"
+        )
 
         # Determine overall rating
         if critical_count > 0:
@@ -457,7 +502,9 @@ Respond in JSON format:
         elif high_count > 0:
             return "HIGH"
         else:
-            avg_score = sum(a.business_risk_score for a in business_assessments) / len(business_assessments)
+            avg_score = sum(a.business_risk_score for a in business_assessments) / len(
+                business_assessments
+            )
             if avg_score >= 60:
                 return "HIGH"
             elif avg_score >= 40:
@@ -465,7 +512,9 @@ Respond in JSON format:
             else:
                 return "LOW"
 
-    def _generate_fallback_env_summary(self, asset: Asset, environment: Environment) -> str:
+    def _generate_fallback_env_summary(
+        self, asset: Asset, environment: Environment
+    ) -> str:
         """Generate fallback environment summary"""
         return (
             f"Asset {asset.name} in {environment.environment.name} environment has "
@@ -476,7 +525,9 @@ Respond in JSON format:
     def _generate_fallback_compliance_summary(self, asset: Asset) -> str:
         """Generate fallback compliance summary"""
         if asset.business_context.compliance_scope:
-            frameworks = ", ".join([f.value.upper() for f in asset.business_context.compliance_scope])
+            frameworks = ", ".join(
+                [f.value.upper() for f in asset.business_context.compliance_scope]
+            )
             return f"This asset is in scope for {frameworks} compliance. Vulnerabilities may impact compliance posture."
         return "No specific compliance requirements identified for this asset."
 
@@ -511,7 +562,8 @@ Respond in JSON format:
             List of CRITICAL business risk assessments
         """
         return [
-            a for a in analysis.business_assessments
+            a
+            for a in analysis.business_assessments
             if a.business_risk_level == "CRITICAL"
         ]
 

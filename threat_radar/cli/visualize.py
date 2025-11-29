@@ -23,13 +23,27 @@ console = Console()
 app = typer.Typer(help="Interactive graph visualization commands")
 
 # Valid parameter values for input validation
-VALID_LAYOUTS = ["spring", "kamada_kawai", "circular", "spectral", "shell", "hierarchical"]
+VALID_LAYOUTS = [
+    "spring",
+    "kamada_kawai",
+    "circular",
+    "spectral",
+    "shell",
+    "hierarchical",
+]
 VALID_COLOR_BY = ["node_type", "severity", "zone", "criticality", "compliance"]
 VALID_VIEW_TYPES = ["topology", "zones", "compliance"]
 VALID_COMPLIANCE_TYPES = ["pci", "hipaa", "sox", "gdpr"]
 VALID_FILTER_TYPES = [
-    "severity", "node_type", "cve", "package", "zone",
-    "criticality", "compliance", "internet_facing", "search"
+    "severity",
+    "node_type",
+    "cve",
+    "package",
+    "zone",
+    "criticality",
+    "compliance",
+    "internet_facing",
+    "search",
 ]
 VALID_EXPORT_FORMATS = ["html", "png", "svg", "pdf", "json", "dot", "cytoscape", "gexf"]
 
@@ -66,9 +80,7 @@ def validate_path(path: Path, must_exist: bool = False) -> Path:
 
         # Check if file exists (for input files)
         if must_exist and not abs_path.exists():
-            raise typer.BadParameter(
-                f"File not found: {path}"
-            )
+            raise typer.BadParameter(f"File not found: {path}")
 
         return abs_path
 
@@ -293,14 +305,21 @@ def visualize_attack_paths(
                 paths_data = json.load(f)
 
             # Convert JSON to AttackPath objects
-            from ..graph.models import AttackPath, AttackStep, AttackStepType, ThreatLevel
+            from ..graph.models import (
+                AttackPath,
+                AttackStep,
+                AttackStepType,
+                ThreatLevel,
+            )
 
             attack_paths = []
             for path_data in paths_data.get("attack_paths", []):
                 steps = [
                     AttackStep(
                         node_id=step["node_id"],
-                        step_type=AttackStepType(step.get("step_type", step.get("type", "lateral_movement"))),
+                        step_type=AttackStepType(
+                            step.get("step_type", step.get("type", "lateral_movement"))
+                        ),
                         description=step["description"],
                         vulnerabilities=step.get("vulnerabilities", []),
                         cvss_score=step.get("cvss_score"),
@@ -463,14 +482,21 @@ def topology(
                 paths_data = json.load(f)
 
             # Convert JSON to AttackPath objects
-            from ..graph.models import AttackPath, AttackStep, AttackStepType, ThreatLevel
+            from ..graph.models import (
+                AttackPath,
+                AttackStep,
+                AttackStepType,
+                ThreatLevel,
+            )
 
             attack_paths = []
             for path_data in paths_data.get("attack_paths", []):
                 steps = [
                     AttackStep(
                         node_id=step["node_id"],
-                        step_type=AttackStepType(step.get("step_type", step.get("type", "lateral_movement"))),
+                        step_type=AttackStepType(
+                            step.get("step_type", step.get("type", "lateral_movement"))
+                        ),
                         description=step["description"],
                         vulnerabilities=step.get("vulnerabilities", []),
                         cvss_score=step.get("cvss_score"),
@@ -599,7 +625,9 @@ def export(
         exporter = GraphExporter(client)
 
         # Create visualization if needed for image formats
-        needs_visualization = any(fmt in ['html', 'png', 'svg', 'pdf'] for fmt in formats)
+        needs_visualization = any(
+            fmt in ["html", "png", "svg", "pdf"] for fmt in formats
+        )
 
         if needs_visualization:
             visualizer = NetworkGraphVisualizer(client)
@@ -719,9 +747,13 @@ def filter(
 
         elif filter_type == "node_type":
             if not values:
-                console.print("[red]Error: --values required for node_type filter[/red]")
+                console.print(
+                    "[red]Error: --values required for node_type filter[/red]"
+                )
                 raise typer.Exit(code=1)
-            filtered_client = graph_filter.filter_by_node_type(list(values), include_related)
+            filtered_client = graph_filter.filter_by_node_type(
+                list(values), include_related
+            )
 
         elif filter_type == "cve":
             if not values:
@@ -733,7 +765,9 @@ def filter(
             if not values:
                 console.print("[red]Error: --values required for package filter[/red]")
                 raise typer.Exit(code=1)
-            filtered_client = graph_filter.filter_by_package(list(values), include_related)
+            filtered_client = graph_filter.filter_by_package(
+                list(values), include_related
+            )
 
         elif filter_type == "zone":
             if not values:
@@ -743,15 +777,21 @@ def filter(
 
         elif filter_type == "criticality":
             if not value:
-                console.print("[red]Error: --value required for criticality filter[/red]")
+                console.print(
+                    "[red]Error: --value required for criticality filter[/red]"
+                )
                 raise typer.Exit(code=1)
             filtered_client = graph_filter.filter_by_criticality(value, include_related)
 
         elif filter_type == "compliance":
             if not values:
-                console.print("[red]Error: --values required for compliance filter[/red]")
+                console.print(
+                    "[red]Error: --values required for compliance filter[/red]"
+                )
                 raise typer.Exit(code=1)
-            filtered_client = graph_filter.filter_by_compliance(list(values), include_related)
+            filtered_client = graph_filter.filter_by_compliance(
+                list(values), include_related
+            )
 
         elif filter_type == "internet_facing":
             filtered_client = graph_filter.filter_by_internet_facing(include_related)
@@ -760,7 +800,9 @@ def filter(
             if not value:
                 console.print("[red]Error: --value required for search filter[/red]")
                 raise typer.Exit(code=1)
-            filtered_client = graph_filter.filter_by_search(value, include_related=include_related)
+            filtered_client = graph_filter.filter_by_search(
+                value, include_related=include_related
+            )
 
         else:
             console.print(f"[red]Error: Unknown filter type: {filter_type}[/red]")
@@ -769,8 +811,12 @@ def filter(
         # Show filter results
         filtered_stats = filtered_client.get_metadata()
         console.print(f"[green]✓[/green] Filtered graph:")
-        console.print(f"  • Nodes: {filtered_stats.node_count} (from {client.graph.number_of_nodes()})")
-        console.print(f"  • Edges: {filtered_stats.edge_count} (from {client.graph.number_of_edges()})")
+        console.print(
+            f"  • Nodes: {filtered_stats.node_count} (from {client.graph.number_of_nodes()})"
+        )
+        console.print(
+            f"  • Edges: {filtered_stats.edge_count} (from {client.graph.number_of_edges()})"
+        )
 
         # Create visualization of filtered graph
         visualizer = NetworkGraphVisualizer(filtered_client)
@@ -830,69 +876,77 @@ def stats(
         console.print(f"Total Edges: {stats['total_edges']}")
 
         # Node types
-        if stats['node_types']:
+        if stats["node_types"]:
             console.print("\n[bold cyan]Node Types:[/bold cyan]")
             table = Table(show_header=False)
             table.add_column("Type", style="yellow")
             table.add_column("Count", justify="right", style="cyan")
 
-            for node_type, count in sorted(stats['node_types'].items(), key=lambda x: -x[1]):
+            for node_type, count in sorted(
+                stats["node_types"].items(), key=lambda x: -x[1]
+            ):
                 table.add_row(node_type, str(count))
 
             console.print(table)
 
         # Severities
-        if stats['severities']:
+        if stats["severities"]:
             console.print("\n[bold cyan]Severities:[/bold cyan]")
             table = Table(show_header=False)
             table.add_column("Severity", style="yellow")
             table.add_column("Count", justify="right", style="cyan")
 
-            for severity, count in sorted(stats['severities'].items(), key=lambda x: -x[1]):
+            for severity, count in sorted(
+                stats["severities"].items(), key=lambda x: -x[1]
+            ):
                 table.add_row(severity, str(count))
 
             console.print(table)
 
         # Zones
-        if stats['zones']:
+        if stats["zones"]:
             console.print("\n[bold cyan]Security Zones:[/bold cyan]")
             table = Table(show_header=False)
             table.add_column("Zone", style="yellow")
             table.add_column("Count", justify="right", style="cyan")
 
-            for zone, count in sorted(stats['zones'].items(), key=lambda x: -x[1]):
+            for zone, count in sorted(stats["zones"].items(), key=lambda x: -x[1]):
                 table.add_row(zone, str(count))
 
             console.print(table)
 
         # Criticalities
-        if stats['criticalities']:
+        if stats["criticalities"]:
             console.print("\n[bold cyan]Criticality Levels:[/bold cyan]")
             table = Table(show_header=False)
             table.add_column("Criticality", style="yellow")
             table.add_column("Count", justify="right", style="cyan")
 
-            for criticality, count in sorted(stats['criticalities'].items(), key=lambda x: -x[1]):
+            for criticality, count in sorted(
+                stats["criticalities"].items(), key=lambda x: -x[1]
+            ):
                 table.add_row(criticality, str(count))
 
             console.print(table)
 
         # Compliance
-        if any(stats['compliance_scopes'].values()):
+        if any(stats["compliance_scopes"].values()):
             console.print("\n[bold cyan]Compliance Scope:[/bold cyan]")
             table = Table(show_header=False)
             table.add_column("Type", style="yellow")
             table.add_column("Count", justify="right", style="cyan")
 
-            for comp_type, count in stats['compliance_scopes'].items():
+            for comp_type, count in stats["compliance_scopes"].items():
                 if count > 0:
                     table.add_row(comp_type.upper(), str(count))
 
             console.print(table)
 
         # Internet-facing
-        if stats['internet_facing'] > 0:
-            console.print(f"\n[bold cyan]Internet-Facing Assets:[/bold cyan] {stats['internet_facing']}")
+        if stats["internet_facing"] > 0:
+            console.print(
+                f"\n[bold cyan]Internet-Facing Assets:[/bold cyan] {stats['internet_facing']}"
+            )
 
     except Exception as e:
         console.print(f"[red]✗[/red] Error loading statistics: {e}")

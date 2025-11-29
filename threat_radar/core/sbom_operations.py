@@ -1,4 +1,5 @@
 """Core SBOM operations - business logic for SBOM generation, analysis, and management."""
+
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple, Any
 from dataclasses import dataclass
@@ -31,6 +32,7 @@ from ..utils.sbom_storage import (
 @dataclass
 class SBOMGenerationResult:
     """Result from SBOM generation operation."""
+
     sbom_data: Any  # Dict or str depending on format
     source: str
     output_path: Optional[Path] = None
@@ -39,6 +41,7 @@ class SBOMGenerationResult:
 @dataclass
 class SBOMComparisonResult:
     """Result from SBOM comparison operation."""
+
     sbom1_name: str
     sbom2_name: str
     common: Set[str]
@@ -50,6 +53,7 @@ class SBOMComparisonResult:
 @dataclass
 class SBOMStatistics:
     """SBOM statistics data."""
+
     package_stats: Dict[str, int]
     licenses: Dict[str, List[str]]
     total_packages: int
@@ -152,8 +156,8 @@ class SBOMGenerator:
         # Determine output path for Docker image
         output_path = None
         if auto_save:
-            if ':' in image:
-                image_name, tag = image.rsplit(':', 1)
+            if ":" in image:
+                image_name, tag = image.rsplit(":", 1)
             else:
                 image_name, tag = image, "latest"
 
@@ -201,7 +205,9 @@ class SBOMGenerator:
     ) -> Optional[Path]:
         """Determine the output path for generated SBOM."""
         if auto_save:
-            project_name = source_path.name if source_path.is_dir() else source_path.stem
+            project_name = (
+                source_path.name if source_path.is_dir() else source_path.stem
+            )
             file_ext = get_format_extension(format_str)
             return get_local_sbom_path(project_name, file_ext)
         elif output:
@@ -247,8 +253,7 @@ class SBOMReader:
 
         if name_filter:
             packages = [
-                p for p in packages
-                if name_filter.lower() in p.get("name", "").lower()
+                p for p in packages if name_filter.lower() in p.get("name", "").lower()
             ]
 
         return packages
@@ -364,8 +369,10 @@ class SBOMAnalyzer:
             components = filter_packages_by_type(sbom_data, type_filter)
             if language_filter:
                 components = [
-                    c for c in components
-                    if (extract_component_metadata(c).get("language") or "").lower() == language_filter.lower()
+                    c
+                    for c in components
+                    if (extract_component_metadata(c).get("language") or "").lower()
+                    == language_filter.lower()
                 ]
         elif language_filter:
             components = filter_components_by_language(sbom_data, language_filter)
@@ -451,7 +458,13 @@ class SBOMStorageManager:
             "filename": sbom_path.name,
             "category": sbom_path.parent.name,
             "size": size,
-            "size_str": f"{size / 1024:.1f} KB" if size < 1024 * 1024 else f"{size / (1024 * 1024):.1f} MB",
-            "modified": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
+            "size_str": (
+                f"{size / 1024:.1f} KB"
+                if size < 1024 * 1024
+                else f"{size / (1024 * 1024):.1f} MB"
+            ),
+            "modified": datetime.fromtimestamp(stat.st_mtime).strftime(
+                "%Y-%m-%d %H:%M"
+            ),
             "modified_timestamp": stat.st_mtime,
         }

@@ -20,10 +20,10 @@ def repair_json(content: str) -> str:
     """
     # Remove trailing commas before closing brackets/braces
     # Pattern: comma followed by optional whitespace and closing bracket/brace
-    content = re.sub(r',(\s*[}\]])', r'\1', content)
+    content = re.sub(r",(\s*[}\]])", r"\1", content)
 
     # Remove multiple consecutive commas
-    content = re.sub(r',(\s*,)+', ',', content)
+    content = re.sub(r",(\s*,)+", ",", content)
 
     return content
 
@@ -32,7 +32,9 @@ class LLMClient(ABC):
     """Abstract base class for LLM clients"""
 
     @abstractmethod
-    def generate(self, prompt: str, temperature: float = 0.7, max_tokens: int = 2000) -> str:
+    def generate(
+        self, prompt: str, temperature: float = 0.7, max_tokens: int = 2000
+    ) -> str:
         """
         Generate a response from the LLM.
 
@@ -89,8 +91,12 @@ class OpenAIClient(LLMClient):
         self.model = model
         self.client = OpenAI(api_key=self.api_key)
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
-    def generate(self, prompt: str, temperature: float = 0.7, max_tokens: int = 2000) -> str:
+    @retry(
+        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10)
+    )
+    def generate(
+        self, prompt: str, temperature: float = 0.7, max_tokens: int = 2000
+    ) -> str:
         """Generate response using OpenAI API"""
         try:
             # Use max_completion_tokens for newer models (gpt-4 and newer)
@@ -110,7 +116,9 @@ class OpenAIClient(LLMClient):
         except Exception as e:
             raise RuntimeError(f"OpenAI API error: {str(e)}")
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+    @retry(
+        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10)
+    )
     def generate_json(self, prompt: str, temperature: float = 0.7) -> Dict[str, Any]:
         """Generate JSON response using OpenAI API"""
         original_content = ""  # Save for error messages
@@ -144,31 +152,33 @@ class OpenAIClient(LLMClient):
 
             # Strategy 1: Extract from markdown code blocks
             if "```" in content:
-                code_blocks = re.findall(r'```(?:json)?\s*\n?(.*?)\n?```', content, re.DOTALL)
+                code_blocks = re.findall(
+                    r"```(?:json)?\s*\n?(.*?)\n?```", content, re.DOTALL
+                )
                 if code_blocks:
                     content = code_blocks[0].strip()
 
             # Strategy 2: Find JSON object in the text
-            json_match = re.search(r'\{.*\}', content, re.DOTALL)
+            json_match = re.search(r"\{.*\}", content, re.DOTALL)
             if json_match:
                 content = json_match.group(0)
 
             # Strategy 3: If content doesn't start with {, find first {
-            if not content.startswith('{'):
-                start_idx = content.find('{')
+            if not content.startswith("{"):
+                start_idx = content.find("{")
                 if start_idx != -1:
                     content = content[start_idx:]
 
             # Strategy 4: Balance braces if extra data after }
-            if content.count('}') > content.count('{'):
+            if content.count("}") > content.count("{"):
                 brace_count = 0
                 for i, char in enumerate(content):
-                    if char == '{':
+                    if char == "{":
                         brace_count += 1
-                    elif char == '}':
+                    elif char == "}":
                         brace_count -= 1
                         if brace_count == 0:
-                            content = content[:i+1]
+                            content = content[: i + 1]
                             break
 
             # Strategy 5: Repair common JSON syntax errors
@@ -176,15 +186,25 @@ class OpenAIClient(LLMClient):
 
             # Final validation before parsing
             if not content or not content.strip():
-                raise RuntimeError(f"No valid JSON found in response. Original: {original_content[:200]}")
+                raise RuntimeError(
+                    f"No valid JSON found in response. Original: {original_content[:200]}"
+                )
 
-            if not content.startswith('{'):
-                raise RuntimeError(f"Response doesn't contain JSON object. Content: {content[:200]}")
+            if not content.startswith("{"):
+                raise RuntimeError(
+                    f"Response doesn't contain JSON object. Content: {content[:200]}"
+                )
 
             return json.loads(content)
         except json.JSONDecodeError as e:
-            preview = original_content[:300] if len(original_content) > 300 else original_content
-            raise RuntimeError(f"Invalid JSON from OpenAI: {str(e)}\nOriginal response: {preview}")
+            preview = (
+                original_content[:300]
+                if len(original_content) > 300
+                else original_content
+            )
+            raise RuntimeError(
+                f"Invalid JSON from OpenAI: {str(e)}\nOriginal response: {preview}"
+            )
         except Exception as e:
             # Import BadRequestError for specific error handling
             try:
@@ -196,7 +216,10 @@ class OpenAIClient(LLMClient):
             if isinstance(e, BadRequestError):
                 error_msg = str(e)
                 # Add helpful context for common JSON mode errors
-                if "does not support" in error_msg.lower() or "json" in error_msg.lower():
+                if (
+                    "does not support" in error_msg.lower()
+                    or "json" in error_msg.lower()
+                ):
                     raise RuntimeError(
                         f"OpenAI API error: {error_msg}\n\n"
                         f"💡 The model '{self.model}' may not support JSON mode.\n"
@@ -213,7 +236,9 @@ class OpenAIClient(LLMClient):
 class AnthropicClient(LLMClient):
     """Anthropic Claude client implementation"""
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "claude-3-5-sonnet-20241022"):
+    def __init__(
+        self, api_key: Optional[str] = None, model: str = "claude-3-5-sonnet-20241022"
+    ):
         """
         Initialize Anthropic client.
 
@@ -238,8 +263,12 @@ class AnthropicClient(LLMClient):
         self.model = model
         self.client = Anthropic(api_key=self.api_key)
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
-    def generate(self, prompt: str, temperature: float = 0.7, max_tokens: int = 2000) -> str:
+    @retry(
+        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10)
+    )
+    def generate(
+        self, prompt: str, temperature: float = 0.7, max_tokens: int = 2000
+    ) -> str:
         """Generate response using Anthropic API"""
         try:
             response = self.client.messages.create(
@@ -252,7 +281,9 @@ class AnthropicClient(LLMClient):
         except Exception as e:
             raise RuntimeError(f"Anthropic API error: {str(e)}")
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+    @retry(
+        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10)
+    )
     def generate_json(self, prompt: str, temperature: float = 0.7) -> Dict[str, Any]:
         """Generate JSON response using Anthropic API"""
         json_prompt = f"{prompt}\n\nRespond with valid JSON only, no other text."
@@ -282,31 +313,33 @@ class AnthropicClient(LLMClient):
 
             # Strategy 1: Extract from markdown code blocks
             if "```" in content:
-                code_blocks = re.findall(r'```(?:json)?\s*\n?(.*?)\n?```', content, re.DOTALL)
+                code_blocks = re.findall(
+                    r"```(?:json)?\s*\n?(.*?)\n?```", content, re.DOTALL
+                )
                 if code_blocks:
                     content = code_blocks[0].strip()
 
             # Strategy 2: Find JSON object in the text
-            json_match = re.search(r'\{.*\}', content, re.DOTALL)
+            json_match = re.search(r"\{.*\}", content, re.DOTALL)
             if json_match:
                 content = json_match.group(0)
 
             # Strategy 3: If content doesn't start with {, find first {
-            if not content.startswith('{'):
-                start_idx = content.find('{')
+            if not content.startswith("{"):
+                start_idx = content.find("{")
                 if start_idx != -1:
                     content = content[start_idx:]
 
             # Strategy 4: Balance braces if extra data after }
-            if content.count('}') > content.count('{'):
+            if content.count("}") > content.count("{"):
                 brace_count = 0
                 for i, char in enumerate(content):
-                    if char == '{':
+                    if char == "{":
                         brace_count += 1
-                    elif char == '}':
+                    elif char == "}":
                         brace_count -= 1
                         if brace_count == 0:
-                            content = content[:i+1]
+                            content = content[: i + 1]
                             break
 
             # Strategy 5: Repair common JSON syntax errors
@@ -314,15 +347,25 @@ class AnthropicClient(LLMClient):
 
             # Final validation before parsing
             if not content or not content.strip():
-                raise RuntimeError(f"No valid JSON found in response. Original: {original_content[:200]}")
+                raise RuntimeError(
+                    f"No valid JSON found in response. Original: {original_content[:200]}"
+                )
 
-            if not content.startswith('{'):
-                raise RuntimeError(f"Response doesn't contain JSON object. Content: {content[:200]}")
+            if not content.startswith("{"):
+                raise RuntimeError(
+                    f"Response doesn't contain JSON object. Content: {content[:200]}"
+                )
 
             return json.loads(content)
         except json.JSONDecodeError as e:
-            preview = original_content[:300] if len(original_content) > 300 else original_content
-            raise RuntimeError(f"Invalid JSON from Claude: {str(e)}\nOriginal response: {preview}")
+            preview = (
+                original_content[:300]
+                if len(original_content) > 300
+                else original_content
+            )
+            raise RuntimeError(
+                f"Invalid JSON from Claude: {str(e)}\nOriginal response: {preview}"
+            )
         except Exception as e:
             if "Claude" in str(e) or "response" in str(e).lower():
                 raise
@@ -332,7 +375,9 @@ class AnthropicClient(LLMClient):
 class OpenRouterClient(LLMClient):
     """OpenRouter unified API client implementation"""
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "anthropic/claude-3.5-sonnet"):
+    def __init__(
+        self, api_key: Optional[str] = None, model: str = "anthropic/claude-3.5-sonnet"
+    ):
         """
         Initialize OpenRouter client.
 
@@ -358,8 +403,12 @@ class OpenRouterClient(LLMClient):
         self.model = model
         self.base_url = "https://openrouter.ai/api/v1"
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
-    def generate(self, prompt: str, temperature: float = 0.7, max_tokens: int = 2000) -> str:
+    @retry(
+        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10)
+    )
+    def generate(
+        self, prompt: str, temperature: float = 0.7, max_tokens: int = 2000
+    ) -> str:
         """Generate response using OpenRouter API"""
         try:
             response = requests.post(
@@ -382,7 +431,9 @@ class OpenRouterClient(LLMClient):
             data = response.json()
 
             if "error" in data:
-                raise RuntimeError(f"OpenRouter API error: {data['error'].get('message', data['error'])}")
+                raise RuntimeError(
+                    f"OpenRouter API error: {data['error'].get('message', data['error'])}"
+                )
 
             return data["choices"][0]["message"]["content"].strip()
         except requests.exceptions.RequestException as e:
@@ -390,7 +441,9 @@ class OpenRouterClient(LLMClient):
         except Exception as e:
             raise RuntimeError(f"OpenRouter error: {str(e)}")
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+    @retry(
+        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10)
+    )
     def generate_json(self, prompt: str, temperature: float = 0.7) -> Dict[str, Any]:
         """Generate JSON response using OpenRouter API"""
         json_prompt = f"{prompt}\n\nRespond with valid JSON only, no other text."
@@ -417,7 +470,9 @@ class OpenRouterClient(LLMClient):
             data = response.json()
 
             if "error" in data:
-                raise RuntimeError(f"OpenRouter API error: {data['error'].get('message', data['error'])}")
+                raise RuntimeError(
+                    f"OpenRouter API error: {data['error'].get('message', data['error'])}"
+                )
 
             content = data["choices"][0]["message"]["content"]
 
@@ -436,31 +491,33 @@ class OpenRouterClient(LLMClient):
 
             # Strategy 1: Extract from markdown code blocks
             if "```" in content:
-                code_blocks = re.findall(r'```(?:json)?\s*\n?(.*?)\n?```', content, re.DOTALL)
+                code_blocks = re.findall(
+                    r"```(?:json)?\s*\n?(.*?)\n?```", content, re.DOTALL
+                )
                 if code_blocks:
                     content = code_blocks[0].strip()
 
             # Strategy 2: Find JSON object in the text
-            json_match = re.search(r'\{.*\}', content, re.DOTALL)
+            json_match = re.search(r"\{.*\}", content, re.DOTALL)
             if json_match:
                 content = json_match.group(0)
 
             # Strategy 3: If content doesn't start with {, find first {
-            if not content.startswith('{'):
-                start_idx = content.find('{')
+            if not content.startswith("{"):
+                start_idx = content.find("{")
                 if start_idx != -1:
                     content = content[start_idx:]
 
             # Strategy 4: Balance braces if extra data after }
-            if content.count('}') > content.count('{'):
+            if content.count("}") > content.count("{"):
                 brace_count = 0
                 for i, char in enumerate(content):
-                    if char == '{':
+                    if char == "{":
                         brace_count += 1
-                    elif char == '}':
+                    elif char == "}":
                         brace_count -= 1
                         if brace_count == 0:
-                            content = content[:i+1]
+                            content = content[: i + 1]
                             break
 
             # Strategy 5: Repair common JSON syntax errors
@@ -468,17 +525,27 @@ class OpenRouterClient(LLMClient):
 
             # Final validation before parsing
             if not content or not content.strip():
-                raise RuntimeError(f"No valid JSON found in response. Original: {original_content[:200]}")
+                raise RuntimeError(
+                    f"No valid JSON found in response. Original: {original_content[:200]}"
+                )
 
-            if not content.startswith('{'):
-                raise RuntimeError(f"Response doesn't contain JSON object. Content: {content[:200]}")
+            if not content.startswith("{"):
+                raise RuntimeError(
+                    f"Response doesn't contain JSON object. Content: {content[:200]}"
+                )
 
             return json.loads(content)
         except requests.exceptions.RequestException as e:
             raise RuntimeError(f"OpenRouter API error: {str(e)}")
         except json.JSONDecodeError as e:
-            preview = original_content[:300] if len(original_content) > 300 else original_content
-            raise RuntimeError(f"Invalid JSON from OpenRouter: {str(e)}\nOriginal response: {preview}")
+            preview = (
+                original_content[:300]
+                if len(original_content) > 300
+                else original_content
+            )
+            raise RuntimeError(
+                f"Invalid JSON from OpenRouter: {str(e)}\nOriginal response: {preview}"
+            )
         except Exception as e:
             if "OpenRouter" in str(e) or "response" in str(e).lower():
                 raise
@@ -499,8 +566,12 @@ class OllamaClient(LLMClient):
         self.base_url = base_url.rstrip("/")
         self.model = model
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
-    def generate(self, prompt: str, temperature: float = 0.7, max_tokens: int = 2000) -> str:
+    @retry(
+        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10)
+    )
+    def generate(
+        self, prompt: str, temperature: float = 0.7, max_tokens: int = 2000
+    ) -> str:
         """Generate response using Ollama API"""
         try:
             response = requests.post(
@@ -521,7 +592,9 @@ class OllamaClient(LLMClient):
         except requests.exceptions.RequestException as e:
             raise RuntimeError(f"Ollama API error: {str(e)}")
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+    @retry(
+        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10)
+    )
     def generate_json(self, prompt: str, temperature: float = 0.7) -> Dict[str, Any]:
         """Generate JSON response using Ollama API"""
         json_prompt = f"{prompt}\n\nRespond with valid JSON only."
@@ -557,31 +630,33 @@ class OllamaClient(LLMClient):
 
             # Strategy 1: Extract from markdown code blocks
             if "```" in content:
-                code_blocks = re.findall(r'```(?:json)?\s*\n?(.*?)\n?```', content, re.DOTALL)
+                code_blocks = re.findall(
+                    r"```(?:json)?\s*\n?(.*?)\n?```", content, re.DOTALL
+                )
                 if code_blocks:
                     content = code_blocks[0].strip()
 
             # Strategy 2: Find JSON object in the text
-            json_match = re.search(r'\{.*\}', content, re.DOTALL)
+            json_match = re.search(r"\{.*\}", content, re.DOTALL)
             if json_match:
                 content = json_match.group(0)
 
             # Strategy 3: If content doesn't start with {, find first {
-            if not content.startswith('{'):
-                start_idx = content.find('{')
+            if not content.startswith("{"):
+                start_idx = content.find("{")
                 if start_idx != -1:
                     content = content[start_idx:]
 
             # Strategy 4: Balance braces if extra data after }
-            if content.count('}') > content.count('{'):
+            if content.count("}") > content.count("{"):
                 brace_count = 0
                 for i, char in enumerate(content):
-                    if char == '{':
+                    if char == "{":
                         brace_count += 1
-                    elif char == '}':
+                    elif char == "}":
                         brace_count -= 1
                         if brace_count == 0:
-                            content = content[:i+1]
+                            content = content[: i + 1]
                             break
 
             # Strategy 5: Repair common JSON syntax errors
@@ -589,17 +664,27 @@ class OllamaClient(LLMClient):
 
             # Final validation before parsing
             if not content or not content.strip():
-                raise RuntimeError(f"No valid JSON found in response. Original: {original_content[:200]}")
+                raise RuntimeError(
+                    f"No valid JSON found in response. Original: {original_content[:200]}"
+                )
 
-            if not content.startswith('{'):
-                raise RuntimeError(f"Response doesn't contain JSON object. Content: {content[:200]}")
+            if not content.startswith("{"):
+                raise RuntimeError(
+                    f"Response doesn't contain JSON object. Content: {content[:200]}"
+                )
 
             return json.loads(content)
         except requests.exceptions.RequestException as e:
             raise RuntimeError(f"Ollama API error: {str(e)}")
         except json.JSONDecodeError as e:
-            preview = original_content[:300] if len(original_content) > 300 else original_content
-            raise RuntimeError(f"Invalid JSON from Ollama: {str(e)}\nOriginal response: {preview}")
+            preview = (
+                original_content[:300]
+                if len(original_content) > 300
+                else original_content
+            )
+            raise RuntimeError(
+                f"Invalid JSON from Ollama: {str(e)}\nOriginal response: {preview}"
+            )
         except Exception as e:
             if "Ollama" in str(e) or "response" in str(e).lower():
                 raise
@@ -656,7 +741,9 @@ def get_llm_client(
         return OpenRouterClient(api_key=api_key, model=default_model)
     elif provider == "ollama":
         default_model = model or "llama2"
-        default_endpoint = endpoint or os.getenv("LOCAL_MODEL_ENDPOINT", "http://localhost:11434")
+        default_endpoint = endpoint or os.getenv(
+            "LOCAL_MODEL_ENDPOINT", "http://localhost:11434"
+        )
         return OllamaClient(base_url=default_endpoint, model=default_model)
     else:
         raise ValueError(

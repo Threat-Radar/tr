@@ -1,4 +1,5 @@
 """Tests for SBOM-CVE integration functionality."""
+
 import pytest
 from pathlib import Path
 from threat_radar.core.sbom_package_converter import (
@@ -16,16 +17,12 @@ SYFT_SBOM = {
             "name": "openssl",
             "version": "1.1.1",
             "type": "deb",
-            "metadata": {"architecture": "amd64"}
+            "metadata": {"architecture": "amd64"},
         },
-        {
-            "name": "curl",
-            "version": "7.64.0",
-            "type": "deb"
-        }
+        {"name": "curl", "version": "7.64.0", "type": "deb"},
     ],
     "source": {"type": "image"},
-    "descriptor": {"name": "syft"}
+    "descriptor": {"name": "syft"},
 }
 
 CYCLONEDX_SBOM = {
@@ -37,15 +34,15 @@ CYCLONEDX_SBOM = {
             "name": "log4j-core",
             "version": "2.14.1",
             "type": "library",
-            "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1"
+            "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1",
         },
         {
             "name": "openssl",
             "version": "1.0.2k",
             "type": "library",
-            "purl": "pkg:deb/debian/openssl@1.0.2k?arch=amd64"
-        }
-    ]
+            "purl": "pkg:deb/debian/openssl@1.0.2k?arch=amd64",
+        },
+    ],
 }
 
 SPDX_SBOM = {
@@ -61,16 +58,12 @@ SPDX_SBOM = {
             "externalRefs": [
                 {
                     "referenceType": "purl",
-                    "referenceLocator": "pkg:deb/ubuntu/nginx@1.18.0"
+                    "referenceLocator": "pkg:deb/ubuntu/nginx@1.18.0",
                 }
-            ]
+            ],
         },
-        {
-            "SPDXID": "SPDXRef-Package-2",
-            "name": "python3",
-            "versionInfo": "3.8.10"
-        }
-    ]
+        {"SPDXID": "SPDXRef-Package-2", "name": "python3", "versionInfo": "3.8.10"},
+    ],
 }
 
 
@@ -181,7 +174,7 @@ class TestPackageStatistics:
                 {"name": "pkg4", "version": "4.0", "type": "npm"},
             ],
             "source": {"type": "image"},
-            "descriptor": {"name": "syft"}
+            "descriptor": {"name": "syft"},
         }
 
         packages = convert_sbom_to_packages(mixed_sbom, format="syft")
@@ -200,7 +193,7 @@ class TestEdgeCases:
         empty_syft = {
             "artifacts": [],
             "source": {"type": "image"},
-            "descriptor": {"name": "syft"}
+            "descriptor": {"name": "syft"},
         }
 
         packages = convert_sbom_to_packages(empty_syft, format="syft")
@@ -209,11 +202,9 @@ class TestEdgeCases:
     def test_missing_version(self):
         """Test handling of packages without version."""
         sbom_no_version = {
-            "artifacts": [
-                {"name": "test-pkg", "type": "deb"}
-            ],
+            "artifacts": [{"name": "test-pkg", "type": "deb"}],
             "source": {"type": "image"},
-            "descriptor": {"name": "syft"}
+            "descriptor": {"name": "syft"},
         }
 
         packages = convert_sbom_to_packages(sbom_no_version, format="syft")
@@ -223,11 +214,9 @@ class TestEdgeCases:
     def test_missing_name(self):
         """Test handling of packages without name."""
         sbom_no_name = {
-            "artifacts": [
-                {"version": "1.0", "type": "deb"}
-            ],
+            "artifacts": [{"version": "1.0", "type": "deb"}],
             "source": {"type": "image"},
-            "descriptor": {"name": "syft"}
+            "descriptor": {"name": "syft"},
         }
 
         packages = convert_sbom_to_packages(sbom_no_name, format="syft")
@@ -245,9 +234,9 @@ class TestEdgeCases:
                     "name": "test-pkg",
                     "version": "1.0",
                     "type": "library",
-                    "purl": "pkg:deb/debian/test-pkg@1.0"
+                    "purl": "pkg:deb/debian/test-pkg@1.0",
                 }
-            ]
+            ],
         }
 
         packages = convert_sbom_to_packages(sbom, format="cyclonedx")

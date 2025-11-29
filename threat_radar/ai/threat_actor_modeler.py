@@ -17,30 +17,30 @@ logger = logging.getLogger(__name__)
 class ThreatActorType(str, Enum):
     """Types of threat actors with different capabilities and motivations."""
 
-    APT = "apt"                    # Advanced Persistent Threat (nation-state backed)
-    RANSOMWARE = "ransomware"      # Ransomware gang (organized crime)
+    APT = "apt"  # Advanced Persistent Threat (nation-state backed)
+    RANSOMWARE = "ransomware"  # Ransomware gang (organized crime)
     SCRIPT_KIDDIE = "script-kiddie"  # Low-skill opportunistic attacker
-    INSIDER = "insider"            # Internal threat (malicious employee)
-    HACKTIVIST = "hacktivist"      # Ideologically motivated group
+    INSIDER = "insider"  # Internal threat (malicious employee)
+    HACKTIVIST = "hacktivist"  # Ideologically motivated group
     NATION_STATE = "nation-state"  # State-sponsored cyber warfare
 
 
 class SkillLevel(str, Enum):
     """Skill level of threat actors."""
 
-    EXPERT = "expert"              # Nation-state level capabilities
-    ADVANCED = "advanced"          # APT groups, sophisticated criminals
+    EXPERT = "expert"  # Nation-state level capabilities
+    ADVANCED = "advanced"  # APT groups, sophisticated criminals
     INTERMEDIATE = "intermediate"  # Organized crime, some APTs
-    NOVICE = "novice"             # Script kiddies, low-skill attackers
+    NOVICE = "novice"  # Script kiddies, low-skill attackers
 
 
 class ResourceLevel(str, Enum):
     """Resources available to threat actor."""
 
-    NATION_STATE = "nation-state"      # Unlimited resources
+    NATION_STATE = "nation-state"  # Unlimited resources
     ORGANIZED_CRIME = "organized-crime"  # Significant resources
-    GROUP = "group"                    # Moderate resources
-    INDIVIDUAL = "individual"          # Limited resources
+    GROUP = "group"  # Moderate resources
+    INDIVIDUAL = "individual"  # Limited resources
 
 
 @dataclass
@@ -79,7 +79,7 @@ class ThreatActorPersona:
     requires_public_exploit: bool = False
     prefers_high_value_targets: bool = True
     stealth_preference: float = 0.5  # 0.0 = loud, 1.0 = very stealthy
-    speed_preference: float = 0.5    # 0.0 = slow/patient, 1.0 = fast
+    speed_preference: float = 0.5  # 0.0 = slow/patient, 1.0 = fast
     description: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
@@ -180,14 +180,14 @@ class ThreatActorModeler:
             requires_public_exploit=False,
             prefers_high_value_targets=True,
             stealth_preference=0.9,  # Very stealthy
-            speed_preference=0.3,    # Patient, methodical
+            speed_preference=0.3,  # Patient, methodical
             description=(
                 "APT28 (Fancy Bear) is a sophisticated Russian nation-state threat actor "
                 "attributed to GRU Unit 26165. Known for multi-stage attacks targeting "
                 "government, military, and critical infrastructure. Prefers long-term "
                 "access and uses custom malware with advanced evasion techniques. "
                 "Highly patient and capable of complex multi-hop attacks."
-            )
+            ),
         )
 
         # 2. REvil Ransomware Gang - Organized cybercrime
@@ -214,7 +214,7 @@ class ThreatActorModeler:
             requires_public_exploit=False,
             prefers_high_value_targets=True,
             stealth_preference=0.4,  # Some stealth, but not primary concern
-            speed_preference=0.9,    # Fast operations
+            speed_preference=0.9,  # Fast operations
             description=(
                 "REvil (Sodinokibi) is a sophisticated ransomware-as-a-service (RaaS) "
                 "operation run by organized criminals. Targets high-revenue organizations "
@@ -222,7 +222,7 @@ class ThreatActorModeler:
                 "Prefers fast attacks with maximum business impact. Typically demands "
                 "payments in millions of dollars. Less concerned with stealth after "
                 "initial access is achieved."
-            )
+            ),
         )
 
         # 3. Script Kiddie - Low-skill opportunistic attacker
@@ -245,14 +245,14 @@ class ThreatActorModeler:
             requires_public_exploit=True,
             prefers_high_value_targets=False,
             stealth_preference=0.1,  # Little to no stealth
-            speed_preference=0.8,    # Fast, opportunistic
+            speed_preference=0.8,  # Fast, opportunistic
             description=(
                 "Script kiddies are low-skill attackers who use pre-made tools and "
                 "publicly available exploits. Limited technical knowledge and resources. "
                 "Target low-hanging fruit and internet-facing systems. Use automated "
                 "scanning tools and exploit kits. Quickly move on if initial exploit fails. "
                 "Pose lower risk but higher volume of attempts."
-            )
+            ),
         )
 
         # 4. Malicious Insider - Internal threat
@@ -279,7 +279,7 @@ class ThreatActorModeler:
             requires_public_exploit=False,
             prefers_high_value_targets=True,
             stealth_preference=0.6,  # Moderate stealth (has legitimate access)
-            speed_preference=0.5,    # Varies by motivation
+            speed_preference=0.5,  # Varies by motivation
             description=(
                 "Malicious insiders are employees, contractors, or trusted users who "
                 "abuse their legitimate access. Can be highly dangerous due to knowledge "
@@ -287,7 +287,7 @@ class ThreatActorModeler:
                 "(disgruntled employees), financial gain (data theft), or ideology. "
                 "Often bypass perimeter security entirely. Detection relies on behavioral "
                 "analysis and access monitoring."
-            )
+            ),
         )
 
         # 5. Nation-State Actor - State-sponsored cyber warfare
@@ -298,7 +298,12 @@ class ThreatActorModeler:
             skill_level=SkillLevel.EXPERT,
             resources=ResourceLevel.NATION_STATE,
             motivations=["espionage", "sabotage", "strategic advantage", "disruption"],
-            target_preferences=["critical", "confidential", "government", "infrastructure"],
+            target_preferences=[
+                "critical",
+                "confidential",
+                "government",
+                "infrastructure",
+            ],
             ttps=[
                 "T1195",  # Supply Chain Compromise
                 "T1189",  # Drive-by Compromise
@@ -314,7 +319,7 @@ class ThreatActorModeler:
             requires_public_exploit=False,
             prefers_high_value_targets=True,
             stealth_preference=1.0,  # Maximum stealth
-            speed_preference=0.2,    # Extremely patient
+            speed_preference=0.2,  # Extremely patient
             description=(
                 "Nation-state actors are state-sponsored groups with extensive resources, "
                 "advanced capabilities, and long-term strategic objectives. Capable of "
@@ -322,7 +327,7 @@ class ThreatActorModeler:
                 "Extremely patient with campaigns lasting months or years. Primary goals "
                 "include intelligence gathering, sabotage, and strategic positioning. "
                 "Represent highest threat level with virtually unlimited resources."
-            )
+            ),
         )
 
         return personas
@@ -354,8 +359,7 @@ class ThreatActorModeler:
         # List available types
         available = ", ".join(self.personas.keys())
         raise ValueError(
-            f"Unknown threat actor type: {actor_type}. "
-            f"Available types: {available}"
+            f"Unknown threat actor type: {actor_type}. " f"Available types: {available}"
         )
 
     def list_personas(self) -> List[ThreatActorPersona]:
@@ -371,7 +375,7 @@ class ThreatActorModeler:
         self,
         paths: List[AttackPath],
         persona: ThreatActorPersona,
-        target_nodes_data: Optional[Dict[str, Dict]] = None
+        target_nodes_data: Optional[Dict[str, Dict]] = None,
     ) -> List[AttackPath]:
         """
         Filter attack paths suitable for the given threat actor.
@@ -443,7 +447,7 @@ class ThreatActorModeler:
         self,
         paths: List[AttackPath],
         persona: ThreatActorPersona,
-        target_nodes_data: Optional[Dict[str, Dict]] = None
+        target_nodes_data: Optional[Dict[str, Dict]] = None,
     ) -> List[AttackPath]:
         """
         Rank attack paths by threat actor preferences.
@@ -488,7 +492,9 @@ class ThreatActorModeler:
             if persona.speed_preference > 0.7:  # Fast actor
                 score += complexity_factor * 30  # Bonus for short paths
             elif persona.speed_preference < 0.3:  # Patient actor
-                score += (1.0 - complexity_factor) * 10  # Slight bonus for longer (more thorough)
+                score += (
+                    1.0 - complexity_factor
+                ) * 10  # Slight bonus for longer (more thorough)
 
             # Exploitability score (already calculated in AttackPath)
             score += path.exploitability * 20  # Up to 20 points
@@ -524,10 +530,17 @@ class ThreatActorModeler:
             "resources": persona.resources.value,
             "motivations": persona.motivations,
             "target_preferences": persona.target_preferences,
-            "path_complexity_range": [persona.min_path_complexity, persona.max_path_complexity],
+            "path_complexity_range": [
+                persona.min_path_complexity,
+                persona.max_path_complexity,
+            ],
             "requires_public_exploit": persona.requires_public_exploit,
             "stealth_preference": persona.stealth_preference,
             "speed_preference": persona.speed_preference,
             "common_ttps": persona.ttps[:5],  # Top 5 TTPs
-            "description_summary": persona.description[:200] + "..." if len(persona.description) > 200 else persona.description
+            "description_summary": (
+                persona.description[:200] + "..."
+                if len(persona.description) > 200
+                else persona.description
+            ),
         }

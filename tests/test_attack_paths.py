@@ -31,148 +31,178 @@ def attack_graph_client():
     client = NetworkXClient()
 
     # Add DMZ entry point (internet-facing)
-    client.add_node(GraphNode(
-        node_id="asset:dmz-web",
-        node_type=NodeType.CONTAINER,
-        properties={
-            "name": "DMZ Web Server",
-            "zone": "dmz",
-            "internet_facing": True,
-            "has_public_port": True,
-            "criticality": "medium",
-        }
-    ))
+    client.add_node(
+        GraphNode(
+            node_id="asset:dmz-web",
+            node_type=NodeType.CONTAINER,
+            properties={
+                "name": "DMZ Web Server",
+                "zone": "dmz",
+                "internet_facing": True,
+                "has_public_port": True,
+                "criticality": "medium",
+            },
+        )
+    )
 
     # Add vulnerable package in DMZ
-    client.add_node(GraphNode(
-        node_id="package:nginx:1.18",
-        node_type=NodeType.PACKAGE,
-        properties={
-            "name": "nginx",
-            "version": "1.18.0",
-        }
-    ))
+    client.add_node(
+        GraphNode(
+            node_id="package:nginx:1.18",
+            node_type=NodeType.PACKAGE,
+            properties={
+                "name": "nginx",
+                "version": "1.18.0",
+            },
+        )
+    )
 
     # Add critical vulnerability
-    client.add_node(GraphNode(
-        node_id="cve:CVE-2023-0001",
-        node_type=NodeType.VULNERABILITY,
-        properties={
-            "cve_id": "CVE-2023-0001",
-            "severity": "critical",
-            "cvss_score": 9.8,
-        }
-    ))
+    client.add_node(
+        GraphNode(
+            node_id="cve:CVE-2023-0001",
+            node_type=NodeType.VULNERABILITY,
+            properties={
+                "cve_id": "CVE-2023-0001",
+                "severity": "critical",
+                "cvss_score": 9.8,
+            },
+        )
+    )
 
     # Add internal application server
-    client.add_node(GraphNode(
-        node_id="asset:internal-app",
-        node_type=NodeType.CONTAINER,
-        properties={
-            "name": "Internal Application Server",
-            "zone": "internal",
-            "criticality": "high",
-            "criticality_score": 85,
-        }
-    ))
+    client.add_node(
+        GraphNode(
+            node_id="asset:internal-app",
+            node_type=NodeType.CONTAINER,
+            properties={
+                "name": "Internal Application Server",
+                "zone": "internal",
+                "criticality": "high",
+                "criticality_score": 85,
+            },
+        )
+    )
 
     # Add internal package
-    client.add_node(GraphNode(
-        node_id="package:openssl:1.1.1",
-        node_type=NodeType.PACKAGE,
-        properties={
-            "name": "openssl",
-            "version": "1.1.1",
-        }
-    ))
+    client.add_node(
+        GraphNode(
+            node_id="package:openssl:1.1.1",
+            node_type=NodeType.PACKAGE,
+            properties={
+                "name": "openssl",
+                "version": "1.1.1",
+            },
+        )
+    )
 
     # Add high severity vulnerability
-    client.add_node(GraphNode(
-        node_id="cve:CVE-2023-0002",
-        node_type=NodeType.VULNERABILITY,
-        properties={
-            "cve_id": "CVE-2023-0002",
-            "severity": "high",
-            "cvss_score": 7.5,
-        }
-    ))
+    client.add_node(
+        GraphNode(
+            node_id="cve:CVE-2023-0002",
+            node_type=NodeType.VULNERABILITY,
+            properties={
+                "cve_id": "CVE-2023-0002",
+                "severity": "high",
+                "cvss_score": 7.5,
+            },
+        )
+    )
 
     # Add critical database target (PCI scope)
-    client.add_node(GraphNode(
-        node_id="asset:database",
-        node_type=NodeType.CONTAINER,
-        properties={
-            "name": "Database Server",
-            "zone": "internal",
-            "criticality": "critical",
-            "criticality_score": 95,
-            "pci_scope": True,
-            "data_classification": "pci",
-            "function": "database",
-        }
-    ))
+    client.add_node(
+        GraphNode(
+            node_id="asset:database",
+            node_type=NodeType.CONTAINER,
+            properties={
+                "name": "Database Server",
+                "zone": "internal",
+                "criticality": "critical",
+                "criticality_score": 95,
+                "pci_scope": True,
+                "data_classification": "pci",
+                "function": "database",
+            },
+        )
+    )
 
     # Add another DMZ asset for lateral movement testing
-    client.add_node(GraphNode(
-        node_id="asset:dmz-api",
-        node_type=NodeType.CONTAINER,
-        properties={
-            "name": "DMZ API Gateway",
-            "zone": "dmz",
-            "internet_facing": True,
-            "criticality": "medium",
-        }
-    ))
+    client.add_node(
+        GraphNode(
+            node_id="asset:dmz-api",
+            node_type=NodeType.CONTAINER,
+            properties={
+                "name": "DMZ API Gateway",
+                "zone": "dmz",
+                "internet_facing": True,
+                "criticality": "medium",
+            },
+        )
+    )
 
     # Create relationships (attack paths)
     # DMZ web -> package
-    client.add_edge(GraphEdge(
-        source_id="asset:dmz-web",
-        target_id="package:nginx:1.18",
-        edge_type=EdgeType.CONTAINS,
-    ))
+    client.add_edge(
+        GraphEdge(
+            source_id="asset:dmz-web",
+            target_id="package:nginx:1.18",
+            edge_type=EdgeType.CONTAINS,
+        )
+    )
 
     # Package -> vulnerability
-    client.add_edge(GraphEdge(
-        source_id="package:nginx:1.18",
-        target_id="cve:CVE-2023-0001",
-        edge_type=EdgeType.HAS_VULNERABILITY,
-    ))
+    client.add_edge(
+        GraphEdge(
+            source_id="package:nginx:1.18",
+            target_id="cve:CVE-2023-0001",
+            edge_type=EdgeType.HAS_VULNERABILITY,
+        )
+    )
 
     # DMZ web -> internal app (network connection / dependency)
-    client.add_edge(GraphEdge(
-        source_id="asset:dmz-web",
-        target_id="asset:internal-app",
-        edge_type=EdgeType.COMMUNICATES_WITH,
-    ))
+    client.add_edge(
+        GraphEdge(
+            source_id="asset:dmz-web",
+            target_id="asset:internal-app",
+            edge_type=EdgeType.COMMUNICATES_WITH,
+        )
+    )
 
     # Internal app -> package
-    client.add_edge(GraphEdge(
-        source_id="asset:internal-app",
-        target_id="package:openssl:1.1.1",
-        edge_type=EdgeType.CONTAINS,
-    ))
+    client.add_edge(
+        GraphEdge(
+            source_id="asset:internal-app",
+            target_id="package:openssl:1.1.1",
+            edge_type=EdgeType.CONTAINS,
+        )
+    )
 
     # Package -> vulnerability
-    client.add_edge(GraphEdge(
-        source_id="package:openssl:1.1.1",
-        target_id="cve:CVE-2023-0002",
-        edge_type=EdgeType.HAS_VULNERABILITY,
-    ))
+    client.add_edge(
+        GraphEdge(
+            source_id="package:openssl:1.1.1",
+            target_id="cve:CVE-2023-0002",
+            edge_type=EdgeType.HAS_VULNERABILITY,
+        )
+    )
 
     # Internal app -> database
-    client.add_edge(GraphEdge(
-        source_id="asset:internal-app",
-        target_id="asset:database",
-        edge_type=EdgeType.DEPENDS_ON,
-    ))
+    client.add_edge(
+        GraphEdge(
+            source_id="asset:internal-app",
+            target_id="asset:database",
+            edge_type=EdgeType.DEPENDS_ON,
+        )
+    )
 
     # DMZ web -> DMZ API (lateral movement)
-    client.add_edge(GraphEdge(
-        source_id="asset:dmz-web",
-        target_id="asset:dmz-api",
-        edge_type=EdgeType.COMMUNICATES_WITH,
-    ))
+    client.add_edge(
+        GraphEdge(
+            source_id="asset:dmz-web",
+            target_id="asset:dmz-api",
+            edge_type=EdgeType.COMMUNICATES_WITH,
+        )
+    )
 
     return client
 
@@ -343,11 +373,13 @@ class TestEntryPointDetection:
     def test_no_entry_points(self):
         """Test when no entry points exist."""
         client = NetworkXClient()
-        client.add_node(GraphNode(
-            node_id="asset:internal",
-            node_type=NodeType.CONTAINER,
-            properties={"zone": "internal"},
-        ))
+        client.add_node(
+            GraphNode(
+                node_id="asset:internal",
+                node_type=NodeType.CONTAINER,
+                properties={"zone": "internal"},
+            )
+        )
 
         analyzer = GraphAnalyzer(client)
         entry_points = analyzer.identify_entry_points()
@@ -378,11 +410,13 @@ class TestHighValueTargets:
     def test_no_high_value_targets(self):
         """Test when no high-value targets exist."""
         client = NetworkXClient()
-        client.add_node(GraphNode(
-            node_id="asset:low-priority",
-            node_type=NodeType.CONTAINER,
-            properties={"criticality": "low"},
-        ))
+        client.add_node(
+            GraphNode(
+                node_id="asset:low-priority",
+                node_type=NodeType.CONTAINER,
+                properties={"criticality": "low"},
+            )
+        )
 
         analyzer = GraphAnalyzer(client)
         targets = analyzer.identify_high_value_targets()
@@ -397,9 +431,7 @@ class TestAttackPathDiscovery:
         """Test finding shortest attack paths."""
         analyzer = GraphAnalyzer(attack_graph_client)
 
-        attack_paths = analyzer.find_shortest_attack_paths(
-            max_length=10
-        )
+        attack_paths = analyzer.find_shortest_attack_paths(max_length=10)
 
         assert len(attack_paths) > 0
 
@@ -417,9 +449,7 @@ class TestAttackPathDiscovery:
         analyzer = GraphAnalyzer(attack_graph_client)
 
         attack_paths = analyzer.find_shortest_attack_paths(
-            entry_points=["asset:dmz-web"],
-            targets=["asset:database"],
-            max_length=10
+            entry_points=["asset:dmz-web"], targets=["asset:database"], max_length=10
         )
 
         assert len(attack_paths) > 0
@@ -439,7 +469,9 @@ class TestAttackPathDiscovery:
         attack_paths = analyzer.find_shortest_attack_paths()
 
         # Paths with high CVSS should be high threat
-        critical_paths = [p for p in attack_paths if p.threat_level == ThreatLevel.CRITICAL]
+        critical_paths = [
+            p for p in attack_paths if p.threat_level == ThreatLevel.CRITICAL
+        ]
         high_paths = [p for p in attack_paths if p.threat_level == ThreatLevel.HIGH]
 
         # Should have at least some high-severity paths given test data
@@ -467,14 +499,14 @@ class TestPrivilegeEscalation:
         """Test detecting DMZ to internal zone escalation."""
         analyzer = GraphAnalyzer(attack_graph_client)
 
-        escalations = analyzer.detect_privilege_escalation_paths(
-            max_paths=10
-        )
+        escalations = analyzer.detect_privilege_escalation_paths(max_paths=10)
 
         # Should find escalations from DMZ to internal
         dmz_to_internal = [
-            e for e in escalations
-            if "dmz" in e.from_privilege.lower() and "internal" in e.to_privilege.lower()
+            e
+            for e in escalations
+            if "dmz" in e.from_privilege.lower()
+            and "internal" in e.to_privilege.lower()
         ]
 
         assert len(dmz_to_internal) > 0
@@ -518,8 +550,7 @@ class TestLateralMovement:
 
         # Should find movement between DMZ assets
         dmz_movements = [
-            m for m in movements
-            if "dmz" in m.from_asset and "dmz" in m.to_asset
+            m for m in movements if "dmz" in m.from_asset and "dmz" in m.to_asset
         ]
 
         assert len(dmz_movements) > 0
@@ -596,13 +627,13 @@ class TestAttackSurfaceAnalysis:
         surface = analyzer.analyze_attack_surface(max_paths=20)
 
         # Should have all components
-        assert hasattr(surface, 'entry_points')
-        assert hasattr(surface, 'high_value_targets')
-        assert hasattr(surface, 'attack_paths')
-        assert hasattr(surface, 'privilege_escalations')
-        assert hasattr(surface, 'lateral_movements')
-        assert hasattr(surface, 'total_risk_score')
-        assert hasattr(surface, 'recommendations')
+        assert hasattr(surface, "entry_points")
+        assert hasattr(surface, "high_value_targets")
+        assert hasattr(surface, "attack_paths")
+        assert hasattr(surface, "privilege_escalations")
+        assert hasattr(surface, "lateral_movements")
+        assert hasattr(surface, "total_risk_score")
+        assert hasattr(surface, "recommendations")
 
 
 class TestAttackPathEdgeCases:
@@ -626,18 +657,22 @@ class TestAttackPathEdgeCases:
         client = NetworkXClient()
 
         # Add entry point
-        client.add_node(GraphNode(
-            node_id="asset:entry",
-            node_type=NodeType.CONTAINER,
-            properties={"internet_facing": True},
-        ))
+        client.add_node(
+            GraphNode(
+                node_id="asset:entry",
+                node_type=NodeType.CONTAINER,
+                properties={"internet_facing": True},
+            )
+        )
 
         # Add target (disconnected)
-        client.add_node(GraphNode(
-            node_id="asset:target",
-            node_type=NodeType.CONTAINER,
-            properties={"criticality": "critical", "criticality_score": 95},
-        ))
+        client.add_node(
+            GraphNode(
+                node_id="asset:target",
+                node_type=NodeType.CONTAINER,
+                properties={"criticality": "critical", "criticality_score": 95},
+            )
+        )
 
         analyzer = GraphAnalyzer(client)
         paths = analyzer.find_shortest_attack_paths()

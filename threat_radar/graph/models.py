@@ -7,6 +7,7 @@ from enum import Enum
 
 class NodeType(Enum):
     """Supported node types in the vulnerability graph."""
+
     CONTAINER = "container"
     PACKAGE = "package"
     VULNERABILITY = "vulnerability"
@@ -18,6 +19,7 @@ class NodeType(Enum):
 
 class EdgeType(Enum):
     """Supported edge types in the vulnerability graph."""
+
     CONTAINS = "CONTAINS"  # Container -> Package
     HAS_VULNERABILITY = "HAS_VULNERABILITY"  # Package -> Vulnerability
     DEPENDS_ON = "DEPENDS_ON"  # Container -> Container, Service -> Service
@@ -40,6 +42,7 @@ class GraphNode:
         node_type: Type of the node (container, package, vulnerability, etc.)
         properties: Additional node attributes (name, version, severity, etc.)
     """
+
     node_id: str
     node_type: NodeType
     properties: Dict[str, Any] = field(default_factory=dict)
@@ -61,6 +64,7 @@ class GraphEdge:
         edge_type: Type of relationship (contains, depends_on, etc.)
         properties: Additional edge attributes (weight, timestamp, etc.)
     """
+
     source_id: str
     target_id: str
     edge_type: EdgeType
@@ -85,6 +89,7 @@ class GraphMetadata:
         node_type_counts: Count of nodes by type
         edge_type_counts: Count of edges by type
     """
+
     node_count: int = 0
     edge_count: int = 0
     node_type_counts: Dict[str, int] = field(default_factory=dict)
@@ -93,6 +98,7 @@ class GraphMetadata:
 
 class AttackStepType(Enum):
     """Types of attack steps in an attack path."""
+
     ENTRY_POINT = "entry_point"
     EXPLOIT_VULNERABILITY = "exploit_vulnerability"
     PRIVILEGE_ESCALATION = "privilege_escalation"
@@ -103,6 +109,7 @@ class AttackStepType(Enum):
 
 class ThreatLevel(Enum):
     """Threat level classifications for attack paths."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -123,6 +130,7 @@ class AttackStep:
         prerequisites: Required conditions for this step
         impact: Impact description if successful
     """
+
     node_id: str
     step_type: AttackStepType
     description: str
@@ -150,6 +158,7 @@ class AttackPath:
         requires_privileges: Whether privilege escalation is required
         description: Summary of the attack path
     """
+
     path_id: str
     entry_point: str
     target: str
@@ -188,6 +197,7 @@ class PrivilegeEscalationPath:
         difficulty: Exploitation difficulty (easy/medium/hard)
         mitigation: Recommended mitigation steps
     """
+
     from_privilege: str
     to_privilege: str
     path: AttackPath
@@ -211,6 +221,7 @@ class LateralMovementOpportunity:
         prerequisites: Required conditions
         detection_difficulty: How hard to detect (easy/medium/hard)
     """
+
     from_asset: str
     to_asset: str
     movement_type: str
@@ -235,6 +246,7 @@ class AttackSurface:
         total_risk_score: Overall risk assessment
         recommendations: Security recommendations
     """
+
     entry_points: List[str]
     high_value_targets: List[str]
     attack_paths: List[AttackPath]

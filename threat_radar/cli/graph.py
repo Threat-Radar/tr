@@ -63,7 +63,9 @@ def build(
 
         # Detect format
         is_grype_raw_format = "matches" in scan_data
-        is_threat_radar_format = "vulnerabilities" in scan_data and "target" in scan_data
+        is_threat_radar_format = (
+            "vulnerabilities" in scan_data and "target" in scan_data
+        )
 
         # Convert to GrypeScanResult
         vulnerabilities = []
@@ -77,9 +79,14 @@ def build(
                     package_name=vuln_data["artifact"]["name"],
                     package_version=vuln_data["artifact"]["version"],
                     package_type=vuln_data["artifact"].get("type", "unknown"),
-                    fixed_in_version=vuln_data["vulnerability"].get("fix", {}).get("versions", [None])[0],
+                    fixed_in_version=vuln_data["vulnerability"]
+                    .get("fix", {})
+                    .get("versions", [None])[0],
                     description=vuln_data["vulnerability"].get("description"),
-                    cvss_score=vuln_data["vulnerability"].get("cvss", [{}])[0].get("metrics", {}).get("baseScore"),
+                    cvss_score=vuln_data["vulnerability"]
+                    .get("cvss", [{}])[0]
+                    .get("metrics", {})
+                    .get("baseScore"),
                     urls=vuln_data["vulnerability"].get("urls", []),
                     data_source=vuln_data["vulnerability"].get("dataSource"),
                     namespace=vuln_data["vulnerability"].get("namespace"),
@@ -118,7 +125,9 @@ def build(
             console.print("[red]✗[/red] Unsupported scan result format")
             console.print("[yellow]Expected either:[/yellow]")
             console.print("  • Raw Grype format (with 'matches' key)")
-            console.print("  • Threat Radar format (with 'vulnerabilities' and 'target' keys)")
+            console.print(
+                "  • Threat Radar format (with 'vulnerabilities' and 'target' keys)"
+            )
             raise typer.Exit(code=1)
 
         # Extract target based on format
@@ -171,7 +180,7 @@ def build(
                     "target": scan_result.target,
                     "vulnerability_count": scan_result.total_count,
                     **metadata.node_type_counts,
-                }
+                },
             )
             console.print(f"[green]✓[/green] Saved to: {saved_path}")
 
@@ -180,7 +189,9 @@ def build(
             console.print(f"[green]✓[/green] Saved to: {output}")
 
         if not auto_save and not output:
-            console.print("[yellow]⚠[/yellow] Graph not saved (use --output or --auto-save)")
+            console.print(
+                "[yellow]⚠[/yellow] Graph not saved (use --output or --auto-save)"
+            )
 
     except Exception as e:
         console.print(f"[red]✗[/red] Error building graph: {e}")
@@ -240,7 +251,9 @@ def query(
                         console.print(f"  • {asset}")
 
         if top_packages:
-            console.print(f"\n[bold]Top {top_packages} Most Vulnerable Packages:[/bold]")
+            console.print(
+                f"\n[bold]Top {top_packages} Most Vulnerable Packages:[/bold]"
+            )
             vulnerable_pkgs = analyzer.most_vulnerable_packages(top_n=top_packages)
 
             table = Table(show_header=True, header_style="bold cyan")
@@ -249,11 +262,7 @@ def query(
             table.add_column("Avg CVSS", justify="right")
 
             for pkg_id, vuln_count, avg_cvss in vulnerable_pkgs:
-                table.add_row(
-                    pkg_id,
-                    str(vuln_count),
-                    f"{avg_cvss:.1f}"
-                )
+                table.add_row(pkg_id, str(vuln_count), f"{avg_cvss:.1f}")
 
             console.print(table)
 
@@ -265,7 +274,9 @@ def query(
             table.add_column("Metric", style="cyan")
             table.add_column("Value", justify="right", style="yellow")
 
-            table.add_row("Total Vulnerabilities", str(statistics["total_vulnerabilities"]))
+            table.add_row(
+                "Total Vulnerabilities", str(statistics["total_vulnerabilities"])
+            )
             table.add_row("Critical", str(statistics["by_severity"]["critical"]))
             table.add_row("High", str(statistics["by_severity"]["high"]))
             table.add_row("Medium", str(statistics["by_severity"]["medium"]))
@@ -313,13 +324,10 @@ def list_graphs(
         stat = graph_path.stat()
         size_mb = stat.st_size / (1024 * 1024)
         from datetime import datetime
+
         mod_time = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M")
 
-        table.add_row(
-            graph_path.name,
-            f"{size_mb:.2f} MB",
-            mod_time
-        )
+        table.add_row(graph_path.name, f"{size_mb:.2f} MB", mod_time)
 
     console.print(table)
     console.print(f"\n[dim]Total: {len(graphs)} graphs[/dim]")
@@ -437,9 +445,9 @@ def fixes(
             table.add_row(
                 fix["cve_id"],
                 f"[{severity_color}]{fix['severity'].upper()}[/{severity_color}]",
-                f"{fix['cvss_score']:.1f}" if fix['cvss_score'] else "N/A",
+                f"{fix['cvss_score']:.1f}" if fix["cvss_score"] else "N/A",
                 str(len(fix["affected_packages"])),
-                fix["fix_version"]
+                fix["fix_version"],
             )
 
         console.print(table)
@@ -472,8 +480,7 @@ def cleanup(
 
     if not force:
         confirm = typer.confirm(
-            f"Delete all graphs older than {days} days?",
-            abort=True
+            f"Delete all graphs older than {days} days?", abort=True
         )
 
     deleted = storage.cleanup_old_graphs(days=days)
@@ -534,9 +541,7 @@ def attack_paths(
         # Find attack paths
         with console.status("[bold green]Finding attack paths..."):
             attack_paths = analyzer.find_shortest_attack_paths(
-                entry_points=entry_points,
-                targets=targets,
-                max_length=max_length
+                entry_points=entry_points, targets=targets, max_length=max_length
             )[:max_paths]
 
         if not attack_paths:
@@ -555,7 +560,9 @@ def attack_paths(
             }.get(path.threat_level.value, "white")
 
             console.print(f"\n[bold cyan]Path {i}:[/bold cyan]")
-            console.print(f"  Threat Level: [{threat_color}]{path.threat_level.value.upper()}[/{threat_color}]")
+            console.print(
+                f"  Threat Level: [{threat_color}]{path.threat_level.value.upper()}[/{threat_color}]"
+            )
             console.print(f"  Total CVSS: {path.total_cvss:.2f}")
             console.print(f"  Length: {path.path_length} steps")
             console.print(f"  Exploitability: {path.exploitability:.0%}")
@@ -594,14 +601,20 @@ def attack_paths(
             ]
 
             with open(output, "w") as f:
-                json.dump({
-                    "total_paths": len(attack_paths),
-                    "entry_points": entry_points,
-                    "targets": targets,
-                    "attack_paths": attack_paths_data
-                }, f, indent=2)
+                json.dump(
+                    {
+                        "total_paths": len(attack_paths),
+                        "entry_points": entry_points,
+                        "targets": targets,
+                        "attack_paths": attack_paths_data,
+                    },
+                    f,
+                    indent=2,
+                )
 
-            console.print(f"\n[green]✓[/green] Saved {len(attack_paths)} paths to: {output}")
+            console.print(
+                f"\n[green]✓[/green] Saved {len(attack_paths)} paths to: {output}"
+            )
 
     except Exception as e:
         console.print(f"[red]✗[/red] Error analyzing attack paths: {e}")
@@ -653,7 +666,9 @@ def privilege_escalation(
             console.print("[yellow]No privilege escalation paths found[/yellow]")
             return
 
-        console.print(f"\n[bold]Found {len(escalation_paths)} Privilege Escalation Paths:[/bold]")
+        console.print(
+            f"\n[bold]Found {len(escalation_paths)} Privilege Escalation Paths:[/bold]"
+        )
 
         # Display paths
         for i, esc in enumerate(escalation_paths[:10], 1):  # Show top 10
@@ -666,7 +681,9 @@ def privilege_escalation(
             console.print(f"\n[bold cyan]Escalation {i}:[/bold cyan]")
             console.print(f"  From: {esc.from_privilege}")
             console.print(f"  To: {esc.to_privilege}")
-            console.print(f"  Difficulty: [{diff_color}]{esc.difficulty.upper()}[/{diff_color}]")
+            console.print(
+                f"  Difficulty: [{diff_color}]{esc.difficulty.upper()}[/{diff_color}]"
+            )
             console.print(f"  Path Length: {esc.path.path_length} steps")
             console.print(f"  CVEs: {', '.join(esc.vulnerabilities[:5])}")
 
@@ -703,12 +720,18 @@ def privilege_escalation(
             ]
 
             with open(output, "w") as f:
-                json.dump({
-                    "total_escalations": len(escalation_paths),
-                    "privilege_escalations": escalation_data
-                }, f, indent=2)
+                json.dump(
+                    {
+                        "total_escalations": len(escalation_paths),
+                        "privilege_escalations": escalation_data,
+                    },
+                    f,
+                    indent=2,
+                )
 
-            console.print(f"\n[green]✓[/green] Saved {len(escalation_paths)} escalations to: {output}")
+            console.print(
+                f"\n[green]✓[/green] Saved {len(escalation_paths)} escalations to: {output}"
+            )
 
     except Exception as e:
         console.print(f"[red]✗[/red] Error detecting privilege escalation: {e}")
@@ -751,7 +774,9 @@ def lateral_movement(
         analyzer = GraphAnalyzer(client)
 
         # Identify lateral movements
-        with console.status("[bold green]Identifying lateral movement opportunities..."):
+        with console.status(
+            "[bold green]Identifying lateral movement opportunities..."
+        ):
             opportunities = analyzer.identify_lateral_movement_opportunities(
                 max_opportunities=max_opportunities
             )
@@ -760,7 +785,9 @@ def lateral_movement(
             console.print("[yellow]No lateral movement opportunities found[/yellow]")
             return
 
-        console.print(f"\n[bold]Found {len(opportunities)} Lateral Movement Opportunities:[/bold]")
+        console.print(
+            f"\n[bold]Found {len(opportunities)} Lateral Movement Opportunities:[/bold]"
+        )
 
         # Display opportunities
         for i, opp in enumerate(opportunities[:10], 1):  # Show top 10
@@ -774,7 +801,9 @@ def lateral_movement(
             console.print(f"  From: {opp.from_asset}")
             console.print(f"  To: {opp.to_asset}")
             console.print(f"  Type: {opp.movement_type}")
-            console.print(f"  Detection: [{detect_color}]{opp.detection_difficulty.upper()}[/{detect_color}]")
+            console.print(
+                f"  Detection: [{detect_color}]{opp.detection_difficulty.upper()}[/{detect_color}]"
+            )
             console.print(f"  Path Length: {opp.path.path_length} steps")
 
             if opp.vulnerabilities:
@@ -801,12 +830,18 @@ def lateral_movement(
             ]
 
             with open(output, "w") as f:
-                json.dump({
-                    "total_opportunities": len(opportunities),
-                    "lateral_movements": movement_data
-                }, f, indent=2)
+                json.dump(
+                    {
+                        "total_opportunities": len(opportunities),
+                        "lateral_movements": movement_data,
+                    },
+                    f,
+                    indent=2,
+                )
 
-            console.print(f"\n[green]✓[/green] Saved {len(opportunities)} opportunities to: {output}")
+            console.print(
+                f"\n[green]✓[/green] Saved {len(opportunities)} opportunities to: {output}"
+            )
 
     except Exception as e:
         console.print(f"[red]✗[/red] Error identifying lateral movement: {e}")
@@ -854,11 +889,15 @@ def attack_surface(
 
         # Display results
         console.print("\n[bold]Attack Surface Analysis Results:[/bold]")
-        console.print(f"  Total Risk Score: [red]{attack_surface.total_risk_score:.1f}/100[/red]")
+        console.print(
+            f"  Total Risk Score: [red]{attack_surface.total_risk_score:.1f}/100[/red]"
+        )
         console.print(f"\n  Entry Points: {len(attack_surface.entry_points)}")
         console.print(f"  High-Value Targets: {len(attack_surface.high_value_targets)}")
         console.print(f"  Attack Paths: {len(attack_surface.attack_paths)}")
-        console.print(f"  Privilege Escalations: {len(attack_surface.privilege_escalations)}")
+        console.print(
+            f"  Privilege Escalations: {len(attack_surface.privilege_escalations)}"
+        )
         console.print(f"  Lateral Movements: {len(attack_surface.lateral_movements)}")
 
         # Show threat distribution
@@ -866,7 +905,9 @@ def attack_surface(
             console.print("\n[bold]Threat Distribution:[/bold]")
             threat_counts = {}
             for path in attack_surface.attack_paths:
-                threat_counts[path.threat_level.value] = threat_counts.get(path.threat_level.value, 0) + 1
+                threat_counts[path.threat_level.value] = (
+                    threat_counts.get(path.threat_level.value, 0) + 1
+                )
 
             for level in ["critical", "high", "medium", "low"]:
                 count = threat_counts.get(level, 0)
@@ -877,7 +918,9 @@ def attack_surface(
                         "medium": "yellow",
                         "low": "blue",
                     }.get(level, "white")
-                    console.print(f"  [{color}]{level.upper()}[/{color}]: {count} paths")
+                    console.print(
+                        f"  [{color}]{level.upper()}[/{color}]: {count} paths"
+                    )
 
         # Show recommendations
         if attack_surface.recommendations:
@@ -987,7 +1030,9 @@ def centrality(
             centrality_metric = CentralityMetric(metric.lower())
         except ValueError:
             console.print(f"[red]✗[/red] Invalid metric: {metric}")
-            console.print("[yellow]Valid metrics:[/yellow] degree, betweenness, closeness, pagerank, eigenvector")
+            console.print(
+                "[yellow]Valid metrics:[/yellow] degree, betweenness, closeness, pagerank, eigenvector"
+            )
             raise typer.Exit(code=1)
 
         # Calculate centrality
@@ -999,7 +1044,9 @@ def centrality(
             )
 
         # Display results
-        console.print(f"\n[bold]Top {len(result.nodes)} Nodes by {metric.capitalize()} Centrality:[/bold]")
+        console.print(
+            f"\n[bold]Top {len(result.nodes)} Nodes by {metric.capitalize()} Centrality:[/bold]"
+        )
         console.print(f"[dim]Total nodes analyzed: {result.total_nodes}[/dim]")
         console.print(f"[dim]Average score: {result.avg_score:.4f}[/dim]\n")
 
@@ -1050,7 +1097,9 @@ def centrality(
             console.print("  • High closeness = can quickly reach other nodes")
             console.print("  • Vulnerabilities that spread rapidly")
         elif centrality_metric == CentralityMetric.PAGERANK:
-            console.print("  • High PageRank = important based on connections' importance")
+            console.print(
+                "  • High PageRank = important based on connections' importance"
+            )
             console.print("  • Critical nodes in dependency chains")
 
         # Save to JSON if requested
@@ -1131,7 +1180,9 @@ def communities(
             community_algorithm = CommunityAlgorithm(algorithm.lower())
         except ValueError:
             console.print(f"[red]✗[/red] Invalid algorithm: {algorithm}")
-            console.print("[yellow]Valid algorithms:[/yellow] greedy_modularity, label_propagation, louvain")
+            console.print(
+                "[yellow]Valid algorithms:[/yellow] greedy_modularity, label_propagation, louvain"
+            )
             raise typer.Exit(code=1)
 
         # Detect communities
@@ -1139,7 +1190,9 @@ def communities(
             result = analytics.detect_communities(algorithm=community_algorithm)
 
         # Display results
-        console.print(f"\n[bold]Detected {result.total_communities} Communities:[/bold]")
+        console.print(
+            f"\n[bold]Detected {result.total_communities} Communities:[/bold]"
+        )
         console.print(f"[dim]Modularity score: {result.modularity:.3f}[/dim]")
         console.print(f"[dim]Coverage: {result.coverage:.1%}[/dim]\n")
 
@@ -1159,7 +1212,10 @@ def communities(
 
             # Format node types
             node_types_str = ", ".join(
-                f"{k}: {v}" for k, v in sorted(comm.node_types.items(), key=lambda x: x[1], reverse=True)
+                f"{k}: {v}"
+                for k, v in sorted(
+                    comm.node_types.items(), key=lambda x: x[1], reverse=True
+                )
             )
 
             table.add_row(
@@ -1204,7 +1260,9 @@ def communities(
             with open(output, "w") as f:
                 json.dump(output_data, f, indent=2)
 
-            console.print(f"\n[green]✓[/green] Saved {len(result.communities)} communities to: {output}")
+            console.print(
+                f"\n[green]✓[/green] Saved {len(result.communities)} communities to: {output}"
+            )
 
     except Exception as e:
         console.print(f"[red]✗[/red] Error detecting communities: {e}")
@@ -1254,7 +1312,9 @@ def propagation(
 
         # Analyze propagation
         with console.status(f"[bold green]Tracing propagation for {cve}..."):
-            result = analytics.analyze_vulnerability_propagation(cve, max_depth=max_depth)
+            result = analytics.analyze_vulnerability_propagation(
+                cve, max_depth=max_depth
+            )
 
         # Display results
         console.print(f"\n[bold]Vulnerability Propagation Analysis: {cve}[/bold]\n")
@@ -1275,7 +1335,9 @@ def propagation(
         # Show direct vs transitive impact
         console.print(f"\n[bold]Impact Breakdown:[/bold]")
         console.print(f"  • Direct impact: {result.get_direct_impact()} packages")
-        console.print(f"  • Transitive impact: {result.get_transitive_impact()} downstream nodes")
+        console.print(
+            f"  • Transitive impact: {result.get_transitive_impact()} downstream nodes"
+        )
 
         # Show critical path if found
         if result.critical_path:
@@ -1283,11 +1345,15 @@ def propagation(
             for step in result.critical_path[:5]:  # Show first 5 steps
                 depth_prefix = "  " * step.depth
                 cvss_str = f" (CVSS: {step.cvss_score})" if step.cvss_score else ""
-                console.print(f"{depth_prefix}→ {step.node_type}: {step.node_id}{cvss_str}")
+                console.print(
+                    f"{depth_prefix}→ {step.node_type}: {step.node_id}{cvss_str}"
+                )
 
         # Show sample propagation paths
         if result.propagation_paths:
-            console.print(f"\n[bold]Sample Propagation Paths ({len(result.propagation_paths)} total):[/bold]")
+            console.print(
+                f"\n[bold]Sample Propagation Paths ({len(result.propagation_paths)} total):[/bold]"
+            )
             for i, path in enumerate(result.propagation_paths[:3], 1):
                 console.print(f"\n  Path {i} ({len(path)} steps):")
                 for step in path[:4]:  # Show first 4 steps of each path
@@ -1300,7 +1366,9 @@ def propagation(
         if result.infection_score > 75:
             console.print("  [red]CRITICAL[/red] - Very high propagation risk")
         elif result.infection_score > 50:
-            console.print("  [bright_red]HIGH[/bright_red] - Significant propagation risk")
+            console.print(
+                "  [bright_red]HIGH[/bright_red] - Significant propagation risk"
+            )
         elif result.infection_score > 25:
             console.print("  [yellow]MEDIUM[/yellow] - Moderate propagation risk")
         else:
@@ -1383,7 +1451,9 @@ def metrics(
         console.print("\n[bold]Graph Topology Metrics:[/bold]\n")
 
         # Basic structure
-        structure_table = Table(title="Graph Structure", show_header=True, header_style="bold cyan")
+        structure_table = Table(
+            title="Graph Structure", show_header=True, header_style="bold cyan"
+        )
         structure_table.add_column("Metric", style="cyan")
         structure_table.add_column("Value", justify="right", style="yellow")
 
@@ -1397,12 +1467,18 @@ def metrics(
 
         # Connectivity
         console.print()
-        connectivity_table = Table(title="Connectivity", show_header=True, header_style="bold cyan")
+        connectivity_table = Table(
+            title="Connectivity", show_header=True, header_style="bold cyan"
+        )
         connectivity_table.add_column("Metric", style="cyan")
         connectivity_table.add_column("Value", justify="right", style="yellow")
 
-        connectivity_table.add_row("Connected Components", str(result.connected_components))
-        connectivity_table.add_row("Largest Component Size", str(result.largest_component_size))
+        connectivity_table.add_row(
+            "Connected Components", str(result.connected_components)
+        )
+        connectivity_table.add_row(
+            "Largest Component Size", str(result.largest_component_size)
+        )
         connectivity_table.add_row("Avg Path Length", f"{result.avg_path_length:.2f}")
         connectivity_table.add_row("Graph Diameter", str(result.diameter))
 
@@ -1410,13 +1486,19 @@ def metrics(
 
         # Security metrics
         console.print()
-        security_table = Table(title="Security Metrics", show_header=True, header_style="bold cyan")
+        security_table = Table(
+            title="Security Metrics", show_header=True, header_style="bold cyan"
+        )
         security_table.add_column("Metric", style="cyan")
         security_table.add_column("Value", justify="right", style="yellow")
 
-        security_table.add_row("Vulnerability Concentration", f"{result.vulnerability_concentration:.3f}")
+        security_table.add_row(
+            "Vulnerability Concentration", f"{result.vulnerability_concentration:.3f}"
+        )
         security_table.add_row("Critical Node Count", str(result.critical_node_count))
-        security_table.add_row("Security Score", f"[bold]{result.security_score:.1f}/100[/bold]")
+        security_table.add_row(
+            "Security Score", f"[bold]{result.security_score:.1f}/100[/bold]"
+        )
 
         console.print(security_table)
 
@@ -1425,25 +1507,39 @@ def metrics(
 
         # Density interpretation
         if result.density > 0.5:
-            console.print("  • [yellow]High density[/yellow] - Highly interconnected (vulnerabilities spread easily)")
+            console.print(
+                "  • [yellow]High density[/yellow] - Highly interconnected (vulnerabilities spread easily)"
+            )
         elif result.density > 0.2:
             console.print("  • [blue]Moderate density[/blue] - Balanced connectivity")
         else:
-            console.print("  • [green]Low density[/green] - Sparse connections (better isolation)")
+            console.print(
+                "  • [green]Low density[/green] - Sparse connections (better isolation)"
+            )
 
         # Clustering interpretation
         if result.avg_clustering > 0.5:
-            console.print("  • [yellow]High clustering[/yellow] - Assets form tight groups")
+            console.print(
+                "  • [yellow]High clustering[/yellow] - Assets form tight groups"
+            )
         else:
-            console.print("  • [green]Low clustering[/green] - Assets are well distributed")
+            console.print(
+                "  • [green]Low clustering[/green] - Assets are well distributed"
+            )
 
         # Security score interpretation
         if result.security_score >= 70:
-            console.print("  • [green]Good security posture[/green] - Low risk of widespread impact")
+            console.print(
+                "  • [green]Good security posture[/green] - Low risk of widespread impact"
+            )
         elif result.security_score >= 50:
-            console.print("  • [yellow]Moderate security posture[/yellow] - Some isolation concerns")
+            console.print(
+                "  • [yellow]Moderate security posture[/yellow] - Some isolation concerns"
+            )
         else:
-            console.print("  • [red]Poor security posture[/red] - High risk of cascading failures")
+            console.print(
+                "  • [red]Poor security posture[/red] - High risk of cascading failures"
+            )
 
         # Recommendations
         console.print("\n[bold]Recommendations:[/bold]")
@@ -1452,7 +1548,9 @@ def metrics(
         if result.critical_node_count > result.total_nodes * 0.1:
             console.print("  • Focus on securing critical bottleneck nodes")
         if result.vulnerability_concentration > 0.7:
-            console.print("  • Vulnerabilities are concentrated - target high-risk packages")
+            console.print(
+                "  • Vulnerabilities are concentrated - target high-risk packages"
+            )
 
         # Save to JSON if requested
         if output:
@@ -1546,20 +1644,25 @@ def validate(
         stats_table.add_column("Metric", style="cyan")
         stats_table.add_column("Count", justify="right", style="yellow")
 
-        stats_table.add_row("Total Nodes", str(report.stats.get('total_nodes', 0)))
-        stats_table.add_row("Total Edges", str(report.stats.get('total_edges', 0)))
+        stats_table.add_row("Total Nodes", str(report.stats.get("total_nodes", 0)))
+        stats_table.add_row("Total Edges", str(report.stats.get("total_edges", 0)))
 
         # Node counts
         for key, value in report.stats.items():
-            if key.startswith('nodes_') and key != 'nodes_unknown':
-                node_type = key.replace('nodes_', '').replace('_', ' ').title()
+            if key.startswith("nodes_") and key != "nodes_unknown":
+                node_type = key.replace("nodes_", "").replace("_", " ").title()
                 stats_table.add_row(f"  {node_type}", str(value))
 
         stats_table.add_row("", "")  # Separator
 
         # Edge counts - highlight key edges
-        for edge_type in ['CONTAINS', 'HAS_VULNERABILITY', 'COMMUNICATES_WITH', 'DEPENDS_ON']:
-            key = f'edges_{edge_type}'
+        for edge_type in [
+            "CONTAINS",
+            "HAS_VULNERABILITY",
+            "COMMUNICATES_WITH",
+            "DEPENDS_ON",
+        ]:
+            key = f"edges_{edge_type}"
             count = report.stats.get(key, 0)
             style = "green" if count > 0 else "red"
             stats_table.add_row(f"  {edge_type} Edges", f"[{style}]{count}[/{style}]")
@@ -1588,7 +1691,7 @@ def validate(
                 "stats": report.stats,
             }
 
-            with open(output, 'w') as f:
+            with open(output, "w") as f:
                 json.dump(report_data, f, indent=2)
 
             console.print(f"\n[green]✓[/green] Validation report saved to: {output}")
@@ -1596,7 +1699,9 @@ def validate(
         # Exit with error if critical issues found
         if report.has_critical_issues():
             console.print("\n[red]⚠️  Graph has critical data quality issues![/red]")
-            console.print("[yellow]These issues may prevent correct attack path analysis and vulnerability attribution.[/yellow]")
+            console.print(
+                "[yellow]These issues may prevent correct attack path analysis and vulnerability attribution.[/yellow]"
+            )
             raise typer.Exit(code=1)
 
     except typer.Exit:

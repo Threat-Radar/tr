@@ -16,7 +16,13 @@ from ..environment import (
     EnvironmentGraphBuilder,
     Environment,
 )
-from ..graph import NetworkXClient, GraphBuilder, GraphAnalyzer, GraphValidator, validate_asset_scan_matching
+from ..graph import (
+    NetworkXClient,
+    GraphBuilder,
+    GraphAnalyzer,
+    GraphValidator,
+    validate_asset_scan_matching,
+)
 from ..core import GrypeScanResult, GrypeVulnerability
 from ..utils.graph_storage import GraphStorageManager
 
@@ -69,10 +75,10 @@ def validate(
         if show_errors:
             console.print("\n[bold]Validation Errors:[/bold]")
             for error in e.errors():
-                loc = " → ".join(str(l) for l in error['loc'])
+                loc = " → ".join(str(l) for l in error["loc"])
                 console.print(f"\n[yellow]  {loc}[/yellow]")
                 console.print(f"    {error['msg']}")
-                if 'input' in error:
+                if "input" in error:
                     console.print(f"    Input: {error['input']}")
 
         raise typer.Exit(code=1)
@@ -133,8 +139,7 @@ def build_graph(
                 env_dict = json.load(f)
 
             validation_report = validate_asset_scan_matching(
-                env_dict,
-                [str(scan) for scan in merge_scans]
+                env_dict, [str(scan) for scan in merge_scans]
             )
 
             # Display validation results
@@ -143,8 +148,12 @@ def build_graph(
 
             if validation_report.has_critical_issues():
                 console.print("\n[red]⚠️  CRITICAL VALIDATION ISSUES DETECTED[/red]")
-                console.print("[yellow]The graph will be built but may have missing CONTAINS edges.[/yellow]")
-                console.print("[yellow]Attack paths and vulnerability attribution may be incomplete.[/yellow]\n")
+                console.print(
+                    "[yellow]The graph will be built but may have missing CONTAINS edges.[/yellow]"
+                )
+                console.print(
+                    "[yellow]Attack paths and vulnerability attribution may be incomplete.[/yellow]\n"
+                )
 
         # Build graph
         with console.status("[bold green]Building graph..."):
@@ -178,13 +187,20 @@ def build_graph(
                     for vuln_data in scan_data.get("matches", []):
                         vuln = GrypeVulnerability(
                             id=vuln_data["vulnerability"]["id"],
-                            severity=vuln_data["vulnerability"].get("severity", "unknown"),
+                            severity=vuln_data["vulnerability"].get(
+                                "severity", "unknown"
+                            ),
                             package_name=vuln_data["artifact"]["name"],
                             package_version=vuln_data["artifact"]["version"],
                             package_type=vuln_data["artifact"].get("type", "unknown"),
-                            fixed_in_version=vuln_data["vulnerability"].get("fix", {}).get("versions", [None])[0],
+                            fixed_in_version=vuln_data["vulnerability"]
+                            .get("fix", {})
+                            .get("versions", [None])[0],
                             description=vuln_data["vulnerability"].get("description"),
-                            cvss_score=vuln_data["vulnerability"].get("cvss", [{}])[0].get("metrics", {}).get("baseScore"),
+                            cvss_score=vuln_data["vulnerability"]
+                            .get("cvss", [{}])[0]
+                            .get("metrics", {})
+                            .get("baseScore"),
                             urls=vuln_data["vulnerability"].get("urls", []),
                             data_source=vuln_data["vulnerability"].get("dataSource"),
                             namespace=vuln_data["vulnerability"].get("namespace"),
@@ -216,11 +232,14 @@ def build_graph(
                         )
                         vulnerabilities.append(vuln)
                 else:
-                    console.print(f"    [yellow]⚠[/yellow] Unknown scan format in {scan_file.name}")
+                    console.print(
+                        f"    [yellow]⚠[/yellow] Unknown scan format in {scan_file.name}"
+                    )
                     continue
 
                 scan_result = GrypeScanResult(
-                    target=scan_data.get("target") or scan_data.get("source", {}).get("target", scan_file.stem),
+                    target=scan_data.get("target")
+                    or scan_data.get("source", {}).get("target", scan_file.stem),
                     vulnerabilities=vulnerabilities,
                 )
 
@@ -254,7 +273,9 @@ def build_graph(
 
                         # Link asset to all packages from this scan
                         for vuln in vulnerabilities:
-                            pkg_node_id = f"package:{vuln.package_name}@{vuln.package_version}"
+                            pkg_node_id = (
+                                f"package:{vuln.package_name}@{vuln.package_version}"
+                            )
 
                             # Check if package node exists
                             if client.get_node(pkg_node_id):
@@ -262,22 +283,31 @@ def build_graph(
                                 existing_edge = None
                                 try:
                                     # Try to get existing edge (NetworkX specific)
-                                    if hasattr(client.graph, 'get_edge_data'):
-                                        existing_edge = client.graph.get_edge_data(asset_node_id, pkg_node_id)
+                                    if hasattr(client.graph, "get_edge_data"):
+                                        existing_edge = client.graph.get_edge_data(
+                                            asset_node_id, pkg_node_id
+                                        )
                                 except:
                                     pass
 
                                 if not existing_edge:
                                     from ..graph import GraphEdge, EdgeType
-                                    client.add_edge(GraphEdge(
-                                        source_id=asset_node_id,
-                                        target_id=pkg_node_id,
-                                        edge_type=EdgeType.CONTAINS,
-                                    ))
 
-                    console.print(f"    [green]✓[/green] Linked to {len(matched_assets)} asset(s)")
+                                    client.add_edge(
+                                        GraphEdge(
+                                            source_id=asset_node_id,
+                                            target_id=pkg_node_id,
+                                            edge_type=EdgeType.CONTAINS,
+                                        )
+                                    )
 
-                console.print(f"    [green]✓[/green] Merged {len(vulnerabilities)} vulnerabilities")
+                    console.print(
+                        f"    [green]✓[/green] Linked to {len(matched_assets)} asset(s)"
+                    )
+
+                console.print(
+                    f"    [green]✓[/green] Merged {len(vulnerabilities)} vulnerabilities"
+                )
 
         # Post-build validation: Check graph data quality
         if merge_scans:
@@ -303,11 +333,13 @@ def build_graph(
                     console.print(f"  ... and {len(warnings) - 3} more warnings")
 
             if not critical_issues and not warnings:
-                console.print(f"  [green]✅ Graph validation passed - all data quality checks OK[/green]")
+                console.print(
+                    f"  [green]✅ Graph validation passed - all data quality checks OK[/green]"
+                )
 
             # Show key stats
-            contains_edges = validation_report.stats.get('edges_CONTAINS', 0)
-            has_vuln_edges = validation_report.stats.get('edges_HAS_VULNERABILITY', 0)
+            contains_edges = validation_report.stats.get("edges_CONTAINS", 0)
+            has_vuln_edges = validation_report.stats.get("edges_HAS_VULNERABILITY", 0)
             console.print(f"\n  Graph Quality Metrics:")
             console.print(f"    • CONTAINS edges: {contains_edges}")
             console.print(f"    • HAS_VULNERABILITY edges: {has_vuln_edges}")
@@ -317,11 +349,7 @@ def build_graph(
         risk_scores = builder.calculate_risk_scores(env)
 
         # Show top risk assets
-        sorted_risks = sorted(
-            risk_scores.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )[:5]
+        sorted_risks = sorted(risk_scores.items(), key=lambda x: x[1], reverse=True)[:5]
 
         table = Table(title="Top Risk Assets")
         table.add_column("Asset", style="cyan")
@@ -332,7 +360,7 @@ def build_graph(
             risk_indicator = "🔴" if score >= 80 else "🟠" if score >= 60 else "🟡"
             table.add_row(
                 f"{asset.name} ({asset.type.value})",
-                f"{score:.0f}/100 {risk_indicator}"
+                f"{score:.0f}/100 {risk_indicator}",
             )
 
         console.print(table)
@@ -349,7 +377,7 @@ def build_graph(
                     "environment_type": env.environment.type.value,
                     "asset_count": len(env.assets),
                     **metadata.node_type_counts,
-                }
+                },
             )
             console.print(f"\n[green]✓[/green] Saved to storage: {saved_path.name}")
 
@@ -358,7 +386,9 @@ def build_graph(
             console.print(f"[green]✓[/green] Saved to: {output}")
 
         if not auto_save and not output:
-            console.print("\n[yellow]⚠[/yellow] Graph not saved (use --output or --auto-save)")
+            console.print(
+                "\n[yellow]⚠[/yellow] Graph not saved (use --output or --auto-save)"
+            )
 
     except Exception as e:
         console.print(f"[red]✗[/red] Error building graph: {e}")
@@ -405,10 +435,22 @@ def analyze(
 
         # Criticality breakdown
         console.print(f"\n[bold]Criticality Breakdown:[/bold]")
-        critical = len([a for a in env.assets if a.business_context.criticality.value == "critical"])
-        high = len([a for a in env.assets if a.business_context.criticality.value == "high"])
-        medium = len([a for a in env.assets if a.business_context.criticality.value == "medium"])
-        low = len([a for a in env.assets if a.business_context.criticality.value == "low"])
+        critical = len(
+            [
+                a
+                for a in env.assets
+                if a.business_context.criticality.value == "critical"
+            ]
+        )
+        high = len(
+            [a for a in env.assets if a.business_context.criticality.value == "high"]
+        )
+        medium = len(
+            [a for a in env.assets if a.business_context.criticality.value == "medium"]
+        )
+        low = len(
+            [a for a in env.assets if a.business_context.criticality.value == "low"]
+        )
 
         console.print(f"  🔴 Critical: {critical}")
         console.print(f"  🟠 High: {high}")
@@ -427,10 +469,12 @@ def analyze(
                     "critical": "🔴",
                     "high": "🟠",
                     "medium": "🟡",
-                    "low": "🟢"
+                    "low": "🟢",
                 }.get(asset.business_context.criticality.value, "⚪")
 
-                console.print(f"    {criticality_icon} {asset.name} ({asset.type.value})")
+                console.print(
+                    f"    {criticality_icon} {asset.name} ({asset.type.value})"
+                )
 
         # Compliance scope
         console.print(f"\n[bold]Compliance Scope:[/bold]")
@@ -445,8 +489,12 @@ def analyze(
         # Risk summary
         risk_scores = env.calculate_total_risk_score()
         console.print(f"\n[bold]Risk Assessment:[/bold]")
-        console.print(f"  Average criticality: {risk_scores['average_criticality']:.2f}/4.0")
-        console.print(f"  High-risk percentage: {risk_scores['high_risk_percentage']:.1f}%")
+        console.print(
+            f"  Average criticality: {risk_scores['average_criticality']:.2f}/4.0"
+        )
+        console.print(
+            f"  High-risk percentage: {risk_scores['high_risk_percentage']:.1f}%"
+        )
 
         # Business context
         if env.business_context:
@@ -454,7 +502,9 @@ def analyze(
             if env.business_context.organization:
                 console.print(f"  Organization: {env.business_context.organization}")
             if env.business_context.risk_tolerance:
-                console.print(f"  Risk tolerance: {env.business_context.risk_tolerance.value}")
+                console.print(
+                    f"  Risk tolerance: {env.business_context.risk_tolerance.value}"
+                )
 
     except Exception as e:
         console.print(f"[red]✗[/red] Error analyzing environment: {e}")
@@ -480,14 +530,16 @@ def template(
 
     template = EnvironmentParser.generate_template()
 
-    with open(output, 'w') as f:
+    with open(output, "w") as f:
         json.dump(template, f, indent=2)
 
     console.print(f"[green]✓[/green] Template created: {output}")
     console.print("\n[bold]Next steps:[/bold]")
     console.print("  1. Edit the template with your infrastructure details")
     console.print(f"  2. Validate: threat-radar env validate {output}")
-    console.print(f"  3. Build graph: threat-radar env build-graph {output} --auto-save")
+    console.print(
+        f"  3. Build graph: threat-radar env build-graph {output} --auto-save"
+    )
 
 
 @app.command()
@@ -521,7 +573,8 @@ def list_assets(
         # Apply filters
         if criticality:
             assets = [
-                a for a in assets
+                a
+                for a in assets
                 if a.business_context.criticality.value == criticality.lower()
             ]
 
@@ -554,7 +607,7 @@ def list_assets(
                 asset.type.value,
                 f"[{criticality_color}]{asset.business_context.criticality.value.upper()}[/{criticality_color}]",
                 asset.business_context.function or "",
-                exposed
+                exposed,
             )
 
         console.print(table)

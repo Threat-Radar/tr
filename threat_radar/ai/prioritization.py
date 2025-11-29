@@ -133,10 +133,12 @@ class PrioritizationEngine:
         except Exception as e:
             raise RuntimeError(f"Failed to prioritize vulnerabilities: {str(e)}")
 
-    def _parse_priority_list(self, priority_data: List[Dict[str, Any]]) -> List[PrioritizedVulnerability]:
+    def _parse_priority_list(
+        self, priority_data: List[Dict[str, Any]]
+    ) -> List[PrioritizedVulnerability]:
         """Parse priority list from API response"""
         # Filter to only expected fields to avoid LLM adding extra fields
-        expected_fields = {'cve_id', 'package_name', 'reason', 'urgency_score'}
+        expected_fields = {"cve_id", "package_name", "reason", "urgency_score"}
         filtered_items = [
             {k: v for k, v in item.items() if k in expected_fields}
             for item in priority_data
@@ -172,7 +174,8 @@ class PrioritizationEngine:
             Critical and high priority vulnerabilities
         """
         return (
-            prioritized_list.priority_levels.critical + prioritized_list.priority_levels.high
+            prioritized_list.priority_levels.critical
+            + prioritized_list.priority_levels.high
         )
 
     def calculate_remediation_order(

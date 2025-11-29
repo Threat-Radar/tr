@@ -1,4 +1,5 @@
 """Package extractors for different Linux distributions and package managers."""
+
 import re
 import logging
 from typing import List, Dict, Optional
@@ -10,6 +11,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Package:
     """Represents an installed package."""
+
     name: str
     version: str
     architecture: Optional[str] = None
@@ -39,7 +41,9 @@ class APTExtractor(PackageExtractor):
     @staticmethod
     def get_command() -> str:
         """Return command to list packages."""
-        return "dpkg-query -W -f='${Package}|${Version}|${Architecture}|${Description}\\n'"
+        return (
+            "dpkg-query -W -f='${Package}|${Version}|${Architecture}|${Description}\\n'"
+        )
 
     def parse_packages(self, output: bytes) -> List[Package]:
         """
@@ -48,19 +52,19 @@ class APTExtractor(PackageExtractor):
         Format: package|version|arch|description
         """
         packages = []
-        lines = output.decode('utf-8', errors='ignore').strip().split('\n')
+        lines = output.decode("utf-8", errors="ignore").strip().split("\n")
 
         for line in lines:
             if not line.strip():
                 continue
 
-            parts = line.split('|', maxsplit=3)
+            parts = line.split("|", maxsplit=3)
             if len(parts) >= 2:
                 package = Package(
                     name=parts[0].strip(),
                     version=parts[1].strip(),
                     architecture=parts[2].strip() if len(parts) > 2 else None,
-                    description=parts[3].strip() if len(parts) > 3 else None
+                    description=parts[3].strip() if len(parts) > 3 else None,
                 )
                 packages.append(package)
 
@@ -84,10 +88,10 @@ class APKExtractor(PackageExtractor):
         Example: musl-1.2.3-r0
         """
         packages = []
-        lines = output.decode('utf-8', errors='ignore').strip().split('\n')
+        lines = output.decode("utf-8", errors="ignore").strip().split("\n")
 
         # Pattern to match package-name-version-release
-        pattern = re.compile(r'^(.+?)-(\d+[\.\d]*-r\d+)$')
+        pattern = re.compile(r"^(.+?)-(\d+[\.\d]*-r\d+)$")
 
         for line in lines:
             line = line.strip()
@@ -96,10 +100,7 @@ class APKExtractor(PackageExtractor):
 
             match = pattern.match(line)
             if match:
-                package = Package(
-                    name=match.group(1),
-                    version=match.group(2)
-                )
+                package = Package(name=match.group(1), version=match.group(2))
                 packages.append(package)
             else:
                 # Fallback: treat entire line as package name
@@ -126,18 +127,18 @@ class YUMExtractor(PackageExtractor):
         Format: name|version-release|arch
         """
         packages = []
-        lines = output.decode('utf-8', errors='ignore').strip().split('\n')
+        lines = output.decode("utf-8", errors="ignore").strip().split("\n")
 
         for line in lines:
             if not line.strip():
                 continue
 
-            parts = line.split('|')
+            parts = line.split("|")
             if len(parts) >= 2:
                 package = Package(
                     name=parts[0].strip(),
                     version=parts[1].strip(),
-                    architecture=parts[2].strip() if len(parts) > 2 else None
+                    architecture=parts[2].strip() if len(parts) > 2 else None,
                 )
                 packages.append(package)
 
@@ -149,14 +150,14 @@ class PackageExtractorFactory:
     """Factory to get appropriate package extractor based on distro."""
 
     _extractors = {
-        'debian': APTExtractor,
-        'ubuntu': APTExtractor,
-        'alpine': APKExtractor,
-        'rhel': YUMExtractor,
-        'centos': YUMExtractor,
-        'fedora': YUMExtractor,
-        'rocky': YUMExtractor,
-        'almalinux': YUMExtractor,
+        "debian": APTExtractor,
+        "ubuntu": APTExtractor,
+        "alpine": APKExtractor,
+        "rhel": YUMExtractor,
+        "centos": YUMExtractor,
+        "fedora": YUMExtractor,
+        "rocky": YUMExtractor,
+        "almalinux": YUMExtractor,
     }
 
     @classmethod

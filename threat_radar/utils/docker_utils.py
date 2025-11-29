@@ -1,4 +1,5 @@
 """Docker-related utility functions and context managers."""
+
 from contextlib import contextmanager
 from typing import Tuple, Iterator
 import logging
@@ -7,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 @contextmanager
-def docker_analyzer() -> Iterator['ContainerAnalyzer']:
+def docker_analyzer() -> Iterator["ContainerAnalyzer"]:
     """
     Context manager for ContainerAnalyzer with automatic resource cleanup.
 
@@ -28,7 +29,7 @@ def docker_analyzer() -> Iterator['ContainerAnalyzer']:
 
 
 @contextmanager
-def docker_client() -> Iterator['DockerClient']:
+def docker_client() -> Iterator["DockerClient"]:
     """
     Context manager for DockerClient with automatic resource cleanup.
 
@@ -67,9 +68,9 @@ def parse_image_reference(image: str, default_tag: str = "latest") -> Tuple[str,
         >>> parse_image_reference("registry.io/myimage:v1.0")
         ('registry.io/myimage', 'v1.0')
     """
-    if ':' in image:
+    if ":" in image:
         # Split on the last colon to handle registry URLs like "registry.io/image:tag"
-        parts = image.rsplit(':', 1)
+        parts = image.rsplit(":", 1)
         return parts[0], parts[1]
     return image, default_tag
 
@@ -93,7 +94,7 @@ def format_bytes(size_bytes: int) -> str:
         '1.0 GB'
     """
     size = float(size_bytes)
-    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
         if size < 1024.0:
             return f"{size:.1f} {unit}"
         size /= 1024.0

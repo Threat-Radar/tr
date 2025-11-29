@@ -1,4 +1,5 @@
 """Tests for comprehensive reporting functionality."""
+
 import pytest
 import json
 from pathlib import Path
@@ -338,7 +339,9 @@ class TestComprehensiveReportGenerator:
 
         assert len(report.remediation_recommendations) > 0
         # Should contain general recommendations
-        assert any("upgrade" in rec.lower() for rec in report.remediation_recommendations)
+        assert any(
+            "upgrade" in rec.lower() for rec in report.remediation_recommendations
+        )
 
 
 class TestReportFormatters:
@@ -439,29 +442,55 @@ class TestExecutiveSummary:
 
         # Create a mock risk assessment response with duplicates
         mock_risk_assessment = {
-            'risk_level': 'HIGH',
-            'key_risks': [
-                {'risk': 'Critical vulnerability in OpenSSL', 'likelihood': 'HIGH', 'impact': 'HIGH'},
-                {'risk': 'Critical vulnerability in OpenSSL', 'likelihood': 'HIGH', 'impact': 'HIGH'},  # Duplicate
-                {'risk': 'Remote code execution possible', 'likelihood': 'MEDIUM', 'impact': 'HIGH'},
-                {'risk': 'Remote code execution possible', 'likelihood': 'MEDIUM', 'impact': 'HIGH'},  # Duplicate
-                {'risk': 'Data exposure risk', 'likelihood': 'LOW', 'impact': 'MEDIUM'},
+            "risk_level": "HIGH",
+            "key_risks": [
+                {
+                    "risk": "Critical vulnerability in OpenSSL",
+                    "likelihood": "HIGH",
+                    "impact": "HIGH",
+                },
+                {
+                    "risk": "Critical vulnerability in OpenSSL",
+                    "likelihood": "HIGH",
+                    "impact": "HIGH",
+                },  # Duplicate
+                {
+                    "risk": "Remote code execution possible",
+                    "likelihood": "MEDIUM",
+                    "impact": "HIGH",
+                },
+                {
+                    "risk": "Remote code execution possible",
+                    "likelihood": "MEDIUM",
+                    "impact": "HIGH",
+                },  # Duplicate
+                {"risk": "Data exposure risk", "likelihood": "LOW", "impact": "MEDIUM"},
             ],
-            'recommended_actions': [
-                {'action': 'Update OpenSSL to latest version', 'priority': 'CRITICAL'},
-                {'action': 'Update OpenSSL to latest version', 'priority': 'CRITICAL'},  # Duplicate
-                {'action': 'Apply security patches immediately', 'priority': 'HIGH'},
-                {'action': 'Apply security patches immediately', 'priority': 'HIGH'},  # Duplicate
-                {'action': 'Review access controls', 'priority': 'MEDIUM'},
+            "recommended_actions": [
+                {"action": "Update OpenSSL to latest version", "priority": "CRITICAL"},
+                {
+                    "action": "Update OpenSSL to latest version",
+                    "priority": "CRITICAL",
+                },  # Duplicate
+                {"action": "Apply security patches immediately", "priority": "HIGH"},
+                {
+                    "action": "Apply security patches immediately",
+                    "priority": "HIGH",
+                },  # Duplicate
+                {"action": "Review access controls", "priority": "MEDIUM"},
             ],
-            'risk_summary': 'Multiple critical vulnerabilities detected',
-            'compliance_concerns': ['PCI-DSS', 'SOC2'],
+            "risk_summary": "Multiple critical vulnerabilities detected",
+            "compliance_concerns": ["PCI-DSS", "SOC2"],
         }
 
-        generator = ComprehensiveReportGenerator(ai_provider='openai', ai_model='gpt-4o')
+        generator = ComprehensiveReportGenerator(
+            ai_provider="openai", ai_model="gpt-4o"
+        )
 
         # Mock the LLM client to return our test data
-        with patch('threat_radar.utils.comprehensive_report.get_llm_client') as mock_get_client:
+        with patch(
+            "threat_radar.utils.comprehensive_report.get_llm_client"
+        ) as mock_get_client:
             mock_client = Mock()
             mock_client.generate_json.return_value = mock_risk_assessment
             mock_get_client.return_value = mock_client
@@ -490,10 +519,22 @@ class TestExecutiveSummary:
             assert len(unique_actions) == 2
 
             # Verify the content is correct
-            assert any('OpenSSL' in finding for finding in report.executive_summary.key_findings)
-            assert any('code execution' in finding for finding in report.executive_summary.key_findings)
-            assert any('Update OpenSSL' in action for action in report.executive_summary.immediate_actions)
-            assert any('security patches' in action for action in report.executive_summary.immediate_actions)
+            assert any(
+                "OpenSSL" in finding
+                for finding in report.executive_summary.key_findings
+            )
+            assert any(
+                "code execution" in finding
+                for finding in report.executive_summary.key_findings
+            )
+            assert any(
+                "Update OpenSSL" in action
+                for action in report.executive_summary.immediate_actions
+            )
+            assert any(
+                "security patches" in action
+                for action in report.executive_summary.immediate_actions
+            )
 
 
 class TestDashboardData:

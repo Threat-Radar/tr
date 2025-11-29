@@ -24,7 +24,9 @@ def simple_graph_client():
     client.add_node(GraphNode("container:1", NodeType.CONTAINER, {"name": "alpine"}))
     client.add_node(GraphNode("package:1", NodeType.PACKAGE, {"name": "openssl"}))
     client.add_node(GraphNode("package:2", NodeType.PACKAGE, {"name": "curl"}))
-    client.add_node(GraphNode("cve:1", NodeType.VULNERABILITY, {"severity": "critical"}))
+    client.add_node(
+        GraphNode("cve:1", NodeType.VULNERABILITY, {"severity": "critical"})
+    )
     client.add_node(GraphNode("cve:2", NodeType.VULNERABILITY, {"severity": "high"}))
 
     # Add edges
@@ -43,16 +45,22 @@ def complex_graph_client():
 
     # Create multiple containers
     for i in range(3):
-        client.add_node(GraphNode(f"container:{i}", NodeType.CONTAINER, {"name": f"container-{i}"}))
+        client.add_node(
+            GraphNode(f"container:{i}", NodeType.CONTAINER, {"name": f"container-{i}"})
+        )
 
     # Create packages
     for i in range(5):
-        client.add_node(GraphNode(f"package:{i}", NodeType.PACKAGE, {"name": f"package-{i}"}))
+        client.add_node(
+            GraphNode(f"package:{i}", NodeType.PACKAGE, {"name": f"package-{i}"})
+        )
 
     # Create vulnerabilities
     for i in range(4):
         severity = ["critical", "high", "medium", "low"][i % 4]
-        client.add_node(GraphNode(f"cve:{i}", NodeType.VULNERABILITY, {"severity": severity}))
+        client.add_node(
+            GraphNode(f"cve:{i}", NodeType.VULNERABILITY, {"severity": severity})
+        )
 
     # Add edges to create a network
     # Container 0 -> Package 0, 1
@@ -169,8 +177,7 @@ class TestCentralityAnalysis:
         analytics = GraphAnalytics(complex_graph_client)
 
         result = analytics.calculate_centrality(
-            CentralityMetric.DEGREE,
-            node_type_filter="package"
+            CentralityMetric.DEGREE, node_type_filter="package"
         )
 
         # Should only include package nodes
@@ -253,7 +260,9 @@ class TestCommunityDetection:
         total_nodes_in_communities = sum(c.size for c in result.communities)
 
         # Should match total nodes in graph
-        assert total_nodes_in_communities == complex_graph_client.graph.number_of_nodes()
+        assert (
+            total_nodes_in_communities == complex_graph_client.graph.number_of_nodes()
+        )
 
     def test_community_sizes(self, complex_graph_client):
         """Test that community sizes are correct."""
@@ -274,10 +283,7 @@ class TestPropagationModeling:
         analytics = GraphAnalytics(complex_graph_client)
 
         # Start from a vulnerability node
-        result = analytics.simulate_propagation(
-            start_node="cve:0",
-            max_steps=5
-        )
+        result = analytics.simulate_propagation(start_node="cve:0", max_steps=5)
 
         assert isinstance(result, PropagationReport)
         assert result.start_node == "cve:0"
@@ -288,10 +294,7 @@ class TestPropagationModeling:
         """Test that propagation respects max_steps."""
         analytics = GraphAnalytics(complex_graph_client)
 
-        result = analytics.simulate_propagation(
-            start_node="cve:0",
-            max_steps=2
-        )
+        result = analytics.simulate_propagation(start_node="cve:0", max_steps=2)
 
         assert len(result.steps) <= 2
 
@@ -299,10 +302,7 @@ class TestPropagationModeling:
         """Test that affected nodes are correctly identified."""
         analytics = GraphAnalytics(simple_graph_client)
 
-        result = analytics.simulate_propagation(
-            start_node="cve:1",
-            max_steps=10
-        )
+        result = analytics.simulate_propagation(start_node="cve:1", max_steps=10)
 
         # Should trace back through package to container
         assert "package:1" in result.affected_nodes
@@ -313,10 +313,7 @@ class TestPropagationModeling:
         analytics = GraphAnalytics(simple_graph_client)
 
         with pytest.raises(Exception):
-            analytics.simulate_propagation(
-                start_node="nonexistent:node",
-                max_steps=5
-            )
+            analytics.simulate_propagation(start_node="nonexistent:node", max_steps=5)
 
 
 class TestGraphMetrics:
@@ -407,11 +404,11 @@ class TestAnalyticsSummary:
         summary = analytics.generate_summary()
 
         # Check all required fields are present
-        assert hasattr(summary, 'total_nodes')
-        assert hasattr(summary, 'total_edges')
-        assert hasattr(summary, 'top_central_nodes')
-        assert hasattr(summary, 'communities')
-        assert hasattr(summary, 'metrics')
+        assert hasattr(summary, "total_nodes")
+        assert hasattr(summary, "total_edges")
+        assert hasattr(summary, "top_central_nodes")
+        assert hasattr(summary, "communities")
+        assert hasattr(summary, "metrics")
 
 
 class TestGraphAnalyticsEdgeCases:
@@ -514,8 +511,7 @@ class TestGraphAnalyticsIntegration:
 
         # Get most central vulnerabilities
         vuln_centrality = analytics.calculate_centrality(
-            CentralityMetric.DEGREE,
-            node_type_filter="vulnerability"
+            CentralityMetric.DEGREE, node_type_filter="vulnerability"
         )
 
         # All results should be vulnerabilities
@@ -528,8 +524,7 @@ class TestGraphAnalyticsIntegration:
 
         # Get most central packages (highest risk)
         package_centrality = analytics.calculate_centrality(
-            CentralityMetric.BETWEENNESS,
-            node_type_filter="package"
+            CentralityMetric.BETWEENNESS, node_type_filter="package"
         )
 
         # All results should be packages

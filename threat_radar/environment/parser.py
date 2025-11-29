@@ -69,7 +69,7 @@ class EnvironmentParser:
         file_path = Path(file_path)
         logger.info(f"Loading environment from JSON: {file_path}")
 
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             data = json.load(f)
 
         try:
@@ -109,7 +109,7 @@ class EnvironmentParser:
         file_path = Path(file_path)
         logger.info(f"Loading environment from YAML: {file_path}")
 
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             data = yaml.safe_load(f)
 
         try:
@@ -159,9 +159,7 @@ class EnvironmentParser:
 
     @staticmethod
     def save_to_file(
-        environment: Environment,
-        file_path: Union[str, Path],
-        indent: int = 2
+        environment: Environment, file_path: Union[str, Path], indent: int = 2
     ) -> None:
         """
         Save environment to JSON file.
@@ -174,11 +172,9 @@ class EnvironmentParser:
         file_path = Path(file_path)
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(file_path, 'w') as f:
+        with open(file_path, "w") as f:
             json.dump(
-                environment.model_dump(mode='json', exclude_none=True),
-                f,
-                indent=indent
+                environment.model_dump(mode="json", exclude_none=True), f, indent=indent
             )
 
         logger.info(f"✓ Saved environment to: {file_path}")
@@ -218,7 +214,7 @@ class EnvironmentParser:
                 "region": "us-east-1",
                 "compliance_requirements": [],
                 "owner": "team@company.com",
-                "tags": {}
+                "tags": {},
             },
             "assets": [
                 {
@@ -226,19 +222,12 @@ class EnvironmentParser:
                     "name": "Example Asset",
                     "type": "container",
                     "host": "10.0.1.50",
-                    "software": {
-                        "image": "nginx:alpine",
-                        "os": "Alpine Linux 3.18"
-                    },
+                    "software": {"image": "nginx:alpine", "os": "Alpine Linux 3.18"},
                     "network": {
                         "internal_ip": "10.0.1.50",
                         "exposed_ports": [
-                            {
-                                "port": 80,
-                                "protocol": "http",
-                                "public": False
-                            }
-                        ]
+                            {"port": 80, "protocol": "http", "public": False}
+                        ],
                     },
                     "business_context": {
                         "criticality": "medium",
@@ -246,18 +235,15 @@ class EnvironmentParser:
                         "function": "web-server",
                         "data_classification": "internal",
                         "customer_facing": False,
-                        "owner_team": "platform-team"
-                    }
+                        "owner_team": "platform-team",
+                    },
                 }
             ],
             "dependencies": [],
-            "network_topology": {
-                "zones": [],
-                "segmentation_rules": []
-            },
+            "network_topology": {"zones": [], "segmentation_rules": []},
             "business_context": {
                 "organization": "My Organization",
                 "business_unit": "engineering",
-                "risk_tolerance": "medium"
-            }
+                "risk_tolerance": "medium",
+            },
         }

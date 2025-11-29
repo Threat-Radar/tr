@@ -28,10 +28,7 @@ class GraphStorageManager:
         logger.info(f"Initialized graph storage: {self.storage_dir}")
 
     def save_graph(
-        self,
-        graph_client,
-        name: str,
-        metadata: Optional[Dict] = None
+        self, graph_client, name: str, metadata: Optional[Dict] = None
     ) -> Path:
         """
         Save graph to storage with timestamped filename.
@@ -97,7 +94,7 @@ class GraphStorageManager:
         graphs = sorted(
             self.storage_dir.glob(pattern),
             key=lambda p: p.stat().st_mtime,
-            reverse=True
+            reverse=True,
         )
         return graphs
 
