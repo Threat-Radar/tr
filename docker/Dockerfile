@@ -46,7 +46,7 @@ FROM python:3.11-alpine
 # Metadata
 LABEL maintainer="Threat Radar Team <contact@threat-radar.dev>"
 LABEL description="Enterprise-grade threat assessment and vulnerability analysis platform"
-LABEL version="0.2.0"
+LABEL version="0.3.0"
 
 # Install runtime dependencies
 RUN apk add --no-cache \

@@ -9,7 +9,7 @@ echo "  Threat Radar - Starting Container"
 echo "=========================================="
 
 # Display version information
-echo "Threat Radar Version: 0.2.0"
+echo "Threat Radar Version: 0.3.0"
 echo "Python Version: $(python --version)"
 echo "Grype Version: $(grype version 2>&1 | head -n 1)"
 echo "Syft Version: $(syft version 2>&1 | head -n 1)"
