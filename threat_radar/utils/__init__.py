@@ -1,4 +1,5 @@
 """Utilities and helper functions"""
+
 from .docker_utils import (
     docker_analyzer,
     docker_client,
@@ -22,7 +23,12 @@ from .report_templates import (
     ReportLevel,
     ReportFormat,
 )
-from .report_formatters import get_formatter, JSONFormatter, MarkdownFormatter, HTMLFormatter
+from .report_formatters import (
+    get_formatter,
+    JSONFormatter,
+    MarkdownFormatter,
+    HTMLFormatter,
+)
 
 __all__ = [
     "docker_analyzer",

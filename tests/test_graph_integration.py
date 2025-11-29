@@ -99,7 +99,7 @@ class TestGraphNode:
         node = GraphNode(
             node_id="test:node",
             node_type=NodeType.CONTAINER,
-            properties={"name": "test-container", "version": "1.0"}
+            properties={"name": "test-container", "version": "1.0"},
         )
 
         assert node.node_id == "test:node"
@@ -111,7 +111,7 @@ class TestGraphNode:
         node = GraphNode(
             node_id="test:node",
             node_type="package",  # String, should convert to enum
-            properties={}
+            properties={},
         )
 
         assert node.node_type == NodeType.PACKAGE
@@ -126,7 +126,7 @@ class TestGraphEdge:
             source_id="container:1",
             target_id="package:2",
             edge_type=EdgeType.CONTAINS,
-            properties={"weight": 1.0}
+            properties={"weight": 1.0},
         )
 
         assert edge.source_id == "container:1"
@@ -153,7 +153,7 @@ class TestNetworkXClient:
         node = GraphNode(
             node_id="container:test",
             node_type=NodeType.CONTAINER,
-            properties={"name": "test"}
+            properties={"name": "test"},
         )
 
         graph_client.add_node(node)
@@ -180,9 +180,7 @@ class TestNetworkXClient:
     def test_get_node(self, graph_client):
         """Test retrieving a node."""
         original_node = GraphNode(
-            node_id="test:1",
-            node_type=NodeType.PACKAGE,
-            properties={"version": "1.0"}
+            node_id="test:1", node_type=NodeType.PACKAGE, properties={"version": "1.0"}
         )
         graph_client.add_node(original_node)
 
@@ -246,7 +244,9 @@ class TestNetworkXClient:
         graph_client.add_edge(GraphEdge("test:1", "test:2", EdgeType.CONTAINS))
 
         # Save to temp file
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".graphml", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".graphml", delete=False
+        ) as f:
             temp_path = f.name
 
         try:
@@ -306,8 +306,7 @@ class TestGraphBuilder:
 
         # Check openssl package has vulnerability edges
         openssl_neighbors = graph_client.get_neighbors(
-            "package:openssl@1.1.1",
-            edge_type=EdgeType.HAS_VULNERABILITY
+            "package:openssl@1.1.1", edge_type=EdgeType.HAS_VULNERABILITY
         )
 
         assert len(openssl_neighbors) >= 2  # CVE-2023-0001 and CVE-2023-0003
@@ -319,8 +318,7 @@ class TestGraphBuilder:
 
         # Check CVE-2023-0001 has FIXED_BY edge
         cve_neighbors = graph_client.get_neighbors(
-            "cve:CVE-2023-0001",
-            edge_type=EdgeType.FIXED_BY
+            "cve:CVE-2023-0001", edge_type=EdgeType.FIXED_BY
         )
 
         assert len(cve_neighbors) > 0
@@ -415,7 +413,9 @@ class TestGraphStorage:
             storage = GraphStorageManager(storage_dir=tmpdir)
 
             # Save graph
-            graph_client.add_node(GraphNode("test:1", NodeType.CONTAINER, {"name": "test"}))
+            graph_client.add_node(
+                GraphNode("test:1", NodeType.CONTAINER, {"name": "test"})
+            )
             saved_path = storage.save_graph(graph_client, "test-graph")
 
             # Load graph

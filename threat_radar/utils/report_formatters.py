@@ -1,4 +1,5 @@
 """Report formatters for different output formats (JSON, Markdown, HTML, PDF)."""
+
 import json
 from typing import Any, Dict
 from datetime import datetime
@@ -65,10 +66,16 @@ class MarkdownFormatter(ReportFormatter):
             md.append(f"### Business Context\n{exec_sum.business_context}\n")
 
             md.append("### Remediation Metrics\n")
-            md.append(f"- **Critical Items:** {exec_sum.critical_items_requiring_attention}")
-            md.append(f"- **Estimated Effort:** {exec_sum.estimated_remediation_effort}")
+            md.append(
+                f"- **Critical Items:** {exec_sum.critical_items_requiring_attention}"
+            )
+            md.append(
+                f"- **Estimated Effort:** {exec_sum.estimated_remediation_effort}"
+            )
             if exec_sum.days_to_patch_critical:
-                md.append(f"- **Timeline:** {exec_sum.days_to_patch_critical} days to patch critical issues")
+                md.append(
+                    f"- **Timeline:** {exec_sum.days_to_patch_critical} days to patch critical issues"
+                )
             md.append("\n---\n")
 
         # Summary Statistics
@@ -86,14 +93,22 @@ class MarkdownFormatter(ReportFormatter):
         md.append(f"| Vulnerable Packages | {summary.vulnerable_packages} |")
         md.append(f"| Average CVSS Score | {summary.average_cvss_score:.2f} |")
         md.append(f"| Highest CVSS Score | {summary.highest_cvss_score:.2f} |")
-        md.append(f"| Vulnerabilities with Fix | ✅ {summary.vulnerabilities_with_fix} |")
-        md.append(f"| Vulnerabilities without Fix | ❌ {summary.vulnerabilities_without_fix} |")
+        md.append(
+            f"| Vulnerabilities with Fix | ✅ {summary.vulnerabilities_with_fix} |"
+        )
+        md.append(
+            f"| Vulnerabilities without Fix | ❌ {summary.vulnerabilities_without_fix} |"
+        )
 
         # Add new metrics from executive summary if available
         if report.executive_summary:
             exec_sum = report.executive_summary
-            md.append(f"| Fix Availability | {exec_sum.fix_available_percentage:.1f}% |")
-            md.append(f"| Internet-Facing Assets | 🌐 {exec_sum.internet_facing_assets} |")
+            md.append(
+                f"| Fix Availability | {exec_sum.fix_available_percentage:.1f}% |"
+            )
+            md.append(
+                f"| Internet-Facing Assets | 🌐 {exec_sum.internet_facing_assets} |"
+            )
 
         md.append("")
 
@@ -102,11 +117,21 @@ class MarkdownFormatter(ReportFormatter):
         md.append("```")
         total = summary.total_vulnerabilities
         if total > 0:
-            md.append(f"Critical   {'█' * int((summary.critical / total) * 50)} {summary.critical}")
-            md.append(f"High       {'█' * int((summary.high / total) * 50)} {summary.high}")
-            md.append(f"Medium     {'█' * int((summary.medium / total) * 50)} {summary.medium}")
-            md.append(f"Low        {'█' * int((summary.low / total) * 50)} {summary.low}")
-            md.append(f"Negligible {'█' * int((summary.negligible / total) * 50)} {summary.negligible}")
+            md.append(
+                f"Critical   {'█' * int((summary.critical / total) * 50)} {summary.critical}"
+            )
+            md.append(
+                f"High       {'█' * int((summary.high / total) * 50)} {summary.high}"
+            )
+            md.append(
+                f"Medium     {'█' * int((summary.medium / total) * 50)} {summary.medium}"
+            )
+            md.append(
+                f"Low        {'█' * int((summary.low / total) * 50)} {summary.low}"
+            )
+            md.append(
+                f"Negligible {'█' * int((summary.negligible / total) * 50)} {summary.negligible}"
+            )
         md.append("```\n")
 
         md.append("---\n")
@@ -114,17 +139,21 @@ class MarkdownFormatter(ReportFormatter):
         # Top Vulnerable Packages
         if report.packages:
             md.append("## Most Vulnerable Packages\n")
-            md.append("| Package | Version | Vulnerabilities | Highest Severity | Recommended Version |")
-            md.append("|---------|---------|-----------------|------------------|---------------------|")
+            md.append(
+                "| Package | Version | Vulnerabilities | Highest Severity | Recommended Version |"
+            )
+            md.append(
+                "|---------|---------|-----------------|------------------|---------------------|"
+            )
 
             for pkg in report.packages[:10]:
                 severity_icon = {
-                    'critical': '🔴',
-                    'high': '🟠',
-                    'medium': '🟡',
-                    'low': '🔵',
-                    'negligible': '🟢'
-                }.get(pkg.highest_severity, '⚪')
+                    "critical": "🔴",
+                    "high": "🟠",
+                    "medium": "🟡",
+                    "low": "🔵",
+                    "negligible": "🟢",
+                }.get(pkg.highest_severity, "⚪")
 
                 recommended = pkg.recommended_version or "No fix available"
 
@@ -146,18 +175,28 @@ class MarkdownFormatter(ReportFormatter):
             md.append(f"| Critical Paths | 🔴 {attack_data.critical_paths} |")
             md.append(f"| High Paths | 🟠 {attack_data.high_paths} |")
             md.append(f"| Entry Points | {attack_data.entry_points_count} |")
-            md.append(f"| High-Value Targets | {attack_data.high_value_targets_count} |")
-            md.append(f"| Privilege Escalation Opportunities | {attack_data.privilege_escalation_opportunities} |")
-            md.append(f"| Lateral Movement Opportunities | {attack_data.lateral_movement_opportunities} |")
+            md.append(
+                f"| High-Value Targets | {attack_data.high_value_targets_count} |"
+            )
+            md.append(
+                f"| Privilege Escalation Opportunities | {attack_data.privilege_escalation_opportunities} |"
+            )
+            md.append(
+                f"| Lateral Movement Opportunities | {attack_data.lateral_movement_opportunities} |"
+            )
             md.append(f"| Total Risk Score | {attack_data.total_risk_score:.2f}/100 |")
             md.append("")
 
             # Critical/High Attack Paths
-            critical_paths = [ap for ap in attack_data.attack_paths if ap.threat_level in ['critical', 'high']][:10]
+            critical_paths = [
+                ap
+                for ap in attack_data.attack_paths
+                if ap.threat_level in ["critical", "high"]
+            ][:10]
             if critical_paths:
                 md.append("### Critical & High Threat Paths\n")
                 for path in critical_paths:
-                    threat_icon = '🔴' if path.threat_level == 'critical' else '🟠'
+                    threat_icon = "🔴" if path.threat_level == "critical" else "🟠"
                     md.append(f"#### {threat_icon} {path.path_id}\n")
                     md.append(f"**Threat Level:** {path.threat_level.upper()}")
                     md.append(f"**Entry Point:** `{path.entry_point}`")
@@ -165,11 +204,15 @@ class MarkdownFormatter(ReportFormatter):
                     md.append(f"**Path Length:** {path.path_length} steps")
                     md.append(f"**Total CVSS:** {path.total_cvss:.1f}")
                     md.append(f"**Exploitability:** {path.exploitability * 100:.0f}%")
-                    md.append(f"**Requires Privileges:** {'Yes' if path.requires_privileges else 'No'}")
+                    md.append(
+                        f"**Requires Privileges:** {'Yes' if path.requires_privileges else 'No'}"
+                    )
                     md.append(f"\n**Description:** {path.description}\n")
 
                     if path.vulnerabilities_exploited:
-                        md.append(f"**CVEs Exploited:** {', '.join(path.vulnerabilities_exploited[:10])}\n")
+                        md.append(
+                            f"**CVEs Exploited:** {', '.join(path.vulnerabilities_exploited[:10])}\n"
+                        )
 
                     if path.steps_summary:
                         md.append("**Attack Steps:**")
@@ -185,23 +228,32 @@ class MarkdownFormatter(ReportFormatter):
                 md.append("")
 
         # Critical/High Findings
-        critical_high = [f for f in report.findings if f.severity in ['critical', 'high']]
+        critical_high = [
+            f for f in report.findings if f.severity in ["critical", "high"]
+        ]
         if critical_high:
             md.append("## Critical & High Severity Vulnerabilities\n")
 
             for finding in sorted(
                 critical_high,
-                key=lambda x: (0 if x.severity == 'critical' else 1, -(x.cvss_score or 0))
+                key=lambda x: (
+                    0 if x.severity == "critical" else 1,
+                    -(x.cvss_score or 0),
+                ),
             )[:20]:
-                severity_icon = '🔴' if finding.severity == 'critical' else '🟠'
+                severity_icon = "🔴" if finding.severity == "critical" else "🟠"
 
                 md.append(f"### {severity_icon} {finding.cve_id}\n")
-                md.append(f"**Package:** `{finding.package_name}@{finding.package_version}`")
+                md.append(
+                    f"**Package:** `{finding.package_name}@{finding.package_version}`"
+                )
                 md.append(f"**Severity:** {finding.severity.upper()}")
                 md.append(f"**CVSS Score:** {finding.cvss_score or 'N/A'}")
 
                 if finding.fixed_in_version:
-                    md.append(f"**Fix Available:** ✅ Upgrade to `{finding.fixed_in_version}`")
+                    md.append(
+                        f"**Fix Available:** ✅ Upgrade to `{finding.fixed_in_version}`"
+                    )
                 else:
                     md.append(f"**Fix Available:** ❌ No fix available")
 
@@ -222,9 +274,11 @@ class MarkdownFormatter(ReportFormatter):
 
         # Footer
         md.append("---\n")
-        md.append(f"*Report generated by Threat Radar on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*")
+        md.append(
+            f"*Report generated by Threat Radar on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*"
+        )
 
-        return '\n'.join(md)
+        return "\n".join(md)
 
 
 class HTMLFormatter(ReportFormatter):
@@ -235,7 +289,8 @@ class HTMLFormatter(ReportFormatter):
         html = []
 
         # HTML header and CSS
-        html.append("""<!DOCTYPE html>
+        html.append(
+            """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -458,44 +513,52 @@ class HTMLFormatter(ReportFormatter):
 <body>
     <div class="container">
         <h1>🛡️ Vulnerability Scan Report</h1>
-""")
+"""
+        )
 
         # Metadata section
-        html.append(f"""
+        html.append(
+            f"""
         <div class="metadata">
             <div class="metadata-item"><strong>Report ID:</strong> <code>{report.report_id}</code></div>
             <div class="metadata-item"><strong>Generated:</strong> {report.generated_at}</div>
             <div class="metadata-item"><strong>Target:</strong> <code>{report.target}</code></div>
             <div class="metadata-item"><strong>Report Level:</strong> {report.report_level.upper()}</div>
         </div>
-""")
+"""
+        )
 
         # Executive Summary
         if report.executive_summary:
             exec_sum = report.executive_summary
             risk_class = f"risk-{exec_sum.overall_risk_rating.lower()}"
 
-            html.append(f"""
+            html.append(
+                f"""
         <div class="executive-summary">
             <h2>📊 Executive Summary</h2>
             <div class="risk-rating {risk_class}">Risk Rating: {exec_sum.overall_risk_rating}</div>
 
             <h3>Key Findings</h3>
             <ul>
-""")
+"""
+            )
             for finding in exec_sum.key_findings:
                 html.append(f"                <li>{finding}</li>")
 
-            html.append("""
+            html.append(
+                """
             </ul>
 
             <h3>Immediate Actions Required</h3>
             <ol>
-""")
+"""
+            )
             for action in exec_sum.immediate_actions:
                 html.append(f"                <li>{action}</li>")
 
-            html.append(f"""
+            html.append(
+                f"""
             </ol>
 
             <h3>Risk Summary</h3>
@@ -507,14 +570,17 @@ class HTMLFormatter(ReportFormatter):
             <h3>Business Context</h3>
             <p>{exec_sum.business_context}</p>
         </div>
-""")
+"""
+            )
 
         # Summary Statistics
         summary = report.summary
-        html.append("""
+        html.append(
+            """
         <h2>📈 Summary Statistics</h2>
         <div class="stats-grid">
-""")
+"""
+        )
 
         stats = [
             ("Total Vulnerabilities", summary.total_vulnerabilities, None),
@@ -530,23 +596,34 @@ class HTMLFormatter(ReportFormatter):
         # Add new metrics from executive summary if available
         if report.executive_summary:
             exec_sum = report.executive_summary
-            stats.append(("Fix Availability", f"{exec_sum.fix_available_percentage:.1f}%", None))
-            stats.append(("Internet-Facing Assets", exec_sum.internet_facing_assets, None))
+            stats.append(
+                ("Fix Availability", f"{exec_sum.fix_available_percentage:.1f}%", None)
+            )
+            stats.append(
+                ("Internet-Facing Assets", exec_sum.internet_facing_assets, None)
+            )
 
         for title, value, badge_class in stats:
-            badge_html = f' <span class="badge badge-{badge_class}">{badge_class.upper()}</span>' if badge_class else ''
-            html.append(f"""
+            badge_html = (
+                f' <span class="badge badge-{badge_class}">{badge_class.upper()}</span>'
+                if badge_class
+                else ""
+            )
+            html.append(
+                f"""
             <div class="stat-card">
                 <h4>{title}{badge_html}</h4>
                 <div class="value">{value}</div>
             </div>
-""")
+"""
+            )
 
         html.append("        </div>")
 
         # Top Vulnerable Packages
         if report.packages:
-            html.append("""
+            html.append(
+                """
         <h2>📦 Most Vulnerable Packages</h2>
         <table>
             <thead>
@@ -559,13 +636,15 @@ class HTMLFormatter(ReportFormatter):
                 </tr>
             </thead>
             <tbody>
-""")
+"""
+            )
 
             for pkg in report.packages[:10]:
                 badge_class = f"badge-{pkg.highest_severity}"
                 recommended = pkg.recommended_version or "No fix available"
 
-                html.append(f"""
+                html.append(
+                    f"""
                 <tr>
                     <td><code>{pkg.package_name}</code></td>
                     <td><code>{pkg.package_version}</code></td>
@@ -573,17 +652,21 @@ class HTMLFormatter(ReportFormatter):
                     <td><span class="badge {badge_class}">{pkg.highest_severity.upper()}</span></td>
                     <td><code>{recommended}</code></td>
                 </tr>
-""")
+"""
+                )
 
-            html.append("""
+            html.append(
+                """
             </tbody>
         </table>
-""")
+"""
+            )
 
         # Attack Surface Analysis (if present)
         if report.attack_surface_data:
             attack_data = report.attack_surface_data
-            html.append("""
+            html.append(
+                """
         <h2>🎯 Attack Surface Analysis</h2>
 
         <h3>Overview</h3>
@@ -595,8 +678,10 @@ class HTMLFormatter(ReportFormatter):
                 </tr>
             </thead>
             <tbody>
-""")
-            html.append(f"""
+"""
+            )
+            html.append(
+                f"""
                 <tr><td>Total Attack Paths</td><td>{attack_data.total_attack_paths}</td></tr>
                 <tr><td>Critical Paths</td><td><span class="badge badge-critical">{attack_data.critical_paths}</span></td></tr>
                 <tr><td>High Paths</td><td><span class="badge badge-high">{attack_data.high_paths}</span></td></tr>
@@ -605,23 +690,33 @@ class HTMLFormatter(ReportFormatter):
                 <tr><td>Privilege Escalation Opportunities</td><td>{attack_data.privilege_escalation_opportunities}</td></tr>
                 <tr><td>Lateral Movement Opportunities</td><td>{attack_data.lateral_movement_opportunities}</td></tr>
                 <tr><td>Total Risk Score</td><td>{attack_data.total_risk_score:.2f}/100</td></tr>
-""")
-            html.append("""
+"""
+            )
+            html.append(
+                """
             </tbody>
         </table>
-""")
+"""
+            )
 
             # Critical/High Attack Paths
-            critical_paths = [ap for ap in attack_data.attack_paths if ap.threat_level in ['critical', 'high']][:10]
+            critical_paths = [
+                ap
+                for ap in attack_data.attack_paths
+                if ap.threat_level in ["critical", "high"]
+            ][:10]
             if critical_paths:
-                html.append("""
+                html.append(
+                    """
         <h3>Critical & High Threat Paths</h3>
-""")
+"""
+                )
                 for path in critical_paths:
                     badge_class = f"badge-{path.threat_level}"
-                    requires_privs = 'Yes' if path.requires_privileges else 'No'
+                    requires_privs = "Yes" if path.requires_privileges else "No"
 
-                    html.append(f"""
+                    html.append(
+                        f"""
         <div class="vulnerability-card {path.threat_level}">
             <h4>{path.path_id} <span class="badge {badge_class}">{path.threat_level.upper()}</span></h4>
             <p><strong>Entry Point:</strong> <code>{path.entry_point}</code></p>
@@ -631,13 +726,18 @@ class HTMLFormatter(ReportFormatter):
             <p><strong>Exploitability:</strong> {path.exploitability * 100:.0f}%</p>
             <p><strong>Requires Privileges:</strong> {requires_privs}</p>
             <p><strong>Description:</strong> {path.description}</p>
-""")
+"""
+                    )
                     if path.vulnerabilities_exploited:
-                        cves = ', '.join(path.vulnerabilities_exploited[:10])
-                        html.append(f"            <p><strong>CVEs Exploited:</strong> <code>{cves}</code></p>")
+                        cves = ", ".join(path.vulnerabilities_exploited[:10])
+                        html.append(
+                            f"            <p><strong>CVEs Exploited:</strong> <code>{cves}</code></p>"
+                        )
 
                     if path.steps_summary:
-                        html.append("            <p><strong>Attack Steps:</strong></p><ol>")
+                        html.append(
+                            "            <p><strong>Attack Steps:</strong></p><ol>"
+                        )
                         for step in path.steps_summary:
                             html.append(f"                <li>{step}</li>")
                         html.append("            </ol>")
@@ -646,32 +746,48 @@ class HTMLFormatter(ReportFormatter):
 
             # Security Recommendations
             if attack_data.recommendations:
-                html.append("""
+                html.append(
+                    """
         <h3>Security Recommendations</h3>
         <ul>
-""")
+"""
+                )
                 for rec in attack_data.recommendations:
                     html.append(f"            <li>{rec}</li>")
 
-                html.append("""
+                html.append(
+                    """
         </ul>
-""")
+"""
+                )
 
         # Critical/High Findings
-        critical_high = [f for f in report.findings if f.severity in ['critical', 'high']]
+        critical_high = [
+            f for f in report.findings if f.severity in ["critical", "high"]
+        ]
         if critical_high:
-            html.append("""
+            html.append(
+                """
         <h2>🔴 Critical & High Severity Vulnerabilities</h2>
-""")
+"""
+            )
 
             for finding in sorted(
                 critical_high,
-                key=lambda x: (0 if x.severity == 'critical' else 1, -(x.cvss_score or 0))
+                key=lambda x: (
+                    0 if x.severity == "critical" else 1,
+                    -(x.cvss_score or 0),
+                ),
             )[:20]:
                 card_class = finding.severity
-                fix_status = f"✅ Upgrade to <code>{finding.fixed_in_version}</code>" if finding.fixed_in_version else "❌ No fix available"
+                fix_status = (
+                    f"✅ Upgrade to <code>{finding.fixed_in_version}</code>"
+                    if finding.fixed_in_version
+                    else "❌ No fix available"
+                )
 
-                html.append(f"""
+                html.append(
+                    f"""
         <div class="vulnerability-card {card_class}">
             <h3>{finding.cve_id} <span class="badge badge-{finding.severity}">{finding.severity.upper()}</span></h3>
             <p><strong>Package:</strong> <code>{finding.package_name}@{finding.package_version}</code></p>
@@ -679,19 +795,22 @@ class HTMLFormatter(ReportFormatter):
             <p><strong>Fix Available:</strong> {fix_status}</p>
             <p><strong>Description:</strong> {finding.description}</p>
         </div>
-""")
+"""
+                )
 
         # Footer
-        html.append(f"""
+        html.append(
+            f"""
         <div class="footer">
             <p>Report generated by Threat Radar on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
         </div>
     </div>
 </body>
 </html>
-""")
+"""
+        )
 
-        return '\n'.join(html)
+        return "\n".join(html)
 
 
 class PDFFormatter(ReportFormatter):
@@ -707,7 +826,9 @@ class PDFFormatter(ReportFormatter):
         try:
             from weasyprint import HTML, CSS
         except ImportError:
-            logger.error("weasyprint is required for PDF export. Install with: pip install weasyprint")
+            logger.error(
+                "weasyprint is required for PDF export. Install with: pip install weasyprint"
+            )
             raise ImportError(
                 "PDF export requires weasyprint. Install it with:\n"
                 "  pip install weasyprint\n"
@@ -729,15 +850,17 @@ class PDFFormatter(ReportFormatter):
 def get_formatter(format_type: str) -> ReportFormatter:
     """Get formatter for specified format type."""
     formatters = {
-        'json': JSONFormatter,
-        'markdown': MarkdownFormatter,
-        'md': MarkdownFormatter,
-        'html': HTMLFormatter,
-        'pdf': PDFFormatter,
+        "json": JSONFormatter,
+        "markdown": MarkdownFormatter,
+        "md": MarkdownFormatter,
+        "html": HTMLFormatter,
+        "pdf": PDFFormatter,
     }
 
     formatter_class = formatters.get(format_type.lower())
     if not formatter_class:
-        raise ValueError(f"Unsupported format: {format_type}. Supported: {list(formatters.keys())}")
+        raise ValueError(
+            f"Unsupported format: {format_type}. Supported: {list(formatters.keys())}"
+        )
 
     return formatter_class()

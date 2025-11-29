@@ -1,4 +1,5 @@
 """Production logging configuration for Threat Radar."""
+
 import logging
 import logging.handlers
 import json
@@ -101,12 +102,12 @@ def setup_logging(
             if enable_colors and sys.stdout.isatty():
                 console_formatter = ColoredFormatter(
                     "%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-                    datefmt="%Y-%m-%d %H:%M:%S"
+                    datefmt="%Y-%m-%d %H:%M:%S",
                 )
             else:
                 console_formatter = logging.Formatter(
                     "%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-                    datefmt="%Y-%m-%d %H:%M:%S"
+                    datefmt="%Y-%m-%d %H:%M:%S",
                 )
 
         console_handler.setFormatter(console_formatter)
@@ -122,7 +123,7 @@ def setup_logging(
             log_file,
             maxBytes=100 * 1024 * 1024,  # 100 MB
             backupCount=10,
-            encoding="utf-8"
+            encoding="utf-8",
         )
         file_handler.setLevel(numeric_level)
 
@@ -138,7 +139,7 @@ def setup_logging(
             str(error_log_path),
             maxBytes=100 * 1024 * 1024,  # 100 MB
             backupCount=10,
-            encoding="utf-8"
+            encoding="utf-8",
         )
         error_handler.setLevel(logging.ERROR)
         error_handler.setFormatter(JSONFormatter())
@@ -151,7 +152,7 @@ def setup_logging(
             str(scan_log_path),
             maxBytes=100 * 1024 * 1024,  # 100 MB
             backupCount=10,
-            encoding="utf-8"
+            encoding="utf-8",
         )
         scan_handler.setLevel(logging.INFO)
         scan_handler.setFormatter(JSONFormatter())
@@ -249,5 +250,5 @@ def setup_production_logging() -> None:
         log_format=log_format,
         log_file=log_file,
         console_output=True,
-        enable_colors=log_format != "json"
+        enable_colors=log_format != "json",
     )

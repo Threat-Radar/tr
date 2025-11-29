@@ -1,4 +1,5 @@
 """Utility functions for displaying CVE scan data."""
+
 from typing import List, Dict, Any, Optional
 from rich.console import Console
 from rich.table import Table
@@ -6,13 +7,15 @@ from rich.panel import Panel
 from rich.text import Text
 from collections import defaultdict
 
-from ..core.cve_storage_manager import CVEScanMetadata, CVESearchResult, CVEAggregateStats
+from ..core.cve_storage_manager import (
+    CVEScanMetadata,
+    CVESearchResult,
+    CVEAggregateStats,
+)
 
 
 def display_scans_table(
-    scans: List[CVEScanMetadata],
-    console: Console,
-    details: bool = False
+    scans: List[CVEScanMetadata], console: Console, details: bool = False
 ) -> None:
     """Display CVE scans in a table format.
 
@@ -50,7 +53,7 @@ def display_scans_table(
                 str(scan.high_count),
                 str(scan.medium_count),
                 str(scan.low_count),
-                scan.scan_date.strftime("%Y-%m-%d %H:%M")
+                scan.scan_date.strftime("%Y-%m-%d %H:%M"),
             )
 
     else:
@@ -70,7 +73,7 @@ def display_scans_table(
                 scan.file_size_str,
                 str(scan.total_vulnerabilities),
                 critical_high,
-                scan.scan_date.strftime("%Y-%m-%d %H:%M")
+                scan.scan_date.strftime("%Y-%m-%d %H:%M"),
             )
 
     console.print(table)
@@ -90,9 +93,7 @@ def display_scans_table(
 
 
 def display_scan_summary(
-    scan_data: Dict[str, Any],
-    target: str,
-    console: Console
+    scan_data: Dict[str, Any], target: str, console: Console
 ) -> None:
     """Display summary of a single CVE scan.
 
@@ -140,7 +141,9 @@ def display_scan_summary(
 
         if package_vulns:
             console.print("\n[bold]Top 5 Vulnerable Packages:[/bold]")
-            top_packages = sorted(package_vulns.items(), key=lambda x: x[1], reverse=True)[:5]
+            top_packages = sorted(
+                package_vulns.items(), key=lambda x: x[1], reverse=True
+            )[:5]
             for i, (package, count) in enumerate(top_packages, 1):
                 console.print(f"  {i}. {package:<30} - {count} vulnerabilities")
 
@@ -149,7 +152,7 @@ def display_vulnerabilities_table(
     vulnerabilities: List[Dict[str, Any]],
     console: Console,
     title: str = "Vulnerabilities",
-    limit: Optional[int] = 20
+    limit: Optional[int] = 20,
 ) -> None:
     """Display vulnerabilities in a table format.
 
@@ -164,13 +167,20 @@ def display_vulnerabilities_table(
         return
 
     # Sort by severity and CVSS score
-    severity_priority = {"critical": 0, "high": 1, "medium": 2, "low": 3, "negligible": 4, "unknown": 5}
+    severity_priority = {
+        "critical": 0,
+        "high": 1,
+        "medium": 2,
+        "low": 3,
+        "negligible": 4,
+        "unknown": 5,
+    }
     sorted_vulns = sorted(
         vulnerabilities,
         key=lambda v: (
             severity_priority.get(v.get("severity", "").lower(), 6),
-            -(v.get("cvss_score") or 0)
-        )
+            -(v.get("cvss_score") or 0),
+        ),
     )
 
     # Create table
@@ -207,7 +217,7 @@ def display_vulnerabilities_table(
             package_name,
             package_version,
             fixed_version,
-            cvss_str
+            cvss_str,
         )
 
     console.print(table)
@@ -215,13 +225,15 @@ def display_vulnerabilities_table(
     # Show truncation message
     if limit and len(vulnerabilities) > limit:
         remaining = len(vulnerabilities) - limit
-        console.print(f"\n[dim]... and {remaining:,} more vulnerabilities (use --limit to see more)[/dim]")
+        console.print(
+            f"\n[dim]... and {remaining:,} more vulnerabilities (use --limit to see more)[/dim]"
+        )
 
 
 def display_vulnerabilities_grouped_by_package(
     vulnerabilities: List[Dict[str, Any]],
     console: Console,
-    severity_filter: Optional[str] = None
+    severity_filter: Optional[str] = None,
 ) -> None:
     """Display vulnerabilities grouped by package.
 
@@ -239,9 +251,7 @@ def display_vulnerabilities_grouped_by_package(
 
     # Sort packages by vulnerability count
     sorted_packages = sorted(
-        package_groups.items(),
-        key=lambda x: len(x[1]),
-        reverse=True
+        package_groups.items(), key=lambda x: len(x[1]), reverse=True
     )
 
     console.print(f"\n[bold cyan]Vulnerabilities Grouped by Package[/bold cyan]")
@@ -272,11 +282,17 @@ def display_vulnerabilities_grouped_by_package(
 
         # Display package header
         console.print("━" * 60)
-        console.print(f"[bold yellow]Package:[/bold yellow] {pkg_name}@{pkg_version} ({pkg_type})")
-        console.print(f"[bold]Vulnerabilities:[/bold] {len(pkg_vulns)} ({', '.join(severity_summary)})\n")
+        console.print(
+            f"[bold yellow]Package:[/bold yellow] {pkg_name}@{pkg_version} ({pkg_type})"
+        )
+        console.print(
+            f"[bold]Vulnerabilities:[/bold] {len(pkg_vulns)} ({', '.join(severity_summary)})\n"
+        )
 
         # Display vulnerabilities for this package
-        for vuln in sorted(pkg_vulns, key=lambda v: _severity_sort_key(v.get("severity", ""))):
+        for vuln in sorted(
+            pkg_vulns, key=lambda v: _severity_sort_key(v.get("severity", ""))
+        ):
             severity = vuln.get("severity", "unknown")
             color = _get_severity_color(severity)
             icon = _get_severity_icon(severity)
@@ -286,22 +302,24 @@ def display_vulnerabilities_grouped_by_package(
             cvss_str = f"CVSS: {cvss:.1f}" if cvss else ""
             fixed_in = vuln.get("fixed_in", "No fix available")
 
-            console.print(f"  {icon} [{color}]{cve_id} [{severity.upper()}][/{color}] {cvss_str}")
+            console.print(
+                f"  {icon} [{color}]{cve_id} [{severity.upper()}][/{color}] {cvss_str}"
+            )
             console.print(f"     Fixed in: {fixed_in}")
 
             # Show description (truncated)
             description = vuln.get("description", "")
             if description:
-                desc_short = description[:100] + "..." if len(description) > 100 else description
+                desc_short = (
+                    description[:100] + "..." if len(description) > 100 else description
+                )
                 console.print(f"     {desc_short}\n", style="dim")
             else:
                 console.print()
 
 
 def display_search_results(
-    results: List[CVESearchResult],
-    query: str,
-    console: Console
+    results: List[CVESearchResult], query: str, console: Console
 ) -> None:
     """Display CVE search results.
 
@@ -321,26 +339,24 @@ def display_search_results(
 
     for result in results:
         console.print("━" * 60)
-        console.print(f"[bold]Scan:[/bold] {result.scan_metadata.target} ({result.scan_metadata.scan_date.strftime('%Y-%m-%d %H:%M')})")
+        console.print(
+            f"[bold]Scan:[/bold] {result.scan_metadata.target} ({result.scan_metadata.scan_date.strftime('%Y-%m-%d %H:%M')})"
+        )
         console.print(f"[bold]Matches:[/bold] {result.total_matches}\n")
 
         # Display matching vulnerabilities
         display_vulnerabilities_table(
-            result.matching_vulnerabilities,
-            console,
-            title="",
-            limit=None
+            result.matching_vulnerabilities, console, title="", limit=None
         )
 
         console.print()
 
-    console.print(f"\n[bold]Total:[/bold] {total_matches} occurrences across {len(results)} scan(s)")
+    console.print(
+        f"\n[bold]Total:[/bold] {total_matches} occurrences across {len(results)} scan(s)"
+    )
 
 
-def display_aggregate_stats(
-    stats: CVEAggregateStats,
-    console: Console
-) -> None:
+def display_aggregate_stats(stats: CVEAggregateStats, console: Console) -> None:
     """Display aggregate CVE statistics.
 
     Args:
@@ -362,7 +378,9 @@ def display_aggregate_stats(
 
     # Severity breakdown
     console.print("\n[bold]  By Severity:[/bold]")
-    _display_severity_breakdown(stats.severity_breakdown, stats.total_vulnerabilities, console, indent="    ")
+    _display_severity_breakdown(
+        stats.severity_breakdown, stats.total_vulnerabilities, console, indent="    "
+    )
 
     # Fix availability
     if stats.fix_availability["fixed"] > 0 or stats.fix_availability["no_fix"] > 0:
@@ -370,8 +388,12 @@ def display_aggregate_stats(
         fixed_pct = (stats.fix_availability["fixed"] / total) * 100 if total > 0 else 0
 
         console.print("\n[bold]  Fix Availability:[/bold]")
-        console.print(f"    ✅ Fixes available: {fixed_pct:.1f}% ({stats.fix_availability['fixed']:,})")
-        console.print(f"    ❌ No fix: {100-fixed_pct:.1f}% ({stats.fix_availability['no_fix']:,})")
+        console.print(
+            f"    ✅ Fixes available: {fixed_pct:.1f}% ({stats.fix_availability['fixed']:,})"
+        )
+        console.print(
+            f"    ❌ No fix: {100-fixed_pct:.1f}% ({stats.fix_availability['no_fix']:,})"
+        )
 
     # Top CVEs
     if stats.top_cves:
@@ -379,20 +401,21 @@ def display_aggregate_stats(
         for i, (cve_id, scan_count, package_count) in enumerate(stats.top_cves, 1):
             scan_text = "scan" if scan_count == 1 else "scans"
             pkg_text = "package" if package_count == 1 else "packages"
-            console.print(f"  {i:2d}. {cve_id:<20} → Found in {scan_count} {scan_text} ({package_count} {pkg_text})")
+            console.print(
+                f"  {i:2d}. {cve_id:<20} → Found in {scan_count} {scan_text} ({package_count} {pkg_text})"
+            )
 
     # Package type breakdown
     if stats.package_type_breakdown:
         console.print("\n[bold]Most Vulnerable Package Types:[/bold]")
-        for i, (pkg_type, count) in enumerate(list(stats.package_type_breakdown.items())[:5], 1):
+        for i, (pkg_type, count) in enumerate(
+            list(stats.package_type_breakdown.items())[:5], 1
+        ):
             console.print(f"  {i}. {pkg_type:<15} → {count:,} vulnerabilities")
 
 
 def _display_severity_breakdown(
-    severity_counts: Dict[str, int],
-    total: int,
-    console: Console,
-    indent: str = "  "
+    severity_counts: Dict[str, int], total: int, console: Console, indent: str = "  "
 ) -> None:
     """Display severity breakdown with percentages."""
     severity_order = [
@@ -401,7 +424,7 @@ def _display_severity_breakdown(
         ("medium", "🟡", "yellow"),
         ("low", "🔵", "blue"),
         ("negligible", "⚪", "white"),
-        ("unknown", "❓", "dim")
+        ("unknown", "❓", "dim"),
     ]
 
     for severity, icon, color in severity_order:
@@ -422,7 +445,7 @@ def _get_severity_color(severity: str) -> str:
         "medium": "yellow",
         "low": "blue",
         "negligible": "white",
-        "unknown": "dim"
+        "unknown": "dim",
     }
     return colors.get(severity, "white")
 
@@ -436,7 +459,7 @@ def _get_severity_icon(severity: str) -> str:
         "medium": "🟡",
         "low": "🔵",
         "negligible": "⚪",
-        "unknown": "❓"
+        "unknown": "❓",
     }
     return icons.get(severity, "⚪")
 
@@ -449,6 +472,6 @@ def _severity_sort_key(severity: str) -> int:
         "medium": 2,
         "low": 3,
         "negligible": 4,
-        "unknown": 5
+        "unknown": 5,
     }
     return severity_priority.get(severity.lower(), 6)

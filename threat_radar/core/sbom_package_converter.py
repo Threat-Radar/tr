@@ -33,13 +33,15 @@ def detect_sbom_format(sbom_data: Dict[str, Any]) -> str:
     if "spdxVersion" in sbom_data:
         return "spdx"
 
-    raise ValueError("Unable to detect SBOM format. Supported formats: Syft, CycloneDX, SPDX")
+    raise ValueError(
+        "Unable to detect SBOM format. Supported formats: Syft, CycloneDX, SPDX"
+    )
 
 
 def convert_sbom_to_packages(
     sbom_data: Dict[str, Any],
     format: Optional[str] = None,
-    include_types: Optional[List[str]] = None
+    include_types: Optional[List[str]] = None,
 ) -> List[Package]:
     """
     Convert SBOM data to a list of Package objects.
@@ -71,8 +73,7 @@ def convert_sbom_to_packages(
 
 
 def _convert_syft_packages(
-    sbom_data: Dict[str, Any],
-    include_types: Optional[List[str]] = None
+    sbom_data: Dict[str, Any], include_types: Optional[List[str]] = None
 ) -> List[Package]:
     """Convert Syft format artifacts to Package objects."""
     packages = []
@@ -97,7 +98,7 @@ def _convert_syft_packages(
             version=artifact["version"],
             architecture=architecture,
             description=None,  # Syft doesn't typically include descriptions
-            type=pkg_type
+            type=pkg_type,
         )
         packages.append(package)
 
@@ -105,8 +106,7 @@ def _convert_syft_packages(
 
 
 def _convert_cyclonedx_packages(
-    sbom_data: Dict[str, Any],
-    include_types: Optional[List[str]] = None
+    sbom_data: Dict[str, Any], include_types: Optional[List[str]] = None
 ) -> List[Package]:
     """Convert CycloneDX format components to Package objects."""
     packages = []
@@ -141,7 +141,7 @@ def _convert_cyclonedx_packages(
             version=component["version"],
             architecture=architecture,
             description=component.get("description"),
-            type=pkg_type
+            type=pkg_type,
         )
         packages.append(package)
 
@@ -149,8 +149,7 @@ def _convert_cyclonedx_packages(
 
 
 def _convert_spdx_packages(
-    sbom_data: Dict[str, Any],
-    include_types: Optional[List[str]] = None
+    sbom_data: Dict[str, Any], include_types: Optional[List[str]] = None
 ) -> List[Package]:
     """Convert SPDX format packages to Package objects."""
     packages = []
@@ -190,7 +189,7 @@ def _convert_spdx_packages(
             version=version,
             architecture=architecture,
             description=pkg.get("summary"),
-            type=pkg_type
+            type=pkg_type,
         )
         packages.append(package)
 

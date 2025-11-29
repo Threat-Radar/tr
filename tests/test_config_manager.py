@@ -35,7 +35,7 @@ def isolate_config(monkeypatch, tmp_path):
     ]
     monkeypatch.setattr(
         "threat_radar.utils.config_manager.ConfigManager.DEFAULT_CONFIG_LOCATIONS",
-        fake_locations
+        fake_locations,
     )
 
     yield
@@ -289,7 +289,7 @@ class TestThreatRadarConfig:
             },
             "ai": {
                 "provider": "ollama",
-            }
+            },
         }
 
         config = ThreatRadarConfig.from_dict(partial_dict)
@@ -317,7 +317,7 @@ class TestConfigManager:
 
     def test_initialization_no_config_file(self):
         """Test initialization without config file."""
-        with patch.object(Path, 'exists', return_value=False):
+        with patch.object(Path, "exists", return_value=False):
             manager = ConfigManager()
 
             assert manager.config is not None
@@ -438,11 +438,14 @@ class TestConfigManager:
 
     def test_load_from_env_vars(self):
         """Test loading configuration from environment variables."""
-        with patch.dict(os.environ, {
-            "THREAT_RADAR_SCAN_SEVERITY": "HIGH",
-            "THREAT_RADAR_AI_PROVIDER": "anthropic",
-            "THREAT_RADAR_OUTPUT_VERBOSITY": "3",
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "THREAT_RADAR_SCAN_SEVERITY": "HIGH",
+                "THREAT_RADAR_AI_PROVIDER": "anthropic",
+                "THREAT_RADAR_OUTPUT_VERBOSITY": "3",
+            },
+        ):
             manager = ConfigManager()
             manager.load_from_env()
 
@@ -452,9 +455,13 @@ class TestConfigManager:
 
     def test_load_from_env_vars_partial(self):
         """Test loading partial configuration from environment."""
-        with patch.dict(os.environ, {
-            "THREAT_RADAR_SCAN_SEVERITY": "CRITICAL",
-        }, clear=True):
+        with patch.dict(
+            os.environ,
+            {
+                "THREAT_RADAR_SCAN_SEVERITY": "CRITICAL",
+            },
+            clear=True,
+        ):
             manager = ConfigManager()
             manager.load_from_env()
 
@@ -469,7 +476,7 @@ class TestConfigManager:
         config_file = tmp_path / ".threat-radar.json"
         config_file.write_text(json.dumps({"scan": {"severity": "HIGH"}}))
 
-        with patch.object(Path, 'cwd', return_value=tmp_path):
+        with patch.object(Path, "cwd", return_value=tmp_path):
             manager = ConfigManager()
             found = manager.find_config_file()
 
@@ -477,8 +484,8 @@ class TestConfigManager:
 
     def test_find_config_file_not_found(self, tmp_path):
         """Test when config file is not found."""
-        with patch.object(Path, 'cwd', return_value=tmp_path):
-            with patch.object(Path, 'home', return_value=tmp_path):
+        with patch.object(Path, "cwd", return_value=tmp_path):
+            with patch.object(Path, "home", return_value=tmp_path):
                 manager = ConfigManager()
                 found = manager.find_config_file()
 
@@ -559,7 +566,7 @@ class TestGetConfigManager:
 
     def test_get_config_manager_no_args(self):
         """Test getting config manager without arguments."""
-        with patch.object(ConfigManager, '__init__', return_value=None):
+        with patch.object(ConfigManager, "__init__", return_value=None):
             manager = get_config_manager()
 
             assert manager is not None
@@ -586,9 +593,12 @@ class TestConfigurationPrecedence:
 
     def test_precedence_file_then_env(self, temp_config_file):
         """Test that environment variables override file config."""
-        with patch.dict(os.environ, {
-            "THREAT_RADAR_SCAN_SEVERITY": "CRITICAL",
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "THREAT_RADAR_SCAN_SEVERITY": "CRITICAL",
+            },
+        ):
             manager = ConfigManager(config_path=temp_config_file)
             manager.load_from_env()
 
@@ -600,9 +610,12 @@ class TestConfigurationPrecedence:
 
     def test_precedence_programmatic_override(self, temp_config_file):
         """Test that programmatic changes override everything."""
-        with patch.dict(os.environ, {
-            "THREAT_RADAR_SCAN_SEVERITY": "MEDIUM",
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "THREAT_RADAR_SCAN_SEVERITY": "MEDIUM",
+            },
+        ):
             manager = ConfigManager(config_path=temp_config_file)
             manager.load_from_env()
 
@@ -629,9 +642,7 @@ class TestConfigurationEdgeCases:
     def test_malformed_nested_structure(self, tmp_path):
         """Test handling malformed nested structure."""
         malformed_file = tmp_path / "malformed.json"
-        malformed_file.write_text(json.dumps({
-            "scan": "not_a_dict"  # Should be dict
-        }))
+        malformed_file.write_text(json.dumps({"scan": "not_a_dict"}))  # Should be dict
 
         manager = ConfigManager()
 
@@ -676,7 +687,7 @@ class TestConfigManagerErrorHandling:
         manager = ConfigManager(config_path=config_file)
 
         # Mock open to raise exception
-        with patch('builtins.open', side_effect=PermissionError("Access denied")):
+        with patch("builtins.open", side_effect=PermissionError("Access denied")):
             # Should not crash, just log error
             manager._load_config()
 
@@ -707,9 +718,13 @@ class TestEnvironmentVariableOverrides:
 
     def test_backward_compat_severity_var(self):
         """Test backward compatibility with THREAT_RADAR_SEVERITY."""
-        with patch.dict(os.environ, {
-            "THREAT_RADAR_SEVERITY": "MEDIUM",
-        }, clear=True):
+        with patch.dict(
+            os.environ,
+            {
+                "THREAT_RADAR_SEVERITY": "MEDIUM",
+            },
+            clear=True,
+        ):
             manager = ConfigManager()
             manager.load_from_env()
 
@@ -717,10 +732,13 @@ class TestEnvironmentVariableOverrides:
 
     def test_new_var_overrides_old_var(self):
         """Test that new env var takes precedence over old."""
-        with patch.dict(os.environ, {
-            "THREAT_RADAR_SCAN_SEVERITY": "CRITICAL",
-            "THREAT_RADAR_SEVERITY": "LOW",  # Should be ignored
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "THREAT_RADAR_SCAN_SEVERITY": "CRITICAL",
+                "THREAT_RADAR_SEVERITY": "LOW",  # Should be ignored
+            },
+        ):
             manager = ConfigManager()
             manager.load_from_env()
 
@@ -728,9 +746,13 @@ class TestEnvironmentVariableOverrides:
 
     def test_backward_compat_verbosity_var(self):
         """Test backward compatibility with THREAT_RADAR_VERBOSITY."""
-        with patch.dict(os.environ, {
-            "THREAT_RADAR_VERBOSITY": "2",
-        }, clear=True):
+        with patch.dict(
+            os.environ,
+            {
+                "THREAT_RADAR_VERBOSITY": "2",
+            },
+            clear=True,
+        ):
             manager = ConfigManager()
             manager.load_from_env()
 
@@ -738,9 +760,12 @@ class TestEnvironmentVariableOverrides:
 
     def test_invalid_verbosity_value(self):
         """Test handling of invalid verbosity value."""
-        with patch.dict(os.environ, {
-            "THREAT_RADAR_OUTPUT_VERBOSITY": "not_a_number",
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "THREAT_RADAR_OUTPUT_VERBOSITY": "not_a_number",
+            },
+        ):
             manager = ConfigManager()
             manager.load_from_env()
 
@@ -749,9 +774,12 @@ class TestEnvironmentVariableOverrides:
 
     def test_auto_save_env_var(self):
         """Test THREAT_RADAR_AUTO_SAVE environment variable."""
-        with patch.dict(os.environ, {
-            "THREAT_RADAR_AUTO_SAVE": "true",
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "THREAT_RADAR_AUTO_SAVE": "true",
+            },
+        ):
             manager = ConfigManager()
             manager.load_from_env()
 
@@ -759,9 +787,12 @@ class TestEnvironmentVariableOverrides:
 
     def test_output_format_env_var(self):
         """Test THREAT_RADAR_OUTPUT_FORMAT environment variable."""
-        with patch.dict(os.environ, {
-            "THREAT_RADAR_OUTPUT_FORMAT": "json",
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "THREAT_RADAR_OUTPUT_FORMAT": "json",
+            },
+        ):
             manager = ConfigManager()
             manager.load_from_env()
 
@@ -899,7 +930,7 @@ class TestMergeConfigurations:
         override = {
             "scan": {"severity": "CRITICAL"},
             "ai": {"provider": "anthropic", "model": "claude-3-5-sonnet-20241022"},
-            "output": {"verbosity": 3}
+            "output": {"verbosity": 3},
         }
 
         manager.merge(override)
@@ -925,7 +956,10 @@ class TestResetConfigManager:
 
     def test_reset_config_manager_function(self):
         """Test that reset_config_manager clears global instance."""
-        from threat_radar.utils.config_manager import reset_config_manager, get_config_manager
+        from threat_radar.utils.config_manager import (
+            reset_config_manager,
+            get_config_manager,
+        )
 
         # Create first instance
         manager1 = get_config_manager()

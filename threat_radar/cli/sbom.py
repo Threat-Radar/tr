@@ -1,4 +1,5 @@
 """SBOM generation and analysis commands using Syft."""
+
 from pathlib import Path
 from typing import Optional
 import typer
@@ -30,10 +31,19 @@ console = Console()
 @app.command("generate")
 def generate(
     path: Path = typer.Argument(..., help="Directory or file to scan"),
-    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Output file path"),
-    format: str = typer.Option("cyclonedx-json", "--format", "-f", help="SBOM format (cyclonedx-json, spdx-json, syft-json)"),
+    output: Optional[Path] = typer.Option(
+        None, "--output", "-o", help="Output file path"
+    ),
+    format: str = typer.Option(
+        "cyclonedx-json",
+        "--format",
+        "-f",
+        help="SBOM format (cyclonedx-json, spdx-json, syft-json)",
+    ),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress progress output"),
-    auto_save: bool = typer.Option(False, "--auto-save", help="Auto-save to sbom_storage/local/ with timestamp"),
+    auto_save: bool = typer.Option(
+        False, "--auto-save", help="Auto-save to sbom_storage/local/ with timestamp"
+    ),
 ):
     """
     Generate SBOM from a local directory or file.
@@ -79,10 +89,16 @@ def generate(
 @app.command("docker")
 def docker_scan(
     image: str = typer.Argument(..., help="Docker image to scan (e.g., 'alpine:3.18')"),
-    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Output file path"),
+    output: Optional[Path] = typer.Option(
+        None, "--output", "-o", help="Output file path"
+    ),
     format: str = typer.Option("cyclonedx-json", "--format", "-f", help="SBOM format"),
-    scope: str = typer.Option("squashed", "--scope", "-s", help="Image scope (squashed, all-layers)"),
-    auto_save: bool = typer.Option(False, "--auto-save", help="Auto-save to sbom_storage/docker/ with timestamp"),
+    scope: str = typer.Option(
+        "squashed", "--scope", "-s", help="Image scope (squashed, all-layers)"
+    ),
+    auto_save: bool = typer.Option(
+        False, "--auto-save", help="Auto-save to sbom_storage/docker/ with timestamp"
+    ),
 ):
     """
     Generate SBOM from a Docker image.
@@ -122,8 +138,12 @@ def docker_scan(
 @app.command("read")
 def read(
     sbom_path: Path = typer.Argument(..., exists=True, help="Path to SBOM file"),
-    format: str = typer.Option("table", "--format", "-f", help="Display format (table, json, summary)"),
-    filter: Optional[str] = typer.Option(None, "--filter", help="Filter packages by name"),
+    format: str = typer.Option(
+        "table", "--format", "-f", help="Display format (table, json, summary)"
+    ),
+    filter: Optional[str] = typer.Option(
+        None, "--filter", help="Filter packages by name"
+    ),
 ):
     """
     Read and display an existing SBOM file.
@@ -140,7 +160,9 @@ def read(
             display_sbom_summary(sbom_data, sbom_path.name, console)
         else:  # table
             packages = reader.get_packages(sbom_data, name_filter=filter)
-            display_packages_table(packages, console, title=f"Packages in {sbom_path.name}")
+            display_packages_table(
+                packages, console, title=f"Packages in {sbom_path.name}"
+            )
 
             if filter:
                 console.print(f"\n[dim]Filtered by: {filter}[/dim]")
@@ -154,7 +176,9 @@ def read(
 def compare(
     sbom1: Path = typer.Argument(..., exists=True, help="First SBOM file"),
     sbom2: Path = typer.Argument(..., exists=True, help="Second SBOM file"),
-    show_versions: bool = typer.Option(False, "--versions", "-v", help="Show version changes"),
+    show_versions: bool = typer.Option(
+        False, "--versions", "-v", help="Show version changes"
+    ),
 ):
     """
     Compare two SBOM files and show differences.
@@ -223,7 +247,9 @@ def statistics(
         table.add_column("Type", style="cyan")
         table.add_column("Count", style="green")
 
-        for pkg_type, count in sorted(stats.package_stats.items(), key=lambda x: x[1], reverse=True):
+        for pkg_type, count in sorted(
+            stats.package_stats.items(), key=lambda x: x[1], reverse=True
+        ):
             table.add_row(pkg_type, str(count))
 
         console.print(table)
@@ -238,7 +264,9 @@ def statistics(
             lic_table.add_column("Package Count", style="green")
 
             # Show top 10 licenses
-            sorted_licenses = sorted(stats.licenses.items(), key=lambda x: len(x[1]), reverse=True)
+            sorted_licenses = sorted(
+                stats.licenses.items(), key=lambda x: len(x[1]), reverse=True
+            )
             for lic_name, packages in sorted_licenses[:10]:
                 lic_table.add_row(lic_name, str(len(packages)))
 
@@ -253,7 +281,9 @@ def statistics(
 def export(
     sbom_path: Path = typer.Argument(..., exists=True, help="Path to SBOM file"),
     output: Path = typer.Option(..., "--output", "-o", help="Output file path"),
-    format: str = typer.Option("csv", "--format", "-f", help="Export format (csv, requirements)"),
+    format: str = typer.Option(
+        "csv", "--format", "-f", help="Export format (csv, requirements)"
+    ),
 ):
     """
     Export SBOM to different formats.
@@ -301,8 +331,15 @@ def search(
 
 @app.command("list")
 def list_sboms(
-    category: str = typer.Option("all", "--category", "-c", help="Category to list (docker, local, comparisons, archives, all)"),
-    limit: Optional[int] = typer.Option(None, "--limit", "-n", help="Limit number of results"),
+    category: str = typer.Option(
+        "all",
+        "--category",
+        "-c",
+        help="Category to list (docker, local, comparisons, archives, all)",
+    ),
+    limit: Optional[int] = typer.Option(
+        None, "--limit", "-n", help="Limit number of results"
+    ),
 ):
     """
     List all stored SBOMs in sbom_storage directory.
@@ -340,7 +377,9 @@ def list_sboms(
         if limit:
             all_sboms = manager.list_sboms(category)
             if len(all_sboms) > limit:
-                console.print(f"[dim]Showing {limit} of {len(all_sboms)} total SBOMs[/dim]")
+                console.print(
+                    f"[dim]Showing {limit} of {len(all_sboms)} total SBOMs[/dim]"
+                )
 
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")
@@ -350,11 +389,21 @@ def list_sboms(
 @app.command("components")
 def components(
     sbom_path: Path = typer.Argument(..., exists=True, help="Path to SBOM file"),
-    type: Optional[str] = typer.Option(None, "--type", "-t", help="Filter by type (library, file, os, application)"),
-    language: Optional[str] = typer.Option(None, "--language", "-l", help="Filter by language (python, javascript, go)"),
-    details: bool = typer.Option(False, "--details", "-d", help="Show detailed component information"),
-    group_by: Optional[str] = typer.Option(None, "--group-by", "-g", help="Group by (type, language)"),
-    limit: Optional[int] = typer.Option(None, "--limit", "-n", help="Limit number of components shown"),
+    type: Optional[str] = typer.Option(
+        None, "--type", "-t", help="Filter by type (library, file, os, application)"
+    ),
+    language: Optional[str] = typer.Option(
+        None, "--language", "-l", help="Filter by language (python, javascript, go)"
+    ),
+    details: bool = typer.Option(
+        False, "--details", "-d", help="Show detailed component information"
+    ),
+    group_by: Optional[str] = typer.Option(
+        None, "--group-by", "-g", help="Group by (type, language)"
+    ),
+    limit: Optional[int] = typer.Option(
+        None, "--limit", "-n", help="Limit number of components shown"
+    ),
 ):
     """
     Display all components from SBOM with filtering and grouping options.
@@ -377,8 +426,11 @@ def components(
         # Display based on grouping
         if group_by == "type":
             from ..utils.sbom_utils import load_sbom
+
             sbom_data = load_sbom(sbom_path)
-            display_components_grouped_by_type(sbom_data, components_list, details, console)
+            display_components_grouped_by_type(
+                sbom_data, components_list, details, console
+            )
         elif group_by == "language":
             display_components_grouped_by_language(components_list, details, console)
         elif details:

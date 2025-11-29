@@ -1,8 +1,12 @@
 """Tests for batch processing functionality."""
+
 import pytest
 from unittest.mock import Mock, MagicMock, call
 
-from threat_radar.ai.vulnerability_analyzer import VulnerabilityAnalyzer, VulnerabilityAnalysis
+from threat_radar.ai.vulnerability_analyzer import (
+    VulnerabilityAnalyzer,
+    VulnerabilityAnalysis,
+)
 from threat_radar.ai.llm_client import LLMClient
 from threat_radar.ai.prompt_templates import (
     format_vulnerability_data,
@@ -12,7 +16,9 @@ from threat_radar.ai.prompt_templates import (
 from threat_radar.core.grype_integration import GrypeScanResult, GrypeVulnerability
 
 
-def create_test_vulnerability(cve_id: str, severity: str = "high") -> GrypeVulnerability:
+def create_test_vulnerability(
+    cve_id: str, severity: str = "high"
+) -> GrypeVulnerability:
     """Helper to create test vulnerability."""
     return GrypeVulnerability(
         id=cve_id,
@@ -70,7 +76,9 @@ class TestBatchProcessing:
         }
 
         # Create analyzer
-        analyzer = VulnerabilityAnalyzer(llm_client=mock_client, batch_size=25, auto_batch_threshold=30)
+        analyzer = VulnerabilityAnalyzer(
+            llm_client=mock_client, batch_size=25, auto_batch_threshold=30
+        )
 
         # Create small scan (20 vulns < 30 threshold)
         scan_result = create_scan_with_vulns(20)
@@ -106,7 +114,9 @@ class TestBatchProcessing:
         mock_client.generate.return_value = "Consolidated summary"
 
         # Create analyzer
-        analyzer = VulnerabilityAnalyzer(llm_client=mock_client, batch_size=25, auto_batch_threshold=30)
+        analyzer = VulnerabilityAnalyzer(
+            llm_client=mock_client, batch_size=25, auto_batch_threshold=30
+        )
 
         # Create large scan (100 vulns > 30 threshold)
         scan_result = create_scan_with_vulns(100)
@@ -261,7 +271,10 @@ class TestPromptTemplates:
 
     def test_format_vulnerability_data_with_limit(self):
         """Test formatting with limit."""
-        vulns = [{"id": f"CVE-2024-{i}", "package_name": "test", "severity": "high"} for i in range(50)]
+        vulns = [
+            {"id": f"CVE-2024-{i}", "package_name": "test", "severity": "high"}
+            for i in range(50)
+        ]
 
         # Limit to 10
         formatted = format_vulnerability_data(vulns, limit=10)

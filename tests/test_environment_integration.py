@@ -279,8 +279,13 @@ class TestAsset:
 
     def test_asset_compliance_scope(self, sample_asset):
         """Test asset compliance scope."""
-        assert ComplianceFramework.PCI_DSS in sample_asset.business_context.compliance_scope
-        assert ComplianceFramework.GDPR in sample_asset.business_context.compliance_scope
+        assert (
+            ComplianceFramework.PCI_DSS
+            in sample_asset.business_context.compliance_scope
+        )
+        assert (
+            ComplianceFramework.GDPR in sample_asset.business_context.compliance_scope
+        )
 
 
 class TestDependency:
@@ -389,9 +394,7 @@ class TestEnvironmentParser:
 
     def test_load_from_json_file(self, minimal_environment_dict):
         """Test loading environment from JSON file."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(minimal_environment_dict, f)
             temp_path = f.name
 
@@ -409,9 +412,7 @@ class TestEnvironmentParser:
         except ImportError:
             pytest.skip("PyYAML not installed")
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(minimal_environment_dict, f)
             temp_path = f.name
 
@@ -423,9 +424,7 @@ class TestEnvironmentParser:
 
     def test_save_to_file(self, sample_environment):
         """Test saving environment to file."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             temp_path = f.name
 
         try:
@@ -440,9 +439,7 @@ class TestEnvironmentParser:
 
     def test_validate_file_success(self, minimal_environment_dict):
         """Test validating a valid file."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(minimal_environment_dict, f)
             temp_path = f.name
 
@@ -456,9 +453,7 @@ class TestEnvironmentParser:
         """Test validating an invalid file."""
         invalid_data = {"environment": {"name": "test"}}  # Missing required fields
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(invalid_data, f)
             temp_path = f.name
 

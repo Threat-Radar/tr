@@ -1,4 +1,5 @@
 """Tests for Docker integration and container analysis."""
+
 import pytest
 import docker
 from pathlib import Path
@@ -9,7 +10,7 @@ from threat_radar.core.package_extractors import (
     APTExtractor,
     APKExtractor,
     YUMExtractor,
-    PackageExtractorFactory
+    PackageExtractorFactory,
 )
 
 
@@ -40,10 +41,7 @@ def test_images(docker_client):
             try:
                 # Build image
                 image, build_logs = docker_client.client.images.build(
-                    path=str(fixtures_dir),
-                    dockerfile=dockerfile,
-                    tag=tag,
-                    rm=True
+                    path=str(fixtures_dir), dockerfile=dockerfile, tag=tag, rm=True
                 )
                 images[distro] = tag
             except Exception as e:
@@ -282,6 +280,7 @@ class TestIntegration:
 
         # Verify asdict conversion
         from dataclasses import asdict
+
         result = asdict(analysis)
         assert "packages" in result
         assert len(result["packages"]) == len(analysis.packages)

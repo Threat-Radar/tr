@@ -1,4 +1,5 @@
 """Docker image cleanup utilities for CVE scanning."""
+
 import logging
 import subprocess
 from typing import Optional
@@ -25,7 +26,7 @@ class DockerImageCleanup:
                 ["docker", "image", "inspect", image_name],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=10,
             )
             return result.returncode == 0
         except (subprocess.TimeoutExpired, FileNotFoundError):
@@ -49,18 +50,15 @@ class DockerImageCleanup:
             if force:
                 cmd.append("--force")
 
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=30
-            )
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
 
             if result.returncode == 0:
                 logger.info(f"Successfully removed Docker image: {image_name}")
                 return True
             else:
-                logger.warning(f"Failed to remove Docker image {image_name}: {result.stderr}")
+                logger.warning(
+                    f"Failed to remove Docker image {image_name}: {result.stderr}"
+                )
                 return False
 
         except subprocess.TimeoutExpired:
@@ -146,8 +144,7 @@ class ScanCleanupContext:
             self.cleanup_util.remove_image(self.image_name, force=False)
         else:
             logger.debug(
-                f"Skipping cleanup for {self.image_name} "
-                "(image existed before scan)"
+                f"Skipping cleanup for {self.image_name} " "(image existed before scan)"
             )
 
         return False

@@ -37,21 +37,17 @@ def sample_graph_client():
     container = GraphNode(
         node_id="container:alpine",
         node_type=NodeType.CONTAINER,
-        properties={"name": "alpine:3.18", "zone": "dmz"}
+        properties={"name": "alpine:3.18", "zone": "dmz"},
     )
     package = GraphNode(
         node_id="pkg:openssl@1.1.1",
         node_type=NodeType.PACKAGE,
-        properties={"name": "openssl", "version": "1.1.1"}
+        properties={"name": "openssl", "version": "1.1.1"},
     )
     vuln = GraphNode(
         node_id="cve:CVE-2023-1234",
         node_type=NodeType.VULNERABILITY,
-        properties={
-            "cve_id": "CVE-2023-1234",
-            "severity": "high",
-            "cvss_score": 7.5
-        }
+        properties={"cve_id": "CVE-2023-1234", "severity": "high", "cvss_score": 7.5},
     )
 
     client.add_node(container)
@@ -59,16 +55,20 @@ def sample_graph_client():
     client.add_node(vuln)
 
     # Add edges
-    client.add_edge(GraphEdge(
-        source_id="container:alpine",
-        target_id="pkg:openssl@1.1.1",
-        edge_type=EdgeType.CONTAINS
-    ))
-    client.add_edge(GraphEdge(
-        source_id="pkg:openssl@1.1.1",
-        target_id="cve:CVE-2023-1234",
-        edge_type=EdgeType.HAS_VULNERABILITY
-    ))
+    client.add_edge(
+        GraphEdge(
+            source_id="container:alpine",
+            target_id="pkg:openssl@1.1.1",
+            edge_type=EdgeType.CONTAINS,
+        )
+    )
+    client.add_edge(
+        GraphEdge(
+            source_id="pkg:openssl@1.1.1",
+            target_id="cve:CVE-2023-1234",
+            edge_type=EdgeType.HAS_VULNERABILITY,
+        )
+    )
 
     return client
 
@@ -126,7 +126,13 @@ class TestNetworkGraphVisualizer:
         visualizer = NetworkGraphVisualizer(sample_graph_client)
 
         # Test different layouts
-        for layout in ["spring", "kamada_kawai", "circular", "spectral", "hierarchical"]:
+        for layout in [
+            "spring",
+            "kamada_kawai",
+            "circular",
+            "spectral",
+            "hierarchical",
+        ]:
             pos = visualizer._calculate_layout(layout)
             assert len(pos) == 3  # 3 nodes in sample graph
             assert all(isinstance(p, tuple) and len(p) == 2 for p in pos.values())
@@ -196,7 +202,9 @@ class TestNetworkGraphVisualizer:
 
         # Verify spiral: z-coords should vary smoothly
         z_coords = [p[2] for p in pos.values()]
-        assert min(z_coords) < 0 and max(z_coords) > 0, "Spiral should span negative and positive z"
+        assert (
+            min(z_coords) < 0 and max(z_coords) > 0
+        ), "Spiral should span negative and positive z"
 
     def test_3d_layout_spectral_degree_based(self, sample_graph_client):
         """Test 3D spectral layout with degree-based z-positioning."""
@@ -249,7 +257,9 @@ class TestNetworkGraphVisualizer:
         avg_z_by_type = {nt: sum(zs) / len(zs) for nt, zs in node_z.items()}
         if len(avg_z_by_type) > 1:
             z_values = list(avg_z_by_type.values())
-            assert len(set(z_values)) > 1, "Different node types should be at different z-levels"
+            assert (
+                len(set(z_values)) > 1
+            ), "Different node types should be at different z-levels"
 
     def test_3d_visualization_creation(self, sample_graph_client):
         """Test creating 3D visualization."""
@@ -264,7 +274,7 @@ class TestNetworkGraphVisualizer:
         assert fig is not None
         assert fig.layout.title.text == "3D Test Graph"
         # 3D plots should have scene configuration
-        assert hasattr(fig.layout, 'scene')
+        assert hasattr(fig.layout, "scene")
 
     def test_add_spiral_z_dimension(self, sample_graph_client):
         """Test spiral z-dimension helper method."""
@@ -310,9 +320,9 @@ class TestNetworkGraphVisualizer:
 
         # Create 2D shell layout
         pos_2d = {
-            "node1": (0.5, 0.5),   # Inner
-            "node2": (1.0, 0.0),   # Middle
-            "node3": (2.0, 2.0),   # Outer
+            "node1": (0.5, 0.5),  # Inner
+            "node2": (1.0, 0.0),  # Middle
+            "node3": (2.0, 2.0),  # Outer
         }
 
         pos_3d = visualizer._add_shell_z_dimension(pos_2d)
@@ -339,11 +349,13 @@ class TestAttackPathVisualizer:
         # Add nodes for attack path to graph
         for step in sample_attack_path.steps:
             if step.node_id not in sample_graph_client.graph:
-                sample_graph_client.add_node(GraphNode(
-                    node_id=step.node_id,
-                    node_type=NodeType.CONTAINER,
-                    properties={"name": step.node_id}
-                ))
+                sample_graph_client.add_node(
+                    GraphNode(
+                        node_id=step.node_id,
+                        node_type=NodeType.CONTAINER,
+                        properties={"name": step.node_id},
+                    )
+                )
 
         visualizer = AttackPathVisualizer(sample_graph_client)
 
@@ -360,11 +372,13 @@ class TestAttackPathVisualizer:
         # Add nodes to graph
         for step in sample_attack_path.steps:
             if step.node_id not in sample_graph_client.graph:
-                sample_graph_client.add_node(GraphNode(
-                    node_id=step.node_id,
-                    node_type=NodeType.CONTAINER,
-                    properties={"name": step.node_id}
-                ))
+                sample_graph_client.add_node(
+                    GraphNode(
+                        node_id=step.node_id,
+                        node_type=NodeType.CONTAINER,
+                        properties={"name": step.node_id},
+                    )
+                )
 
         visualizer = AttackPathVisualizer(sample_graph_client)
 
@@ -482,6 +496,7 @@ class TestGraphExporter:
         assert output_file.exists()
 
         import json
+
         with open(output_file) as f:
             data = json.load(f)
 
@@ -489,7 +504,9 @@ class TestGraphExporter:
         assert "metadata" in data
         assert data["metadata"]["total_nodes"] == 3
 
-    def test_export_attack_paths(self, sample_attack_path, sample_graph_client, tmp_path):
+    def test_export_attack_paths(
+        self, sample_attack_path, sample_graph_client, tmp_path
+    ):
         """Test attack paths export."""
         exporter = GraphExporter(sample_graph_client)
 
@@ -499,6 +516,7 @@ class TestGraphExporter:
         assert output_file.exists()
 
         import json
+
         with open(output_file) as f:
             data = json.load(f)
 

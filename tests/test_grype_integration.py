@@ -36,9 +36,7 @@ def sample_grype_json_output():
                         {
                             "version": "3.1",
                             "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-                            "metrics": {
-                                "baseScore": 9.8
-                            }
+                            "metrics": {"baseScore": 9.8},
                         }
                     ],
                     "urls": ["https://nvd.nist.gov/vuln/detail/CVE-2023-0001"],
@@ -49,11 +47,7 @@ def sample_grype_json_output():
                     "name": "openssl",
                     "version": "1.1.1",
                     "type": "apk",
-                    "locations": [
-                        {
-                            "path": "/lib/apk/db/installed"
-                        }
-                    ]
+                    "locations": [{"path": "/lib/apk/db/installed"}],
                 },
                 "relatedVulnerabilities": [
                     {
@@ -68,34 +62,19 @@ def sample_grype_json_output():
                         "type": "exact-direct-match",
                         "matcher": "apk-matcher",
                         "searchedBy": {
-                            "distro": {
-                                "type": "alpine",
-                                "version": "3.18.0"
-                            },
-                            "package": {
-                                "name": "openssl",
-                                "version": "1.1.1"
-                            }
+                            "distro": {"type": "alpine", "version": "3.18.0"},
+                            "package": {"name": "openssl", "version": "1.1.1"},
                         },
-                        "found": {
-                            "versionConstraint": "< 1.1.1k (apk)"
-                        }
+                        "found": {"versionConstraint": "< 1.1.1k (apk)"},
                     }
-                ]
+                ],
             },
             {
                 "vulnerability": {
                     "id": "CVE-2023-0002",
                     "severity": "High",
                     "description": "High severity vulnerability in curl",
-                    "cvss": [
-                        {
-                            "version": "3.1",
-                            "metrics": {
-                                "baseScore": 7.5
-                            }
-                        }
-                    ],
+                    "cvss": [{"version": "3.1", "metrics": {"baseScore": 7.5}}],
                 },
                 "artifact": {
                     "name": "curl",
@@ -106,12 +85,10 @@ def sample_grype_json_output():
                 "matchDetails": [
                     {
                         "type": "exact-direct-match",
-                        "found": {
-                            "versionConstraint": "< 7.79.1 (apk)"
-                        }
+                        "found": {"versionConstraint": "< 7.79.1 (apk)"},
                     }
-                ]
-            }
+                ],
+            },
         ],
         "source": {
             "type": "image",
@@ -119,14 +96,10 @@ def sample_grype_json_output():
                 "userInput": "alpine:3.18",
                 "imageID": "sha256:abc123",
                 "manifestDigest": "sha256:def456",
-                "tags": ["alpine:3.18"]
-            }
+                "tags": ["alpine:3.18"],
+            },
         },
-        "distro": {
-            "name": "alpine",
-            "version": "3.18.0",
-            "idLike": ["alpine"]
-        },
+        "distro": {"name": "alpine", "version": "3.18.0", "idLike": ["alpine"]},
         "descriptor": {
             "name": "grype",
             "version": "0.70.0",
@@ -135,9 +108,9 @@ def sample_grype_json_output():
                 "schemaVersion": 5,
                 "location": "/home/user/.cache/grype/db/5",
                 "checksum": "sha256:abc123",
-                "error": None
-            }
-        }
+                "error": None,
+            },
+        },
     }
 
 
@@ -288,7 +261,7 @@ class TestGrypeScanResult:
 class TestGrypeClient:
     """Test GrypeClient functionality."""
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_client_initialization(self, mock_run):
         """Test client can be initialized."""
         mock_run.return_value = MagicMock(returncode=0, stdout="grype 0.70.0")
@@ -297,7 +270,7 @@ class TestGrypeClient:
         assert client is not None
         assert client.grype_path == "grype"
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_custom_grype_path(self, mock_run):
         """Test client with custom Grype path."""
         mock_run.return_value = MagicMock(returncode=0, stdout="grype 0.70.0")
@@ -305,7 +278,7 @@ class TestGrypeClient:
         client = GrypeClient(grype_path="/custom/path/to/grype")
         assert client.grype_path == "/custom/path/to/grype"
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_check_grype_installed_failure(self, mock_run):
         """Test checking if Grype is not installed."""
         mock_run.side_effect = FileNotFoundError()
@@ -313,7 +286,7 @@ class TestGrypeClient:
         with pytest.raises(RuntimeError, match="Grype not found"):
             GrypeClient()
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_scan_image_success(self, mock_run, sample_grype_json_output):
         """Test scanning Docker image successfully."""
         # Mock version check
@@ -334,7 +307,7 @@ class TestGrypeClient:
         assert result.vulnerabilities[0].id == "CVE-2023-0001"
         assert result.vulnerabilities[0].severity == "critical"
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_scan_image_with_severity_filter(self, mock_run, sample_grype_json_output):
         """Test scanning with severity filter."""
         # Mock version check
@@ -347,14 +320,16 @@ class TestGrypeClient:
             stdout=json.dumps(sample_grype_json_output),
         )
 
-        result = client.scan_docker_image("alpine:3.18", fail_on_severity=GrypeSeverity.HIGH)
+        result = client.scan_docker_image(
+            "alpine:3.18", fail_on_severity=GrypeSeverity.HIGH
+        )
 
         # Verify correct command was called
         call_args = mock_run.call_args[0][0]
         assert "--fail-on" in call_args
         assert "high" in call_args
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_scan_image_error(self, mock_run):
         """Test scan image with error."""
         # Mock version check
@@ -370,7 +345,7 @@ class TestGrypeClient:
         with pytest.raises(RuntimeError, match="Grype scan failed"):
             client.scan_docker_image("nonexistent:image")
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_scan_sbom_success(self, mock_run, sample_grype_json_output, tmp_path):
         """Test scanning SBOM file successfully."""
         # Mock version check
@@ -392,7 +367,7 @@ class TestGrypeClient:
         assert result is not None
         assert len(result.vulnerabilities) == 2
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_scan_sbom_file_not_found(self, mock_run):
         """Test scanning nonexistent SBOM file."""
         # Mock version check
@@ -402,7 +377,7 @@ class TestGrypeClient:
         with pytest.raises(ValueError, match="SBOM file not found"):
             client.scan_sbom("/nonexistent/sbom.json")
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_scan_directory_success(self, mock_run, sample_grype_json_output, tmp_path):
         """Test scanning directory successfully."""
         # Mock version check
@@ -421,7 +396,7 @@ class TestGrypeClient:
         call_args = mock_run.call_args[0][0]
         assert f"dir:{tmp_path}" in call_args
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_update_database_success(self, mock_run):
         """Test updating Grype vulnerability database."""
         # Mock version check
@@ -438,7 +413,7 @@ class TestGrypeClient:
         assert "db" in call_args
         assert "update" in call_args
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_update_database_failure(self, mock_run):
         """Test database update failure."""
         # Mock version check
@@ -454,7 +429,7 @@ class TestGrypeClient:
         with pytest.raises(RuntimeError, match="Database update failed"):
             client.update_database()
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_get_database_status(self, mock_run):
         """Test getting database status."""
         # Mock version check
@@ -464,7 +439,7 @@ class TestGrypeClient:
         # Mock status
         mock_run.return_value = MagicMock(
             returncode=0,
-            stdout="Location: /home/user/.cache/grype/db/5\nBuilt: 2023-12-01T00:00:00Z\nSchema Version: 5\n"
+            stdout="Location: /home/user/.cache/grype/db/5\nBuilt: 2023-12-01T00:00:00Z\nSchema Version: 5\n",
         )
 
         status = client.get_db_status()
@@ -473,7 +448,7 @@ class TestGrypeClient:
         assert "location" in status
         assert "built" in status
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_parse_grype_output_invalid_json(self, mock_run):
         """Test parsing invalid JSON output."""
         # Mock version check
@@ -520,7 +495,7 @@ class TestGrypeOutputFormat:
 class TestGrypeIntegration:
     """Integration tests for Grype functionality."""
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_complete_scan_workflow(self, mock_run, sample_grype_json_output):
         """Test complete workflow: check installation, scan, parse results."""
         # Mock version check
@@ -534,7 +509,9 @@ class TestGrypeIntegration:
         )
 
         # Scan image
-        result = client.scan_docker_image("alpine:3.18", fail_on_severity=GrypeSeverity.HIGH)
+        result = client.scan_docker_image(
+            "alpine:3.18", fail_on_severity=GrypeSeverity.HIGH
+        )
 
         # Verify results
         assert result is not None

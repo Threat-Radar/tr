@@ -1,4 +1,5 @@
 """File I/O utility functions for CLI commands."""
+
 import json
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -9,7 +10,7 @@ def save_json(
     data: Dict[str, Any],
     filepath: str,
     console: Optional[Console] = None,
-    success_message: Optional[str] = None
+    success_message: Optional[str] = None,
 ) -> None:
     """
     Save data as JSON file with error handling and user feedback.
@@ -33,7 +34,7 @@ def save_json(
         # Ensure parent directory exists
         Path(filepath).parent.mkdir(parents=True, exist_ok=True)
 
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(data, f, indent=2)
 
         if console:
@@ -54,7 +55,7 @@ def save_text(
     content: str,
     filepath: str,
     console: Optional[Console] = None,
-    success_message: Optional[str] = None
+    success_message: Optional[str] = None,
 ) -> None:
     """
     Save text content to file with error handling and user feedback.
@@ -77,7 +78,7 @@ def save_text(
         # Ensure parent directory exists
         Path(filepath).parent.mkdir(parents=True, exist_ok=True)
 
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             f.write(content)
 
         if console:

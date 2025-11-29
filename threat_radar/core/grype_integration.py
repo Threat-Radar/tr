@@ -1,4 +1,5 @@
 """Grype integration for vulnerability scanning of containers and SBOMs."""
+
 import json
 import subprocess
 import logging
@@ -12,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 class GrypeOutputFormat(Enum):
     """Supported Grype output formats."""
+
     JSON = "json"
     TABLE = "table"
     CYCLONEDX = "cyclonedx"
@@ -21,6 +23,7 @@ class GrypeOutputFormat(Enum):
 
 class GrypeSeverity(Enum):
     """CVE severity levels."""
+
     NEGLIGIBLE = "negligible"
     LOW = "low"
     MEDIUM = "medium"
@@ -31,6 +34,7 @@ class GrypeSeverity(Enum):
 @dataclass
 class GrypeVulnerability:
     """Represents a vulnerability found by Grype."""
+
     id: str  # CVE ID
     severity: str
     package_name: str
@@ -51,6 +55,7 @@ class GrypeVulnerability:
 @dataclass
 class GrypeScanResult:
     """Results of a Grype vulnerability scan."""
+
     target: str
     vulnerabilities: List[GrypeVulnerability] = field(default_factory=list)
     total_count: int = 0
@@ -69,7 +74,7 @@ class GrypeScanResult:
         if not self.total_count:
             self.total_count = len(self.vulnerabilities)
 
-    def filter_by_severity(self, min_severity: GrypeSeverity) -> 'GrypeScanResult':
+    def filter_by_severity(self, min_severity: GrypeSeverity) -> "GrypeScanResult":
         """
         Filter vulnerabilities by minimum severity.
 
@@ -84,22 +89,21 @@ class GrypeScanResult:
             GrypeSeverity.LOW: 1,
             GrypeSeverity.MEDIUM: 2,
             GrypeSeverity.HIGH: 3,
-            GrypeSeverity.CRITICAL: 4
+            GrypeSeverity.CRITICAL: 4,
         }
 
         min_level = severity_order[min_severity]
 
         filtered_vulns = [
-            v for v in self.vulnerabilities
-            if severity_order.get(
-                GrypeSeverity(v.severity.lower()), 0
-            ) >= min_level
+            v
+            for v in self.vulnerabilities
+            if severity_order.get(GrypeSeverity(v.severity.lower()), 0) >= min_level
         ]
 
         return GrypeScanResult(
             target=self.target,
             vulnerabilities=filtered_vulns,
-            scan_metadata=self.scan_metadata
+            scan_metadata=self.scan_metadata,
         )
 
 
@@ -120,16 +124,13 @@ class GrypeClient:
         """Verify Grype is installed and accessible."""
         try:
             result = subprocess.run(
-                [self.grype_path, "version"],
-                capture_output=True,
-                text=True,
-                timeout=5
+                [self.grype_path, "version"], capture_output=True, text=True, timeout=5
             )
             if result.returncode != 0:
                 raise RuntimeError(f"Grype check failed: {result.stderr}")
 
             # Extract version from output
-            version_line = result.stdout.strip().split('\n')[0]
+            version_line = result.stdout.strip().split("\n")[0]
             logger.info(f"Grype is available: {version_line}")
 
         except FileNotFoundError:
@@ -149,25 +150,25 @@ class GrypeClient:
         scope: str = "squashed",
         fail_on_severity: Optional[GrypeSeverity] = None,
         only_fixed: bool = False,
-        additional_args: Optional[List[str]] = None
+        additional_args: Optional[List[str]] = None,
     ) -> Union[Dict, str]:
         """
-        Scan a target for vulnerabilities.
+            Scan a target for vulnerabilities.
 
-        Args:
-            target: Docker image, SBOM file, or directory to scan
-            output_format: Output format for results
-            scope: Scope for Docker images (squashed, all-layers)
-            fail_on_severity: Fail if vulnerabilities of this severity or higher are found
-            only_fixed: Only report vulnerabilities with fixes available
-            additional_args: Additional CLI arguments
+            Args:
+                target: Docker image, SBOM file, or directory to scan
+                output_format: Output format for results
+                scope: Scope for Docker images (squashed, all-layers)
+                fail_on_severity: Fail if vulnerabilities of this severity or higher are found
+                only_fixed: Only report vulnerabilities with fixes available
+                additional_args: Additional CLI arguments
 
-        Returns:
-            Parsed JSON dict for JSON format, raw string for other formats
+            Returns:
+                Parsed JSON dict for JSON format, raw string for other formats
 
-    Raises:
-        RuntimeError: If scan fails
-    """
+        Raises:
+            RuntimeError: If scan fails
+        """
         cmd = [self.grype_path, target, "-o", output_format.value]
 
         # Add scope for Docker images
@@ -193,7 +194,7 @@ class GrypeClient:
                     cmd,
                     capture_output=True,
                     text=True,
-                    timeout=300  # 5 minutes timeout
+                    timeout=300,  # 5 minutes timeout
                 )
 
                 # Grype returns non-zero if vulnerabilities are found with --fail-on
@@ -212,7 +213,9 @@ class GrypeClient:
                 return result.stdout
 
             except subprocess.TimeoutExpired:
-                raise RuntimeError(f"Grype scan timed out after 300s for target: {target}")
+                raise RuntimeError(
+                    f"Grype scan timed out after 300s for target: {target}"
+                )
             except json.JSONDecodeError as e:
                 raise RuntimeError(f"Failed to parse Grype JSON output: {e}")
 
@@ -221,7 +224,7 @@ class GrypeClient:
         image: str,
         output_format: GrypeOutputFormat = GrypeOutputFormat.JSON,
         scope: str = "squashed",
-        fail_on_severity: Optional[GrypeSeverity] = None
+        fail_on_severity: Optional[GrypeSeverity] = None,
     ) -> GrypeScanResult:
         """
         Scan a Docker image for vulnerabilities.
@@ -242,7 +245,7 @@ class GrypeClient:
             image,
             output_format=output_format,
             scope=scope,
-            fail_on_severity=fail_on_severity
+            fail_on_severity=fail_on_severity,
         )
 
         if output_format == GrypeOutputFormat.JSON:
@@ -255,7 +258,7 @@ class GrypeClient:
         self,
         sbom_path: Union[str, Path],
         output_format: GrypeOutputFormat = GrypeOutputFormat.JSON,
-        fail_on_severity: Optional[GrypeSeverity] = None
+        fail_on_severity: Optional[GrypeSeverity] = None,
     ) -> GrypeScanResult:
         """
         Scan an SBOM file for vulnerabilities.
@@ -279,21 +282,21 @@ class GrypeClient:
         target = f"sbom:{sbom_path}"
 
         raw_result = self.scan(
-            target,
-            output_format=output_format,
-            fail_on_severity=fail_on_severity
+            target, output_format=output_format, fail_on_severity=fail_on_severity
         )
 
         if output_format == GrypeOutputFormat.JSON:
             return self._parse_json_result(raw_result, target=str(sbom_path))
 
-        return GrypeScanResult(target=str(sbom_path), scan_metadata={"raw_output": raw_result})
+        return GrypeScanResult(
+            target=str(sbom_path), scan_metadata={"raw_output": raw_result}
+        )
 
     def scan_directory(
         self,
         directory: Union[str, Path],
         output_format: GrypeOutputFormat = GrypeOutputFormat.JSON,
-        fail_on_severity: Optional[GrypeSeverity] = None
+        fail_on_severity: Optional[GrypeSeverity] = None,
     ) -> GrypeScanResult:
         """
         Scan a local directory for vulnerabilities.
@@ -319,15 +322,15 @@ class GrypeClient:
         target = f"dir:{directory}"
 
         raw_result = self.scan(
-            target,
-            output_format=output_format,
-            fail_on_severity=fail_on_severity
+            target, output_format=output_format, fail_on_severity=fail_on_severity
         )
 
         if output_format == GrypeOutputFormat.JSON:
             return self._parse_json_result(raw_result, target=str(directory))
 
-        return GrypeScanResult(target=str(directory), scan_metadata={"raw_output": raw_result})
+        return GrypeScanResult(
+            target=str(directory), scan_metadata={"raw_output": raw_result}
+        )
 
     def _parse_json_result(self, grype_output: Dict, target: str) -> GrypeScanResult:
         """
@@ -354,7 +357,11 @@ class GrypeClient:
                     cvss_list = related.get("cvss", [])
                     if cvss_list:
                         # Get highest CVSS score
-                        scores = [c.get("metrics", {}).get("baseScore") for c in cvss_list if c.get("metrics", {}).get("baseScore")]
+                        scores = [
+                            c.get("metrics", {}).get("baseScore")
+                            for c in cvss_list
+                            if c.get("metrics", {}).get("baseScore")
+                        ]
                         if scores:
                             cvss_score = max(scores)
                             break
@@ -363,7 +370,11 @@ class GrypeClient:
             if cvss_score is None and "cvss" in vulnerability:
                 cvss_list = vulnerability.get("cvss", [])
                 if cvss_list:
-                    scores = [c.get("metrics", {}).get("baseScore") for c in cvss_list if c.get("metrics", {}).get("baseScore")]
+                    scores = [
+                        c.get("metrics", {}).get("baseScore")
+                        for c in cvss_list
+                        if c.get("metrics", {}).get("baseScore")
+                    ]
                     if scores:
                         cvss_score = max(scores)
 
@@ -373,14 +384,26 @@ class GrypeClient:
                 package_name=artifact.get("name", ""),
                 package_version=artifact.get("version", ""),
                 package_type=artifact.get("type", ""),
-                fixed_in_version=vulnerability.get("fix", {}).get("versions", [None])[0] if vulnerability.get("fix", {}).get("versions") else None,
+                fixed_in_version=(
+                    vulnerability.get("fix", {}).get("versions", [None])[0]
+                    if vulnerability.get("fix", {}).get("versions")
+                    else None
+                ),
                 description=vulnerability.get("description"),
                 cvss_score=cvss_score,
                 urls=vulnerability.get("urls", []),
                 data_source=vulnerability.get("dataSource"),
                 namespace=vulnerability.get("namespace"),
-                artifact_path=artifact.get("locations", [{}])[0].get("path") if artifact.get("locations") else None,
-                artifact_location=artifact.get("locations", [{}])[0].get("layerID") if artifact.get("locations") else None
+                artifact_path=(
+                    artifact.get("locations", [{}])[0].get("path")
+                    if artifact.get("locations")
+                    else None
+                ),
+                artifact_location=(
+                    artifact.get("locations", [{}])[0].get("layerID")
+                    if artifact.get("locations")
+                    else None
+                ),
             )
             vulnerabilities.append(vuln)
 
@@ -396,9 +419,7 @@ class GrypeClient:
         }
 
         result = GrypeScanResult(
-            target=target,
-            vulnerabilities=vulnerabilities,
-            scan_metadata=scan_metadata
+            target=target, vulnerabilities=vulnerabilities, scan_metadata=scan_metadata
         )
 
         logger.info(
@@ -421,7 +442,7 @@ class GrypeClient:
                 [self.grype_path, "db", "update"],
                 capture_output=True,
                 text=True,
-                timeout=300
+                timeout=300,
             )
 
             if result.returncode != 0:
@@ -444,7 +465,7 @@ class GrypeClient:
                 [self.grype_path, "db", "status"],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=10,
             )
 
             if result.returncode != 0:
@@ -452,10 +473,10 @@ class GrypeClient:
 
             # Parse the status output (it's typically key-value pairs)
             status = {}
-            for line in result.stdout.strip().split('\n'):
-                if ':' in line:
-                    key, value = line.split(':', 1)
-                    status[key.strip().lower().replace(' ', '_')] = value.strip()
+            for line in result.stdout.strip().split("\n"):
+                if ":" in line:
+                    key, value = line.split(":", 1)
+                    status[key.strip().lower().replace(" ", "_")] = value.strip()
 
             return status
 

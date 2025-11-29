@@ -184,21 +184,27 @@ def format_vulnerability_data(
     formatted = []
     for vuln in limited_vulns:
         # Handle None description safely
-        description = vuln.get('description') or 'No description available'
-        description_preview = description[:200] + "..." if len(description) > 200 else description
+        description = vuln.get("description") or "No description available"
+        description_preview = (
+            description[:200] + "..." if len(description) > 200 else description
+        )
 
-        formatted.append(f"""
+        formatted.append(
+            f"""
 CVE ID: {vuln.get('id', 'N/A')}
 Package: {vuln.get('package_name', 'N/A')} @ {vuln.get('package_version', 'N/A')}
 Severity: {vuln.get('severity', 'N/A').upper()}
 CVSS Score: {vuln.get('cvss_score', 'N/A')}
 Fixed In: {vuln.get('fixed_in_version') or 'No fix available'}
 Description: {description_preview}
-""".strip())
+""".strip()
+        )
 
     # Add truncation notice if data was limited
     if include_truncation_notice and limit is not None and len(vulnerabilities) > limit:
-        formatted.append(f"\n... and {len(vulnerabilities) - limit} more vulnerabilities")
+        formatted.append(
+            f"\n... and {len(vulnerabilities) - limit} more vulnerabilities"
+        )
 
     return "\n\n---\n\n".join(formatted)
 
@@ -229,7 +235,9 @@ def create_risk_assessment_prompt(
 ) -> str:
     """Create risk assessment prompt"""
     vuln_data = format_vulnerability_data(vulnerabilities)
-    severity_dist_str = ", ".join([f"{k}: {v}" for k, v in severity_distribution.items()])
+    severity_dist_str = ", ".join(
+        [f"{k}: {v}" for k, v in severity_distribution.items()]
+    )
 
     return RISK_ASSESSMENT_PROMPT.format(
         vulnerability_data=vuln_data,
@@ -255,7 +263,9 @@ def create_batch_analysis_prompt(
     Returns:
         Formatted prompt for batch analysis
     """
-    vuln_data = format_vulnerability_data(vulnerabilities, limit=None, include_truncation_notice=False)
+    vuln_data = format_vulnerability_data(
+        vulnerabilities, limit=None, include_truncation_notice=False
+    )
 
     return f"""{VULNERABILITY_ANALYSIS_PROMPT.split('VULNERABILITY DATA:')[0]}
 BATCH CONTEXT:
@@ -310,8 +320,12 @@ def create_summary_consolidation_prompt(
     Returns:
         Formatted prompt for summary consolidation
     """
-    severity_dist_str = ", ".join([f"{k.capitalize()}: {v}" for k, v in severity_counts.items()])
-    batch_summaries_str = "\n\n".join([f"Batch {i+1}: {summary}" for i, summary in enumerate(batch_summaries)])
+    severity_dist_str = ", ".join(
+        [f"{k.capitalize()}: {v}" for k, v in severity_counts.items()]
+    )
+    batch_summaries_str = "\n\n".join(
+        [f"Batch {i+1}: {summary}" for i, summary in enumerate(batch_summaries)]
+    )
 
     return f"""You are a cybersecurity expert consolidating analysis from multiple batches.
 
@@ -497,7 +511,9 @@ def create_attack_scenario_prompt(context: Dict[str, Any]) -> str:
         if business_context.get("pci_scope"):
             business_context_str += "- PCI-DSS scope: Payment card data at risk\n"
         if business_context.get("hipaa_scope"):
-            business_context_str += "- HIPAA scope: Protected health information at risk\n"
+            business_context_str += (
+                "- HIPAA scope: Protected health information at risk\n"
+            )
         if business_context.get("customer_facing"):
             business_context_str += "- Customer-facing: Public reputation impact\n"
         criticality = business_context.get("criticality", "")
@@ -506,7 +522,9 @@ def create_attack_scenario_prompt(context: Dict[str, Any]) -> str:
 
     return ATTACK_SCENARIO_PROMPT.format(
         threat_actor_name=threat_actor.get("name", "Unknown Actor"),
-        threat_actor_description=threat_actor.get("description", "No description")[:300],
+        threat_actor_description=threat_actor.get("description", "No description")[
+            :300
+        ],
         threat_actor_motivations=", ".join(threat_actor.get("motivations", [])),
         threat_actor_skill_level=threat_actor.get("skill_level", "unknown").upper(),
         entry_point=attack_path.get("entry_point", "Unknown"),
@@ -516,7 +534,7 @@ def create_attack_scenario_prompt(context: Dict[str, Any]) -> str:
         threat_level=attack_path.get("threat_level", "unknown").upper(),
         attack_steps=attack_steps_str,
         mitre_mapping=mitre_str,
-        business_context=business_context_str
+        business_context=business_context_str,
     )
 
 
@@ -580,5 +598,5 @@ def create_threat_model_summary_prompt(summary_data: Dict[str, Any]) -> str:
         threat_actors=threat_actors_str,
         total_scenarios=summary_data.get("total_scenarios", 0),
         critical_count=summary_data.get("critical_count", 0),
-        scenario_summaries=scenario_summaries_str
+        scenario_summaries=scenario_summaries_str,
     )

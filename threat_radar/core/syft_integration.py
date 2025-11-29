@@ -1,4 +1,5 @@
 """Syft integration for comprehensive SBOM generation."""
+
 import json
 import subprocess
 import logging
@@ -12,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 class SBOMFormat(Enum):
     """Supported SBOM output formats."""
+
     CYCLONEDX_JSON = "cyclonedx-json"
     CYCLONEDX_XML = "cyclonedx-xml"
     SPDX_JSON = "spdx-json"
@@ -23,6 +25,7 @@ class SBOMFormat(Enum):
 
 class ScanSource(Enum):
     """Source types that Syft can scan."""
+
     DIRECTORY = "dir"
     FILE = "file"
     DOCKER_IMAGE = "docker"
@@ -33,6 +36,7 @@ class ScanSource(Enum):
 @dataclass
 class SyftPackage:
     """Represents a package found by Syft."""
+
     name: str
     version: str
     type: str
@@ -61,10 +65,7 @@ class SyftClient:
         """Verify Syft is installed and accessible."""
         try:
             result = subprocess.run(
-                [self.syft_path, "version"],
-                capture_output=True,
-                text=True,
-                timeout=5
+                [self.syft_path, "version"], capture_output=True, text=True, timeout=5
             )
             if result.returncode != 0:
                 raise RuntimeError(f"Syft check failed: {result.stderr}")
@@ -84,7 +85,7 @@ class SyftClient:
         output_format: SBOMFormat = SBOMFormat.SYFT_JSON,
         scope: str = "all-layers",
         quiet: bool = False,
-        additional_args: Optional[List[str]] = None
+        additional_args: Optional[List[str]] = None,
     ) -> Union[Dict, str]:
         """
         Scan a target and generate SBOM.
@@ -109,8 +110,10 @@ class SyftClient:
             self.syft_path,
             "scan",
             target_str,
-            "-o", output_format.value,
-            "--scope", scope
+            "-o",
+            output_format.value,
+            "--scope",
+            scope,
         ]
 
         if quiet:
@@ -123,10 +126,7 @@ class SyftClient:
 
         try:
             result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=300  # 5 minutes timeout
+                cmd, capture_output=True, text=True, timeout=300  # 5 minutes timeout
             )
 
             if result.returncode != 0:
@@ -140,14 +140,16 @@ class SyftClient:
             return result.stdout
 
         except subprocess.TimeoutExpired:
-            raise RuntimeError(f"Syft scan timed out after 300s for target: {target_str}")
+            raise RuntimeError(
+                f"Syft scan timed out after 300s for target: {target_str}"
+            )
         except json.JSONDecodeError as e:
             raise RuntimeError(f"Failed to parse Syft output: {e}")
 
     def scan_directory(
         self,
         directory: Union[str, Path],
-        output_format: SBOMFormat = SBOMFormat.CYCLONEDX_JSON
+        output_format: SBOMFormat = SBOMFormat.CYCLONEDX_JSON,
     ) -> Union[Dict, str]:
         """
         Scan a local directory.
@@ -171,7 +173,7 @@ class SyftClient:
         self,
         image: str,
         output_format: SBOMFormat = SBOMFormat.CYCLONEDX_JSON,
-        scope: str = "squashed"
+        scope: str = "squashed",
     ) -> Union[Dict, str]:
         """
         Scan a Docker image.
@@ -184,16 +186,12 @@ class SyftClient:
         Returns:
             SBOM data
         """
-        return self.scan(
-            f"docker:{image}",
-            output_format=output_format,
-            scope=scope
-        )
+        return self.scan(f"docker:{image}", output_format=output_format, scope=scope)
 
     def scan_file(
         self,
         file_path: Union[str, Path],
-        output_format: SBOMFormat = SBOMFormat.SYFT_JSON
+        output_format: SBOMFormat = SBOMFormat.SYFT_JSON,
     ) -> Union[Dict, str]:
         """
         Scan a single file.
@@ -235,7 +233,7 @@ class SyftClient:
                 cpe=artifact.get("cpes", [None])[0] if artifact.get("cpes") else None,
                 licenses=artifact.get("licenses", []),
                 locations=[loc.get("path") for loc in artifact.get("locations", [])],
-                metadata=artifact.get("metadata")
+                metadata=artifact.get("metadata"),
             )
             packages.append(package)
 
@@ -247,7 +245,7 @@ class SyftClient:
         sbom_data: str,
         from_format: SBOMFormat,
         to_format: SBOMFormat,
-        output_file: Optional[Union[str, Path]] = None
+        output_file: Optional[Union[str, Path]] = None,
     ) -> str:
         """
         Convert SBOM between formats using Syft.
@@ -261,23 +259,14 @@ class SyftClient:
         Returns:
             Converted SBOM data
         """
-        cmd = [
-            self.syft_path,
-            "convert",
-            "-",  # Read from stdin
-            "-o", to_format.value
-        ]
+        cmd = [self.syft_path, "convert", "-", "-o", to_format.value]  # Read from stdin
 
         if output_file:
             cmd.extend(["-f", str(output_file)])
 
         try:
             result = subprocess.run(
-                cmd,
-                input=sbom_data,
-                capture_output=True,
-                text=True,
-                timeout=30
+                cmd, input=sbom_data, capture_output=True, text=True, timeout=30
             )
 
             if result.returncode != 0:

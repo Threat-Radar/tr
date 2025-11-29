@@ -1,4 +1,5 @@
 """AI analysis storage utilities for automatic report saving."""
+
 import os
 import logging
 from pathlib import Path
@@ -39,10 +40,7 @@ class AIAnalysisManager:
             raise
 
     def generate_filename(
-        self,
-        target: str,
-        analysis_type: str = "analysis",
-        extension: str = "json"
+        self, target: str, analysis_type: str = "analysis", extension: str = "json"
     ) -> str:
         """
         Generate a filename for AI analysis results.
@@ -82,10 +80,10 @@ class AIAnalysisManager:
         """
         # Remove or replace problematic characters
         clean = target.replace(":", "_")  # Docker image tags
-        clean = clean.replace("/", "_")   # Paths and registry prefixes
-        clean = clean.replace("@", "_")   # Digests
-        clean = clean.replace(" ", "_")   # Spaces
-        clean = clean.replace(".", "_")   # Dots (except extension)
+        clean = clean.replace("/", "_")  # Paths and registry prefixes
+        clean = clean.replace("@", "_")  # Digests
+        clean = clean.replace(" ", "_")  # Spaces
+        clean = clean.replace(".", "_")  # Dots (except extension)
 
         # Remove leading/trailing underscores
         clean = clean.strip("_")
@@ -97,10 +95,7 @@ class AIAnalysisManager:
         return clean
 
     def get_storage_path(
-        self,
-        target: str,
-        analysis_type: str = "analysis",
-        extension: str = "json"
+        self, target: str, analysis_type: str = "analysis", extension: str = "json"
     ) -> Path:
         """
         Get full path for storing AI analysis results.
@@ -117,10 +112,7 @@ class AIAnalysisManager:
         return self.storage_dir / filename
 
     def save_analysis(
-        self,
-        target: str,
-        data: Dict[str, Any],
-        analysis_type: str = "analysis"
+        self, target: str, data: Dict[str, Any], analysis_type: str = "analysis"
     ) -> Path:
         """
         Save AI analysis to storage.
@@ -136,7 +128,7 @@ class AIAnalysisManager:
         file_path = self.get_storage_path(target, analysis_type)
 
         try:
-            with open(file_path, 'w') as f:
+            with open(file_path, "w") as f:
                 json.dump(data, f, indent=2)
 
             logger.info(f"Saved AI analysis to: {file_path}")
@@ -147,9 +139,7 @@ class AIAnalysisManager:
             raise
 
     def list_analyses(
-        self,
-        analysis_type: Optional[str] = None,
-        limit: Optional[int] = None
+        self, analysis_type: Optional[str] = None, limit: Optional[int] = None
     ) -> list:
         """
         List all AI analyses in storage.
@@ -168,8 +158,7 @@ class AIAnalysisManager:
             # Filter by analysis type if specified
             if analysis_type:
                 all_analyses = [
-                    a for a in all_analyses
-                    if f"_{analysis_type}_" in a.name
+                    a for a in all_analyses if f"_{analysis_type}_" in a.name
                 ]
 
             # Sort by modification time (newest first)
@@ -204,7 +193,9 @@ class AIAnalysisManager:
                 if "_analysis_" in analysis.name:
                     type_counts["analysis"] = type_counts.get("analysis", 0) + 1
                 elif "_prioritization_" in analysis.name:
-                    type_counts["prioritization"] = type_counts.get("prioritization", 0) + 1
+                    type_counts["prioritization"] = (
+                        type_counts.get("prioritization", 0) + 1
+                    )
                 elif "_remediation_" in analysis.name:
                     type_counts["remediation"] = type_counts.get("remediation", 0) + 1
 
@@ -223,14 +214,10 @@ class AIAnalysisManager:
             return {
                 "storage_dir": str(self.storage_dir),
                 "total_analyses": 0,
-                "error": str(e)
+                "error": str(e),
             }
 
-    def cleanup_old_analyses(
-        self,
-        days: int = 30,
-        keep_latest: int = 10
-    ) -> int:
+    def cleanup_old_analyses(self, days: int = 30, keep_latest: int = 10) -> int:
         """
         Clean up old AI analyses.
 
@@ -247,7 +234,9 @@ class AIAnalysisManager:
             all_analyses = self.list_analyses()
 
             if len(all_analyses) <= keep_latest:
-                logger.info(f"Skipping cleanup - only {len(all_analyses)} analyses (keep_latest={keep_latest})")
+                logger.info(
+                    f"Skipping cleanup - only {len(all_analyses)} analyses (keep_latest={keep_latest})"
+                )
                 return 0
 
             # Keep the latest N analyses

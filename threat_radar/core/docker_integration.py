@@ -1,4 +1,5 @@
 """Docker SDK integration for container analysis."""
+
 import docker
 from docker.errors import DockerException, ImageNotFound, APIError
 from typing import Optional
@@ -36,7 +37,9 @@ class DockerClient:
             raise ConnectionError("Docker client not initialized")
         return self._client
 
-    def pull_image(self, image_name: str, tag: str = "latest") -> docker.models.images.Image:
+    def pull_image(
+        self, image_name: str, tag: str = "latest"
+    ) -> docker.models.images.Image:
         """
         Pull a Docker image from registry.
 
@@ -93,11 +96,7 @@ class DockerClient:
         return self.client.images.list()
 
     def run_container(
-        self,
-        image_name: str,
-        command: str,
-        remove: bool = True,
-        **kwargs
+        self, image_name: str, command: str, remove: bool = True, **kwargs
     ) -> bytes:
         """
         Run a command in a container and return output.
@@ -117,10 +116,7 @@ class DockerClient:
         try:
             logger.info(f"Running command in {image_name}: {command}")
             output = self.client.containers.run(
-                image_name,
-                command,
-                remove=remove,
-                **kwargs
+                image_name, command, remove=remove, **kwargs
             )
             return output
         except APIError as e:

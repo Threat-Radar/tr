@@ -7,6 +7,7 @@ from enum import Enum
 
 class CentralityMetric(Enum):
     """Supported centrality metrics."""
+
     DEGREE = "degree"
     BETWEENNESS = "betweenness"
     CLOSENESS = "closeness"
@@ -16,6 +17,7 @@ class CentralityMetric(Enum):
 
 class CommunityAlgorithm(Enum):
     """Supported community detection algorithms."""
+
     LOUVAIN = "louvain"
     LABEL_PROPAGATION = "label_propagation"
     GREEDY_MODULARITY = "greedy_modularity"
@@ -33,6 +35,7 @@ class NodeCentrality:
         node_type: Type of node (package, vulnerability, etc.)
         properties: Additional node properties
     """
+
     node_id: str
     score: float
     rank: int
@@ -53,6 +56,7 @@ class CentralityResult:
         max_score: Highest centrality score
         min_score: Lowest centrality score
     """
+
     metric: CentralityMetric
     nodes: List[NodeCentrality]
     total_nodes: int
@@ -83,6 +87,7 @@ class Community:
         node_types: Count of each node type in community
         avg_cvss: Average CVSS score of vulnerabilities in community
     """
+
     community_id: int
     nodes: Set[str]
     size: int
@@ -112,6 +117,7 @@ class CommunityDetectionResult:
         modularity: Modularity score (quality of clustering)
         coverage: Fraction of nodes in communities
     """
+
     algorithm: CommunityAlgorithm
     communities: List[Community]
     total_communities: int
@@ -143,6 +149,7 @@ class PropagationStep:
         cvss_score: CVSS score if vulnerability node
         package_name: Package name if package node
     """
+
     node_id: str
     node_type: str
     depth: int
@@ -169,6 +176,7 @@ class PropagationReport:
         steps: Propagation steps (flattened from propagation_paths)
         affected_nodes: All affected node IDs (combined list)
     """
+
     cve_id: str
     total_affected_nodes: int
     affected_packages: List[str]
@@ -226,6 +234,7 @@ class GraphMetrics:
         critical_node_count: Number of critical nodes (high centrality)
         security_score: Overall security score (0-100, higher is better)
     """
+
     total_nodes: int
     total_edges: int
     density: float
@@ -290,6 +299,7 @@ class AnalyticsSummary:
         high_risk_propagations: High-risk vulnerability propagations
         recommendations: Security recommendations based on analytics
     """
+
     graph_metrics: GraphMetrics
     top_critical_nodes: List[NodeCentrality] = field(default_factory=list)
     communities: Optional[CommunityDetectionResult] = None

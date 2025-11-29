@@ -1,4 +1,5 @@
 """Utility functions for SBOM processing and analysis."""
+
 import json
 from typing import Dict, List, Set, Optional, Tuple
 from pathlib import Path
@@ -16,7 +17,7 @@ def save_sbom(sbom_data: Dict, output_path: Path, pretty: bool = True) -> None:
     """
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         if pretty:
             json.dump(sbom_data, f, indent=2)
         else:
@@ -33,7 +34,7 @@ def load_sbom(sbom_path: Path) -> Dict:
     Returns:
         SBOM dictionary
     """
-    with open(sbom_path, 'r') as f:
+    with open(sbom_path, "r") as f:
         return json.load(f)
 
 
@@ -93,7 +94,7 @@ def compare_sboms(sbom1: Dict, sbom2: Dict) -> Dict[str, Set[str]]:
     return {
         "added": packages2 - packages1,
         "removed": packages1 - packages2,
-        "common": packages1 & packages2
+        "common": packages1 & packages2,
     }
 
 
@@ -131,8 +132,7 @@ def filter_packages_by_type(sbom_data: Dict, package_type: str) -> List[Dict]:
     packages = extract_packages(sbom_data)
 
     return [
-        pkg for pkg in packages
-        if pkg.get("type", "").lower() == package_type.lower()
+        pkg for pkg in packages if pkg.get("type", "").lower() == package_type.lower()
     ]
 
 
@@ -227,7 +227,7 @@ def convert_to_csv(sbom_data: Dict, output_path: Path) -> None:
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         # Header
         f.write("name,version,type,purl,licenses\n")
 
@@ -244,7 +244,9 @@ def convert_to_csv(sbom_data: Dict, output_path: Path) -> None:
             for lic in license_list:
                 if isinstance(lic, dict) and "license" in lic:
                     # CycloneDX format: {"license": {"id": "MIT"}}
-                    license_ids.append(lic["license"].get("id") or lic["license"].get("name", ""))
+                    license_ids.append(
+                        lic["license"].get("id") or lic["license"].get("name", "")
+                    )
                 elif isinstance(lic, str):
                     # Simple string format
                     license_ids.append(lic)
@@ -265,7 +267,7 @@ def convert_to_requirements(sbom_data: Dict, output_path: Path) -> None:
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         for pkg in packages:
             name = pkg.get("name", "")
             version = pkg.get("version", "")
@@ -273,10 +275,7 @@ def convert_to_requirements(sbom_data: Dict, output_path: Path) -> None:
                 f.write(f"{name}=={version}\n")
 
 
-def get_version_changes(
-    old_sbom: Dict,
-    new_sbom: Dict
-) -> Dict[str, Tuple[str, str]]:
+def get_version_changes(old_sbom: Dict, new_sbom: Dict) -> Dict[str, Tuple[str, str]]:
     """
     Compare package versions between two SBOMs.
 
@@ -326,10 +325,7 @@ def search_packages(sbom_data: Dict, search_term: str) -> List[Dict]:
     packages = extract_packages(sbom_data)
     search_lower = search_term.lower()
 
-    return [
-        pkg for pkg in packages
-        if search_lower in pkg.get("name", "").lower()
-    ]
+    return [pkg for pkg in packages if search_lower in pkg.get("name", "").lower()]
 
 
 def group_components_by_type(sbom_data: Dict) -> Dict[str, List[Dict]]:
@@ -369,7 +365,7 @@ def extract_component_metadata(component: Dict) -> Dict[str, Optional[str]]:
         "package_type": None,
         "location": None,
         "foundBy": None,
-        "metadataType": None
+        "metadataType": None,
     }
 
     properties = component.get("properties", [])
@@ -414,7 +410,7 @@ def get_files_by_category(sbom_data: Dict) -> Dict[str, List[Dict]]:
         "source": [],
         "config": [],
         "documentation": [],
-        "other": []
+        "other": [],
     }
 
     for file_comp in file_components:
@@ -584,7 +580,9 @@ def display_components_summary(components: list, source: str, console) -> None:
     summary_table.add_column("Type", style="cyan")
     summary_table.add_column("Count", style="green")
 
-    for comp_type, count in sorted(type_counts.items(), key=lambda x: x[1], reverse=True):
+    for comp_type, count in sorted(
+        type_counts.items(), key=lambda x: x[1], reverse=True
+    ):
         summary_table.add_row(comp_type, str(count))
 
     console.print(summary_table)
@@ -649,7 +647,9 @@ def display_detailed_components(components: list, console) -> None:
         console.print(f"[dim]... and {len(components) - 50} more components[/dim]")
 
 
-def display_components_grouped_by_type(sbom_data: dict, components: list, show_details: bool, console) -> None:
+def display_components_grouped_by_type(
+    sbom_data: dict, components: list, show_details: bool, console
+) -> None:
     """Display components grouped by type."""
     from rich.table import Table
 
@@ -662,14 +662,20 @@ def display_components_grouped_by_type(sbom_data: dict, components: list, show_d
             grouped[comp_type] = []
         grouped[comp_type].append(comp)
 
-    for comp_type, comps in sorted(grouped.items(), key=lambda x: len(x[1]), reverse=True):
-        console.print(f"\n[bold green]{comp_type.upper()} ({len(comps)} items)[/bold green]")
+    for comp_type, comps in sorted(
+        grouped.items(), key=lambda x: len(x[1]), reverse=True
+    ):
+        console.print(
+            f"\n[bold green]{comp_type.upper()} ({len(comps)} items)[/bold green]"
+        )
 
         if comp_type == "file":
             # Special handling for files - categorize them
             file_categories = get_files_by_category({"components": comps})
             for category, files in file_categories.items():
-                console.print(f"  [yellow]{category.capitalize()}:[/yellow] {len(files)} files")
+                console.print(
+                    f"  [yellow]{category.capitalize()}:[/yellow] {len(files)} files"
+                )
                 if show_details:
                     for f in files[:5]:
                         console.print(f"    - {f.get('name', '')}")
@@ -698,10 +704,14 @@ def display_components_grouped_by_type(sbom_data: dict, components: list, show_d
             console.print(table)
 
             if len(comps) > 20:
-                console.print(f"[dim]... and {len(comps) - 20} more {comp_type} components[/dim]")
+                console.print(
+                    f"[dim]... and {len(comps) - 20} more {comp_type} components[/dim]"
+                )
 
 
-def display_components_grouped_by_language(components: list, show_details: bool, console) -> None:
+def display_components_grouped_by_language(
+    components: list, show_details: bool, console
+) -> None:
     """Display components grouped by language."""
     from rich.table import Table
 
@@ -715,9 +725,13 @@ def display_components_grouped_by_language(components: list, show_details: bool,
             grouped[language] = []
         grouped[language].append(comp)
 
-    for language, comps in sorted(grouped.items(), key=lambda x: len(x[1]), reverse=True):
+    for language, comps in sorted(
+        grouped.items(), key=lambda x: len(x[1]), reverse=True
+    ):
         lang_display = language.upper() if language else "UNKNOWN"
-        console.print(f"\n[bold green]{lang_display} ({len(comps)} components)[/bold green]")
+        console.print(
+            f"\n[bold green]{lang_display} ({len(comps)} components)[/bold green]"
+        )
 
         table = Table()
         table.add_column("Name", style="cyan", max_width=40)
@@ -733,4 +747,6 @@ def display_components_grouped_by_language(components: list, show_details: bool,
         console.print(table)
 
         if len(comps) > 20:
-            console.print(f"[dim]... and {len(comps) - 20} more {lang_display.lower()} components[/dim]")
+            console.print(
+                f"[dim]... and {len(comps) - 20} more {lang_display.lower()} components[/dim]"
+            )

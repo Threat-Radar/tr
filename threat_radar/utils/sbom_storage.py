@@ -1,4 +1,5 @@
 """SBOM storage and naming utilities."""
+
 import os
 from pathlib import Path
 from datetime import datetime
@@ -31,7 +32,7 @@ def ensure_storage_directories() -> None:
         root / "docker",
         root / "local",
         root / "comparisons",
-        root / "archives"
+        root / "archives",
     ]
 
     for directory in directories:
@@ -49,11 +50,11 @@ def sanitize_name(name: str) -> str:
         Sanitized name safe for filenames
     """
     # Replace special characters with underscores
-    sanitized = re.sub(r'[^\w\-.]', '_', name)
+    sanitized = re.sub(r"[^\w\-.]", "_", name)
     # Remove consecutive underscores
-    sanitized = re.sub(r'_+', '_', sanitized)
+    sanitized = re.sub(r"_+", "_", sanitized)
     # Remove leading/trailing underscores
-    sanitized = sanitized.strip('_')
+    sanitized = sanitized.strip("_")
     return sanitized
 
 
@@ -71,7 +72,7 @@ def generate_docker_sbom_name(
     image_name: str,
     tag: str = "latest",
     format: str = "json",
-    timestamp: Optional[str] = None
+    timestamp: Optional[str] = None,
 ) -> str:
     """
     Generate SBOM filename for Docker container scan.
@@ -99,9 +100,7 @@ def generate_docker_sbom_name(
 
 
 def generate_local_sbom_name(
-    project_name: str,
-    format: str = "json",
-    timestamp: Optional[str] = None
+    project_name: str, format: str = "json", timestamp: Optional[str] = None
 ) -> str:
     """
     Generate SBOM filename for local project scan.
@@ -125,10 +124,7 @@ def generate_local_sbom_name(
 
 
 def generate_comparison_name(
-    name1: str,
-    name2: str,
-    format: str = "json",
-    timestamp: Optional[str] = None
+    name1: str, name2: str, format: str = "json", timestamp: Optional[str] = None
 ) -> str:
     """
     Generate filename for SBOM comparison result.
@@ -157,7 +153,7 @@ def get_docker_sbom_path(
     image_name: str,
     tag: str = "latest",
     format: str = "json",
-    timestamp: Optional[str] = None
+    timestamp: Optional[str] = None,
 ) -> Path:
     """
     Get full path for Docker SBOM.
@@ -177,9 +173,7 @@ def get_docker_sbom_path(
 
 
 def get_local_sbom_path(
-    project_name: str,
-    format: str = "json",
-    timestamp: Optional[str] = None
+    project_name: str, format: str = "json", timestamp: Optional[str] = None
 ) -> Path:
     """
     Get full path for local project SBOM.
@@ -198,10 +192,7 @@ def get_local_sbom_path(
 
 
 def get_comparison_path(
-    name1: str,
-    name2: str,
-    format: str = "json",
-    timestamp: Optional[str] = None
+    name1: str, name2: str, format: str = "json", timestamp: Optional[str] = None
 ) -> Path:
     """
     Get full path for comparison result.
@@ -298,7 +289,7 @@ def get_format_extension(sbom_format: str) -> str:
         "spdx-tag-value": "spdx",
         "syft-json": "syft.json",
         "table": "txt",
-        "text": "txt"
+        "text": "txt",
     }
 
     return format_map.get(sbom_format, "json")

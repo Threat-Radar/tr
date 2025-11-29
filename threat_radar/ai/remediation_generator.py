@@ -137,7 +137,9 @@ class RemediationGenerator:
             RemediationReport with actionable steps
         """
         # Convert Grype vulnerabilities to dict format
-        vulnerabilities_data = [self._vuln_to_dict(v) for v in scan_result.vulnerabilities]
+        vulnerabilities_data = [
+            self._vuln_to_dict(v) for v in scan_result.vulnerabilities
+        ]
 
         # Generate remediation using AI
         prompt = create_remediation_prompt(vulnerabilities_data)
@@ -147,7 +149,8 @@ class RemediationGenerator:
 
             # Parse remediations
             remediations = [
-                RemediationPlan(**rem_data) for rem_data in response.get("remediations", [])
+                RemediationPlan(**rem_data)
+                for rem_data in response.get("remediations", [])
             ]
 
             # Parse grouped packages
@@ -196,7 +199,9 @@ class RemediationGenerator:
         total_vulns = len(scan_result.vulnerabilities)
         total_batches = (total_vulns + self.batch_size - 1) // self.batch_size
 
-        logger.info(f"Processing {total_vulns} vulnerabilities in {total_batches} batches of {self.batch_size}")
+        logger.info(
+            f"Processing {total_vulns} vulnerabilities in {total_batches} batches of {self.batch_size}"
+        )
 
         # Process each batch
         for batch_idx in range(total_batches):
@@ -205,7 +210,9 @@ class RemediationGenerator:
             batch = scan_result.vulnerabilities[start_idx:end_idx]
             batch_num = batch_idx + 1
 
-            logger.debug(f"Processing batch {batch_num}/{total_batches} ({len(batch)} vulnerabilities)")
+            logger.debug(
+                f"Processing batch {batch_num}/{total_batches} ({len(batch)} vulnerabilities)"
+            )
 
             # Convert to dict format
             batch_data = [self._vuln_to_dict(v) for v in batch]
@@ -214,7 +221,9 @@ class RemediationGenerator:
             prompt = create_remediation_prompt(batch_data)
 
             try:
-                response = self.llm_client.generate_json(prompt, temperature=temperature)
+                response = self.llm_client.generate_json(
+                    prompt, temperature=temperature
+                )
 
                 # Parse batch remediations
                 batch_remediations = [
@@ -229,21 +238,31 @@ class RemediationGenerator:
                     if pkg in all_grouped_packages:
                         # Merge existing package data
                         existing = all_grouped_packages[pkg]
-                        existing.vulnerabilities_count += group_data.get("vulnerabilities_count", 0)
+                        existing.vulnerabilities_count += group_data.get(
+                            "vulnerabilities_count", 0
+                        )
                         # Use the higher version if available
                         if group_data.get("recommended_version"):
-                            existing.recommended_version = group_data["recommended_version"]
+                            existing.recommended_version = group_data[
+                                "recommended_version"
+                            ]
                     else:
-                        all_grouped_packages[pkg] = PackageRemediationGroup(**group_data)
+                        all_grouped_packages[pkg] = PackageRemediationGroup(
+                            **group_data
+                        )
 
-                logger.debug(f"Batch {batch_num} complete: {len(batch_remediations)} remediation plans generated")
+                logger.debug(
+                    f"Batch {batch_num} complete: {len(batch_remediations)} remediation plans generated"
+                )
 
                 # Call progress callback if provided
                 if progress_callback:
                     progress_callback(batch_num, total_batches, len(all_remediations))
 
             except Exception as e:
-                logger.warning(f"Batch {batch_num} failed: {str(e)}. Continuing with remaining batches...")
+                logger.warning(
+                    f"Batch {batch_num} failed: {str(e)}. Continuing with remaining batches..."
+                )
                 continue
 
         # Build metadata with batch information
@@ -284,7 +303,8 @@ class RemediationGenerator:
             response = self.llm_client.generate_json(prompt, temperature=temperature)
 
             remediations = [
-                RemediationPlan(**rem_data) for rem_data in response.get("remediations", [])
+                RemediationPlan(**rem_data)
+                for rem_data in response.get("remediations", [])
             ]
 
             grouped_raw = response.get("grouped_by_package", {})

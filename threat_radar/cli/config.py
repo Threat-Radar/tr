@@ -1,4 +1,5 @@
 """Configuration management commands."""
+
 from pathlib import Path
 import json
 import typer
@@ -14,7 +15,9 @@ console = Console()
 
 @app.command("show")
 def show_config(
-    key: str = typer.Argument(None, help="Specific configuration key to show (e.g., 'scan.severity')"),
+    key: str = typer.Argument(
+        None, help="Specific configuration key to show (e.g., 'scan.severity')"
+    ),
 ):
     """
     Show current configuration.
@@ -67,8 +70,8 @@ def set_config(
 
     try:
         # Convert value to appropriate type
-        if value.lower() in ('true', 'false'):
-            typed_value = value.lower() == 'true'
+        if value.lower() in ("true", "false"):
+            typed_value = value.lower() == "true"
         elif value.isdigit():
             typed_value = int(value)
         else:
@@ -76,7 +79,9 @@ def set_config(
 
         # Set value
         config_manager.set(key, typed_value)
-        console.print(f"[green]✓[/green] Set [cyan]{key}[/cyan] = [green]{typed_value}[/green]")
+        console.print(
+            f"[green]✓[/green] Set [cyan]{key}[/cyan] = [green]{typed_value}[/green]"
+        )
 
         # Save if requested
         if save:
@@ -137,7 +142,9 @@ def show_paths():
     """
     from ..utils.config_manager import ConfigManager
 
-    console.print("\n[bold]Configuration File Locations (in order of precedence):[/bold]\n")
+    console.print(
+        "\n[bold]Configuration File Locations (in order of precedence):[/bold]\n"
+    )
 
     table = Table(show_header=True)
     table.add_column("Priority", style="cyan")
@@ -153,7 +160,9 @@ def show_paths():
     # Show which one is currently loaded
     config_manager = get_config_manager()
     if config_manager.config_path:
-        console.print(f"\n[bold green]Currently loaded:[/bold green] {config_manager.config_path}")
+        console.print(
+            f"\n[bold green]Currently loaded:[/bold green] {config_manager.config_path}"
+        )
     else:
         console.print("\n[dim]No configuration file loaded (using defaults)[/dim]")
 
@@ -181,11 +190,13 @@ def validate_config(
         if config_manager.config_path:
             config_file = config_manager.config_path
         else:
-            console.print("[yellow]No config file loaded. Specify a file to validate.[/yellow]")
+            console.print(
+                "[yellow]No config file loaded. Specify a file to validate.[/yellow]"
+            )
             raise typer.Exit(1)
 
     try:
-        with open(config_file, 'r') as f:
+        with open(config_file, "r") as f:
             data = json.load(f)
 
         # Try to create config from data

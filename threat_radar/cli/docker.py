@@ -1,4 +1,5 @@
 """Docker CLI commands for container analysis."""
+
 import typer
 from typing import Optional
 from dataclasses import asdict
@@ -15,6 +16,7 @@ from ..utils import (
     handle_cli_error,
     create_package_table,
 )
+
 # from ..core.python_sbom import PythonPackageExtractor  # Module doesn't exist yet
 
 app = typer.Typer(help="Docker container analysis commands")
@@ -23,9 +25,15 @@ console = Console()
 
 @app.command()
 def import_image(
-    image: str = typer.Argument(..., help="Image name to import (e.g., 'alpine', 'ubuntu:22.04')"),
-    tag: str = typer.Option("latest", "--tag", "-t", help="Image tag (ignored if tag is in image name)"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
+    image: str = typer.Argument(
+        ..., help="Image name to import (e.g., 'alpine', 'ubuntu:22.04')"
+    ),
+    tag: str = typer.Option(
+        "latest", "--tag", "-t", help="Image tag (ignored if tag is in image name)"
+    ),
+    output: Optional[str] = typer.Option(
+        None, "--output", "-o", help="Save results to JSON file"
+    ),
 ):
     """
     Import and analyze a Docker image.
@@ -59,7 +67,9 @@ def import_image(
 @app.command()
 def scan(
     image: str = typer.Argument(..., help="Image name to scan"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
+    output: Optional[str] = typer.Option(
+        None, "--output", "-o", help="Save results to JSON file"
+    ),
 ):
     """
     Scan a local Docker image and extract packages.
@@ -110,10 +120,10 @@ def list_images():
             table.add_column("Created", style="blue")
 
             for image in images:
-                image_id = image['id'][:12]  # Show short ID
-                tags = ', '.join(image['tags']) if image['tags'] else '<none>'
-                size = format_bytes(image['size'])
-                created = image['created'][:19] if image['created'] else 'N/A'
+                image_id = image["id"][:12]  # Show short ID
+                tags = ", ".join(image["tags"]) if image["tags"] else "<none>"
+                size = format_bytes(image["size"])
+                created = image["created"][:19] if image["created"] else "N/A"
 
                 table.add_row(image_id, tags, size, created)
 
@@ -123,8 +133,12 @@ def list_images():
 @app.command()
 def packages(
     image: str = typer.Argument(..., help="Image name"),
-    limit: Optional[int] = typer.Option(None, "--limit", "-n", help="Limit number of packages shown"),
-    filter_name: Optional[str] = typer.Option(None, "--filter", "-f", help="Filter packages by name"),
+    limit: Optional[int] = typer.Option(
+        None, "--limit", "-n", help="Limit number of packages shown"
+    ),
+    filter_name: Optional[str] = typer.Option(
+        None, "--filter", "-f", help="Filter packages by name"
+    ),
 ):
     """
     List packages installed in a Docker image.
@@ -142,14 +156,18 @@ def packages(
             # Filter packages if requested
             filtered_packages = analysis.packages
             if filter_name:
-                filtered_packages = [p for p in filtered_packages if filter_name.lower() in p.name.lower()]
+                filtered_packages = [
+                    p
+                    for p in filtered_packages
+                    if filter_name.lower() in p.name.lower()
+                ]
 
             # Create and display table
             table = create_package_table(
                 filtered_packages,
                 title=f"Packages in {image}",
                 show_architecture=True,
-                limit=limit
+                limit=limit,
             )
 
             console.print(table)
@@ -194,21 +212,29 @@ def _display_analysis(analysis):
         console.print(pkg_table)
 
         if len(analysis.packages) > 10:
-            console.print(f"[dim]... and {len(analysis.packages) - 10} more packages[/dim]")
+            console.print(
+                f"[dim]... and {len(analysis.packages) - 10} more packages[/dim]"
+            )
 
 
 def _format_size(size_bytes: int) -> str:
     """Format size in bytes to human-readable string."""
-    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
         if size_bytes < 1024.0:
             return f"{size_bytes:.1f} {unit}"
         size_bytes /= 1024.0
     return f"{size_bytes:.1f} PB"
+
+
 @app.command()
 def python_sbom(
     image: str = typer.Argument(..., help="Image name"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save SBOM to file"),
-    format: str = typer.Option("cyclonedx", "--format", "-f", help="SBOM format (cyclonedx, csv, txt)"),
+    output: Optional[str] = typer.Option(
+        None, "--output", "-o", help="Save SBOM to file"
+    ),
+    format: str = typer.Option(
+        "cyclonedx", "--format", "-f", help="SBOM format (cyclonedx, csv, txt)"
+    ),
 ):
     """
     Generate Python package SBOM from Docker image.
@@ -223,7 +249,9 @@ def python_sbom(
         with docker_client() as client:
             extractor = PythonPackageExtractor(client)
 
-            console.print(f"\n[cyan]Extracting Python packages from {full_image}...[/cyan]")
+            console.print(
+                f"\n[cyan]Extracting Python packages from {full_image}...[/cyan]"
+            )
 
             packages = extractor.extract_pip_packages(full_image)
 
@@ -232,7 +260,9 @@ def python_sbom(
                 return
 
             # Display packages
-            table = create_package_table(packages, title=f"Python Packages in {full_image}")
+            table = create_package_table(
+                packages, title=f"Python Packages in {full_image}"
+            )
             console.print(table)
             console.print(f"\n[blue]Total: {len(packages)} Python packages[/blue]")
 
@@ -240,13 +270,26 @@ def python_sbom(
             if output:
                 if format == "cyclonedx":
                     sbom = extractor.generate_cyclonedx_sbom(full_image, packages)
-                    save_json(sbom, output, console, f"CycloneDX SBOM saved to {output}")
+                    save_json(
+                        sbom, output, console, f"CycloneDX SBOM saved to {output}"
+                    )
                 elif format == "csv":
                     csv_content = "name,version\n"
-                    csv_content += "\n".join(f"{pkg.name},{pkg.version}" for pkg in packages)
+                    csv_content += "\n".join(
+                        f"{pkg.name},{pkg.version}" for pkg in packages
+                    )
                     from ..utils.file_utils import save_text
+
                     save_text(csv_content, output, console, f"CSV saved to {output}")
                 elif format == "txt":
-                    txt_content = "\n".join(f"{pkg.name}=={pkg.version}" for pkg in packages)
+                    txt_content = "\n".join(
+                        f"{pkg.name}=={pkg.version}" for pkg in packages
+                    )
                     from ..utils.file_utils import save_text
-                    save_text(txt_content, output, console, f"Requirements format saved to {output}")
+
+                    save_text(
+                        txt_content,
+                        output,
+                        console,
+                        f"Requirements format saved to {output}",
+                    )

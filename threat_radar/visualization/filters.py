@@ -86,7 +86,10 @@ class GraphFilter:
                 continue
 
             severity = data.get("severity", "unknown").lower()
-            if severity in severity_order and severity_order.index(severity) >= min_index:
+            if (
+                severity in severity_order
+                and severity_order.index(severity) >= min_index
+            ):
                 vuln_nodes.add(node)
 
         logger.info(f"Found {len(vuln_nodes)} vulnerabilities >= {min_severity}")
@@ -230,10 +233,15 @@ class GraphFilter:
         critical_nodes = set()
         for node, data in self.graph.nodes(data=True):
             criticality = data.get("criticality", "").lower()
-            if criticality in criticality_order and criticality_order.index(criticality) >= min_index:
+            if (
+                criticality in criticality_order
+                and criticality_order.index(criticality) >= min_index
+            ):
                 critical_nodes.add(node)
 
-        logger.info(f"Found {len(critical_nodes)} nodes with criticality >= {min_criticality}")
+        logger.info(
+            f"Found {len(critical_nodes)} nodes with criticality >= {min_criticality}"
+        )
 
         # Build filtered graph
         filtered = self._build_filtered_graph(critical_nodes, include_related)
@@ -363,7 +371,9 @@ class GraphFilter:
 
             subgraph_nodes.update(new_nodes)
 
-        logger.info(f"Extracted subgraph with {len(subgraph_nodes)} nodes ({hops} hops)")
+        logger.info(
+            f"Extracted subgraph with {len(subgraph_nodes)} nodes ({hops} hops)"
+        )
 
         # Build filtered graph
         filtered_graph = self.graph.subgraph(subgraph_nodes).copy()
@@ -403,7 +413,9 @@ class GraphFilter:
 
             filtered_graph = self.graph.subgraph(all_nodes).copy()
 
-        logger.debug(f"Built filtered graph: {filtered_graph.number_of_nodes()} nodes, {filtered_graph.number_of_edges()} edges")
+        logger.debug(
+            f"Built filtered graph: {filtered_graph.number_of_nodes()} nodes, {filtered_graph.number_of_edges()} edges"
+        )
 
         # Create new client
         filtered_client = NetworkXClient()
@@ -447,7 +459,9 @@ class GraphFilter:
             # Criticalities
             criticality = data.get("criticality", "")
             if criticality:
-                stats["criticalities"][criticality] = stats["criticalities"].get(criticality, 0) + 1
+                stats["criticalities"][criticality] = (
+                    stats["criticalities"].get(criticality, 0) + 1
+                )
 
             # Compliance
             for comp in ["pci", "hipaa", "sox", "gdpr"]:
