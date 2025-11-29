@@ -6,6 +6,7 @@ from pathlib import Path
 
 try:
     import plotly.graph_objects as go
+
     PLOTLY_AVAILABLE = True
 except ImportError:
     PLOTLY_AVAILABLE = False
@@ -54,9 +55,9 @@ class AttackPathVisualizer(NetworkGraphVisualizer):
 
     THREAT_LEVEL_COLORS = {
         ThreatLevel.CRITICAL: "#8b0000",  # Dark red
-        ThreatLevel.HIGH: "#dc143c",      # Crimson
-        ThreatLevel.MEDIUM: "#ffa500",    # Orange
-        ThreatLevel.LOW: "#4682b4",       # Steel blue
+        ThreatLevel.HIGH: "#dc143c",  # Crimson
+        ThreatLevel.MEDIUM: "#ffa500",  # Orange
+        ThreatLevel.LOW: "#4682b4",  # Steel blue
     }
 
     PATH_EDGE_WIDTH = 5
@@ -106,9 +107,9 @@ class AttackPathVisualizer(NetworkGraphVisualizer):
             key=lambda p: (
                 p.threat_level == ThreatLevel.CRITICAL,
                 p.threat_level == ThreatLevel.HIGH,
-                -p.total_cvss
+                -p.total_cvss,
             ),
-            reverse=True
+            reverse=True,
         )
 
         # Limit paths if not showing all
@@ -231,18 +232,15 @@ class AttackPathVisualizer(NetworkGraphVisualizer):
 
         # Create layout
         layout = go.Layout(
-            title=dict(
-                text=title,
-                font=dict(size=20, color='#333')
-            ),
+            title=dict(text=title, font=dict(size=20, color="#333")),
             width=width,
             height=height,
             showlegend=True,
-            hovermode='closest',
+            hovermode="closest",
             margin=dict(b=50, l=50, r=50, t=80),
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            plot_bgcolor='#f8f9fa',
+            plot_bgcolor="#f8f9fa",
         )
 
         fig = go.Figure(data=data, layout=layout)
@@ -288,18 +286,15 @@ class AttackPathVisualizer(NetworkGraphVisualizer):
 
         # Create layout with step annotations
         layout = go.Layout(
-            title=dict(
-                text=title,
-                font=dict(size=20, color='#333')
-            ),
+            title=dict(text=title, font=dict(size=20, color="#333")),
             width=width,
             height=height,
             showlegend=True,
-            hovermode='closest',
+            hovermode="closest",
             margin=dict(b=50, l=50, r=50, t=100),
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            plot_bgcolor='#f8f9fa',
+            plot_bgcolor="#f8f9fa",
         )
 
         fig = go.Figure(data=data, layout=layout)
@@ -314,8 +309,7 @@ class AttackPathVisualizer(NetworkGraphVisualizer):
         return fig
 
     def _create_dimmed_edges(
-        self,
-        pos: Dict[str, Tuple[float, float]]
+        self, pos: Dict[str, Tuple[float, float]]
     ) -> List[go.Scatter]:
         """Create dimmed background edges."""
         x_coords = []
@@ -331,9 +325,9 @@ class AttackPathVisualizer(NetworkGraphVisualizer):
         trace = go.Scatter(
             x=x_coords,
             y=y_coords,
-            mode='lines',
-            line=dict(color='#e0e0e0', width=0.5),
-            hoverinfo='none',
+            mode="lines",
+            line=dict(color="#e0e0e0", width=0.5),
+            hoverinfo="none",
             showlegend=False,
         )
 
@@ -364,12 +358,12 @@ class AttackPathVisualizer(NetworkGraphVisualizer):
         trace = go.Scatter(
             x=x_coords,
             y=y_coords,
-            mode='lines',
+            mode="lines",
             line=dict(
                 color=color,
                 width=self.PATH_EDGE_WIDTH,
             ),
-            hoverinfo='text',
+            hoverinfo="text",
             text=f"Path {path_index + 1}: {attack_path.threat_level.value.upper()}",
             name=f"Path {path_index + 1} ({attack_path.threat_level.value})",
         )
@@ -413,10 +407,11 @@ class AttackPathVisualizer(NetworkGraphVisualizer):
 
             # Larger size for entry/target points
             is_entry_or_target = any(
-                node == path.entry_point or node == path.target
-                for path in attack_paths
+                node == path.entry_point or node == path.target for path in attack_paths
             )
-            sizes.append(self.PATH_NODE_SIZE * 1.5 if is_entry_or_target else self.PATH_NODE_SIZE)
+            sizes.append(
+                self.PATH_NODE_SIZE * 1.5 if is_entry_or_target else self.PATH_NODE_SIZE
+            )
 
             # Create hover text
             hover_text = self._create_path_node_hover(node, node_data, attack_paths)
@@ -425,14 +420,14 @@ class AttackPathVisualizer(NetworkGraphVisualizer):
         trace = go.Scatter(
             x=x_coords,
             y=y_coords,
-            mode='markers',
+            mode="markers",
             marker=dict(
                 size=sizes,
                 color=colors,
-                line=dict(width=2, color='white'),
+                line=dict(width=2, color="white"),
             ),
             text=hover_texts,
-            hoverinfo='text',
+            hoverinfo="text",
             name="Attack Path Nodes",
         )
 
@@ -460,15 +455,15 @@ class AttackPathVisualizer(NetworkGraphVisualizer):
         trace = go.Scatter(
             x=x_coords,
             y=y_coords,
-            mode='markers',
+            mode="markers",
             marker=dict(
                 size=8,
-                color='#bdc3c7',
+                color="#bdc3c7",
                 opacity=0.3,
-                line=dict(width=1, color='white'),
+                line=dict(width=1, color="white"),
             ),
             text=hover_texts,
-            hoverinfo='text',
+            hoverinfo="text",
             showlegend=False,
         )
 
@@ -496,15 +491,15 @@ class AttackPathVisualizer(NetworkGraphVisualizer):
         trace = go.Scatter(
             x=x_coords,
             y=y_coords,
-            mode='markers',
+            mode="markers",
             marker=dict(
                 size=10,
-                color='#95a5a6',
+                color="#95a5a6",
                 opacity=0.5,
-                line=dict(width=1, color='white'),
+                line=dict(width=1, color="white"),
             ),
             text=hover_texts,
-            hoverinfo='text',
+            hoverinfo="text",
             name="Related Nodes",
         )
 
@@ -530,7 +525,11 @@ class AttackPathVisualizer(NetworkGraphVisualizer):
                 for step in path.steps:
                     if step.node_id == node_id:
                         # Handle both enum and string step_type
-                        step_type_str = step.step_type.value if hasattr(step.step_type, 'value') else str(step.step_type)
+                        step_type_str = (
+                            step.step_type.value
+                            if hasattr(step.step_type, "value")
+                            else str(step.step_type)
+                        )
                         roles.append(f"⚡ {step_type_str.replace('_', ' ').title()}")
                         break
 
@@ -584,11 +583,11 @@ class AttackPathVisualizer(NetworkGraphVisualizer):
                     y=y,
                     text=f"<b>{i + 1}</b>",
                     showarrow=False,
-                    font=dict(size=12, color='white'),
-                    bgcolor='rgba(0,0,0,0.7)',
+                    font=dict(size=12, color="white"),
+                    bgcolor="rgba(0,0,0,0.7)",
                     borderpad=4,
-                    xanchor='center',
-                    yanchor='middle',
+                    xanchor="center",
+                    yanchor="middle",
                 )
             )
 
@@ -616,14 +615,14 @@ class AttackPathVisualizer(NetworkGraphVisualizer):
             y=0.98,
             text=info_text,
             showarrow=False,
-            font=dict(size=11, color='#333'),
-            align='left',
-            bgcolor='rgba(255,255,255,0.9)',
-            bordercolor='#333',
+            font=dict(size=11, color="#333"),
+            align="left",
+            bgcolor="rgba(255,255,255,0.9)",
+            bordercolor="#333",
             borderwidth=1,
             borderpad=10,
-            xanchor='left',
-            yanchor='top',
+            xanchor="left",
+            yanchor="top",
         )
 
     def _add_threat_level_legend(
@@ -658,11 +657,11 @@ class AttackPathVisualizer(NetworkGraphVisualizer):
             text=legend_text,
             showarrow=False,
             font=dict(size=11),
-            align='left',
-            bgcolor='rgba(255,255,255,0.9)',
-            bordercolor='#333',
+            align="left",
+            bgcolor="rgba(255,255,255,0.9)",
+            bordercolor="#333",
             borderwidth=1,
             borderpad=10,
-            xanchor='right',
-            yanchor='top',
+            xanchor="right",
+            yanchor="top",
         )

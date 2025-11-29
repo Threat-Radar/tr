@@ -7,6 +7,7 @@ from typing import Optional, Dict, Any
 
 try:
     import plotly.graph_objects as go
+
     PLOTLY_AVAILABLE = True
 except ImportError:
     PLOTLY_AVAILABLE = False
@@ -80,7 +81,7 @@ class GraphExporter:
         fig: go.Figure,
         output_path: Path,
         auto_open: bool = False,
-        include_plotlyjs: str = 'inline',
+        include_plotlyjs: str = "inline",
     ) -> None:
         """
         Export figure as standalone HTML file.
@@ -101,12 +102,12 @@ class GraphExporter:
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Validate include_plotlyjs value
-        valid_options = ['inline', 'cdn', 'directory', True, False]
+        valid_options = ["inline", "cdn", "directory", True, False]
         if include_plotlyjs not in valid_options:
             logger.warning(
                 f"Invalid include_plotlyjs value '{include_plotlyjs}', using 'inline'"
             )
-            include_plotlyjs = 'inline'
+            include_plotlyjs = "inline"
 
         fig.write_html(
             str(output_path),
@@ -120,7 +121,7 @@ class GraphExporter:
         self,
         fig: go.Figure,
         output_path: Path,
-        format: str = 'png',
+        format: str = "png",
         width: Optional[int] = None,
         height: Optional[int] = None,
         scale: float = 2.0,
@@ -163,7 +164,7 @@ class GraphExporter:
         self,
         output_path: Path,
         include_positions: bool = True,
-        layout_algorithm: str = 'spring',
+        layout_algorithm: str = "spring",
     ) -> None:
         """
         Export graph as JSON for web visualization.
@@ -196,36 +197,38 @@ class GraphExporter:
 
         # Export NetworkX graph to dict
         from networkx.readwrite import json_graph
+
         graph_data = json_graph.node_link_data(self.graph)
 
         # Add positions if requested
         if include_positions:
             try:
                 import networkx as nx
+
                 pos = None
 
-                if layout_algorithm == 'spring':
+                if layout_algorithm == "spring":
                     pos = nx.spring_layout(self.graph, seed=42)
-                elif layout_algorithm == 'kamada_kawai':
+                elif layout_algorithm == "kamada_kawai":
                     pos = nx.kamada_kawai_layout(self.graph)
-                elif layout_algorithm == 'circular':
+                elif layout_algorithm == "circular":
                     pos = nx.circular_layout(self.graph)
-                elif layout_algorithm == 'spectral':
+                elif layout_algorithm == "spectral":
                     pos = nx.spectral_layout(self.graph)
 
                 if pos:
                     # Add positions to node data
-                    for node_data in graph_data['nodes']:
-                        node_id = node_data['id']
+                    for node_data in graph_data["nodes"]:
+                        node_id = node_data["id"]
                         if node_id in pos:
                             x, y = pos[node_id]
-                            node_data['x'] = float(x)
-                            node_data['y'] = float(y)
+                            node_data["x"] = float(x)
+                            node_data["y"] = float(y)
 
             except Exception as e:
                 logger.warning(f"Could not calculate positions: {e}")
 
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(graph_data, f, indent=2)
 
         logger.info(f"Exported JSON to {output_path}")
@@ -300,27 +303,15 @@ class GraphExporter:
 
         # Add nodes
         for node, data in self.graph.nodes(data=True):
-            node_elem = {
-                "data": {
-                    "id": node,
-                    **data
-                }
-            }
+            node_elem = {"data": {"id": node, **data}}
             cytoscape_data["elements"]["nodes"].append(node_elem)
 
         # Add edges
         for u, v, data in self.graph.edges(data=True):
-            edge_elem = {
-                "data": {
-                    "id": f"{u}-{v}",
-                    "source": u,
-                    "target": v,
-                    **data
-                }
-            }
+            edge_elem = {"data": {"id": f"{u}-{v}", "source": u, "target": v, **data}}
             cytoscape_data["elements"]["edges"].append(edge_elem)
 
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(cytoscape_data, f, indent=2)
 
         logger.info(f"Exported Cytoscape.js format to {output_path}")
@@ -411,12 +402,14 @@ class GraphExporter:
                 "total_edges": self.graph.number_of_edges(),
                 "node_types": self._count_by_attribute("node_type"),
                 "edge_types": self._count_edge_types(),
-                "severities": self._count_by_attribute("severity", node_type="vulnerability"),
+                "severities": self._count_by_attribute(
+                    "severity", node_type="vulnerability"
+                ),
                 "zones": self._count_by_attribute("zone"),
                 "criticalities": self._count_by_attribute("criticality"),
             }
 
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(data, f, indent=2)
 
         logger.info(f"Exported visualization data to {output_path}")
@@ -463,11 +456,15 @@ class GraphExporter:
             }
             paths_data.append(path_dict)
 
-        with open(output_path, 'w') as f:
-            json.dump({
-                "total_paths": len(attack_paths),
-                "attack_paths": paths_data,
-            }, f, indent=2)
+        with open(output_path, "w") as f:
+            json.dump(
+                {
+                    "total_paths": len(attack_paths),
+                    "attack_paths": paths_data,
+                },
+                f,
+                indent=2,
+            )
 
         logger.info(f"Exported {len(attack_paths)} attack paths to {output_path}")
 
@@ -518,52 +515,52 @@ class GraphExporter:
             Dictionary mapping format to output path
         """
         if formats is None:
-            formats = ['html', 'png', 'json', 'dot']
+            formats = ["html", "png", "json", "dot"]
 
         base_path = Path(base_path)
         outputs = {}
 
         for fmt in formats:
             try:
-                if fmt == 'html':
-                    output = base_path.with_suffix('.html')
+                if fmt == "html":
+                    output = base_path.with_suffix(".html")
                     self.export_html(fig, output)
-                    outputs['html'] = output
+                    outputs["html"] = output
 
-                elif fmt == 'png':
-                    output = base_path.with_suffix('.png')
-                    self.export_image(fig, output, format='png')
-                    outputs['png'] = output
+                elif fmt == "png":
+                    output = base_path.with_suffix(".png")
+                    self.export_image(fig, output, format="png")
+                    outputs["png"] = output
 
-                elif fmt == 'svg':
-                    output = base_path.with_suffix('.svg')
-                    self.export_image(fig, output, format='svg')
-                    outputs['svg'] = output
+                elif fmt == "svg":
+                    output = base_path.with_suffix(".svg")
+                    self.export_image(fig, output, format="svg")
+                    outputs["svg"] = output
 
-                elif fmt == 'pdf':
-                    output = base_path.with_suffix('.pdf')
-                    self.export_image(fig, output, format='pdf')
-                    outputs['pdf'] = output
+                elif fmt == "pdf":
+                    output = base_path.with_suffix(".pdf")
+                    self.export_image(fig, output, format="pdf")
+                    outputs["pdf"] = output
 
-                elif fmt == 'json':
-                    output = base_path.with_suffix('.json')
+                elif fmt == "json":
+                    output = base_path.with_suffix(".json")
                     self.export_json(output)
-                    outputs['json'] = output
+                    outputs["json"] = output
 
-                elif fmt == 'dot':
-                    output = base_path.with_suffix('.dot')
+                elif fmt == "dot":
+                    output = base_path.with_suffix(".dot")
                     self.export_dot(output)
-                    outputs['dot'] = output
+                    outputs["dot"] = output
 
-                elif fmt == 'cytoscape':
-                    output = base_path.with_suffix('.cytoscape.json')
+                elif fmt == "cytoscape":
+                    output = base_path.with_suffix(".cytoscape.json")
                     self.export_cytoscape(output)
-                    outputs['cytoscape'] = output
+                    outputs["cytoscape"] = output
 
-                elif fmt == 'gexf':
-                    output = base_path.with_suffix('.gexf')
+                elif fmt == "gexf":
+                    output = base_path.with_suffix(".gexf")
                     self.export_gexf(output)
-                    outputs['gexf'] = output
+                    outputs["gexf"] = output
 
             except Exception as e:
                 logger.error(f"Failed to export {fmt}: {e}")

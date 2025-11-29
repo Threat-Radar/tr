@@ -1,4 +1,5 @@
 """Tests for Syft integration."""
+
 import pytest
 import json
 from pathlib import Path
@@ -14,7 +15,7 @@ from threat_radar.utils.sbom_utils import (
     get_files_by_category,
     get_component_details,
     filter_components_by_language,
-    get_language_statistics
+    get_language_statistics,
 )
 
 
@@ -62,7 +63,7 @@ class TestSyftClient:
                     "type": "python",
                     "purl": "pkg:pypi/test-package@1.0.0",
                     "licenses": ["MIT"],
-                    "locations": [{"path": "/path/to/package"}]
+                    "locations": [{"path": "/path/to/package"}],
                 }
             ]
         }
@@ -80,7 +81,7 @@ class TestSyftClient:
         sbom_data = {
             "artifacts": [
                 {"name": "pkg1", "version": "1.0.0"},
-                {"name": "pkg2", "version": "2.0.0"}
+                {"name": "pkg2", "version": "2.0.0"},
             ]
         }
 
@@ -97,9 +98,7 @@ class TestSBOMUtils:
         """Test saving and loading SBOM."""
         sbom_data = {
             "bomFormat": "CycloneDX",
-            "components": [
-                {"name": "test", "version": "1.0.0"}
-            ]
+            "components": [{"name": "test", "version": "1.0.0"}],
         }
 
         output_path = tmp_path / "test_sbom.json"
@@ -115,7 +114,7 @@ class TestSBOMUtils:
         sbom = {
             "components": [
                 {"name": "pkg1", "version": "1.0.0"},
-                {"name": "pkg2", "version": "2.0.0"}
+                {"name": "pkg2", "version": "2.0.0"},
             ]
         }
 
@@ -127,7 +126,7 @@ class TestSBOMUtils:
         sbom = {
             "artifacts": [
                 {"name": "pkg1", "version": "1.0.0"},
-                {"name": "pkg2", "version": "2.0.0"}
+                {"name": "pkg2", "version": "2.0.0"},
             ]
         }
 
@@ -139,14 +138,14 @@ class TestSBOMUtils:
         sbom1 = {
             "artifacts": [
                 {"name": "common", "version": "1.0.0"},
-                {"name": "removed", "version": "1.0.0"}
+                {"name": "removed", "version": "1.0.0"},
             ]
         }
 
         sbom2 = {
             "artifacts": [
                 {"name": "common", "version": "1.0.0"},
-                {"name": "added", "version": "1.0.0"}
+                {"name": "added", "version": "1.0.0"},
             ]
         }
 
@@ -162,7 +161,7 @@ class TestSBOMUtils:
             "artifacts": [
                 {"name": "pkg1", "type": "python"},
                 {"name": "pkg2", "type": "python"},
-                {"name": "pkg3", "type": "javascript"}
+                {"name": "pkg3", "type": "javascript"},
             ]
         }
 
@@ -197,7 +196,7 @@ class TestComponentFeatures:
                 {"name": "lib1", "type": "library"},
                 {"name": "lib2", "type": "library"},
                 {"name": "file1", "type": "file"},
-                {"name": "app1", "type": "application"}
+                {"name": "app1", "type": "application"},
             ]
         }
 
@@ -216,8 +215,8 @@ class TestComponentFeatures:
             "properties": [
                 {"name": "syft:package:language", "value": "python"},
                 {"name": "syft:package:type", "value": "python"},
-                {"name": "syft:location:0:path", "value": "/path/to/package"}
-            ]
+                {"name": "syft:location:0:path", "value": "/path/to/package"},
+            ],
         }
 
         metadata = extract_component_metadata(component)
@@ -234,7 +233,7 @@ class TestComponentFeatures:
                 {"name": "package/RECORD", "type": "file"},
                 {"name": "README.md", "type": "file"},
                 {"name": "config.json", "type": "file"},
-                {"name": "source.py", "type": "file"}
+                {"name": "source.py", "type": "file"},
             ]
         }
 
@@ -254,9 +253,7 @@ class TestComponentFeatures:
             "type": "library",
             "purl": "pkg:pypi/test-lib@1.0.0",
             "author": "Test Author",
-            "properties": [
-                {"name": "syft:package:language", "value": "python"}
-            ]
+            "properties": [{"name": "syft:package:language", "value": "python"}],
         }
 
         details = get_component_details(component)
@@ -273,12 +270,16 @@ class TestComponentFeatures:
             "components": [
                 {
                     "name": "python-lib",
-                    "properties": [{"name": "syft:package:language", "value": "python"}]
+                    "properties": [
+                        {"name": "syft:package:language", "value": "python"}
+                    ],
                 },
                 {
                     "name": "js-lib",
-                    "properties": [{"name": "syft:package:language", "value": "javascript"}]
-                }
+                    "properties": [
+                        {"name": "syft:package:language", "value": "javascript"}
+                    ],
+                },
             ]
         }
 
@@ -291,9 +292,24 @@ class TestComponentFeatures:
         """Test getting language statistics."""
         sbom = {
             "components": [
-                {"name": "lib1", "properties": [{"name": "syft:package:language", "value": "python"}]},
-                {"name": "lib2", "properties": [{"name": "syft:package:language", "value": "python"}]},
-                {"name": "lib3", "properties": [{"name": "syft:package:language", "value": "javascript"}]}
+                {
+                    "name": "lib1",
+                    "properties": [
+                        {"name": "syft:package:language", "value": "python"}
+                    ],
+                },
+                {
+                    "name": "lib2",
+                    "properties": [
+                        {"name": "syft:package:language", "value": "python"}
+                    ],
+                },
+                {
+                    "name": "lib3",
+                    "properties": [
+                        {"name": "syft:package:language", "value": "javascript"}
+                    ],
+                },
             ]
         }
 
@@ -314,9 +330,9 @@ def sample_sbom_cyclonedx():
                 "name": "requests",
                 "version": "2.31.0",
                 "type": "library",
-                "purl": "pkg:pypi/requests@2.31.0"
+                "purl": "pkg:pypi/requests@2.31.0",
             }
-        ]
+        ],
     }
 
 
@@ -331,7 +347,7 @@ def sample_sbom_syft():
                 "type": "python",
                 "purl": "pkg:pypi/requests@2.31.0",
                 "licenses": ["Apache-2.0"],
-                "locations": [{"path": "/usr/lib/python3/site-packages/requests"}]
+                "locations": [{"path": "/usr/lib/python3/site-packages/requests"}],
             }
         ]
     }

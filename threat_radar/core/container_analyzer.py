@@ -1,4 +1,5 @@
 """Container analysis functions for extracting metadata and packages."""
+
 import re
 import logging
 from typing import Dict, List, Optional, Tuple
@@ -14,6 +15,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ContainerAnalysis:
     """Results of container analysis."""
+
     image_name: str
     image_id: str
     distro: Optional[str] = None
@@ -43,7 +45,9 @@ class ContainerAnalyzer:
         self.docker_client = DockerClient()
         self._syft_client = syft_client
 
-    def import_container(self, image_name: str, tag: str = "latest") -> ContainerAnalysis:
+    def import_container(
+        self, image_name: str, tag: str = "latest"
+    ) -> ContainerAnalysis:
         """
         Import and analyze a container image.
 
@@ -81,11 +85,11 @@ class ContainerAnalyzer:
         # Extract basic info
         analysis = ContainerAnalysis(
             image_name=image_name,
-            image_id=image_info['Id'],
-            size=image_info.get('Size'),
-            created=image_info.get('Created'),
-            architecture=image_info.get('Architecture'),
-            os=image_info.get('Os')
+            image_id=image_info["Id"],
+            size=image_info.get("Size"),
+            created=image_info.get("Created"),
+            architecture=image_info.get("Architecture"),
+            os=image_info.get("Os"),
         )
 
         # Detect distribution
@@ -112,7 +116,7 @@ class ContainerAnalyzer:
         self,
         image_name: str,
         fallback_to_native: bool = True,
-        include_types: Optional[List[str]] = None
+        include_types: Optional[List[str]] = None,
     ) -> ContainerAnalysis:
         """
         Analyze container using SBOM (Syft) for comprehensive package detection.
@@ -138,6 +142,7 @@ class ContainerAnalyzer:
         if self._syft_client is None:
             try:
                 from .syft_integration import SyftClient
+
                 self._syft_client = SyftClient()
             except Exception as e:
                 error_msg = f"Failed to initialize Syft client: {e}"
@@ -150,20 +155,21 @@ class ContainerAnalyzer:
         try:
             # Generate SBOM using Syft
             from .syft_integration import SBOMFormat
+
             logger.info(f"Generating SBOM for {image_name} using Syft...")
 
             sbom_data = self._syft_client.scan_docker_image(
-                image_name,
-                output_format=SBOMFormat.SYFT_JSON,
-                scope="squashed"
+                image_name, output_format=SBOMFormat.SYFT_JSON, scope="squashed"
             )
 
             # Convert SBOM packages to Package objects
-            from .sbom_package_converter import convert_sbom_to_packages, get_package_statistics
+            from .sbom_package_converter import (
+                convert_sbom_to_packages,
+                get_package_statistics,
+            )
+
             packages = convert_sbom_to_packages(
-                sbom_data,
-                format="syft",
-                include_types=include_types
+                sbom_data, format="syft", include_types=include_types
             )
 
             # Get package type statistics
@@ -179,15 +185,15 @@ class ContainerAnalyzer:
             # Build ContainerAnalysis result
             analysis = ContainerAnalysis(
                 image_name=image_name,
-                image_id=image_info['Id'],
-                size=image_info.get('Size'),
-                created=image_info.get('Created'),
-                architecture=image_info.get('Architecture'),
-                os=image_info.get('Os'),
+                image_id=image_info["Id"],
+                size=image_info.get("Size"),
+                created=image_info.get("Created"),
+                architecture=image_info.get("Architecture"),
+                os=image_info.get("Os"),
                 distro=distro,
                 distro_version=version,
                 base_image=self._get_base_image(image_info),
-                packages=packages
+                packages=packages,
             )
 
             logger.info(
@@ -220,9 +226,7 @@ class ContainerAnalyzer:
         # Try reading /etc/os-release
         try:
             output = self.docker_client.run_container(
-                image_name,
-                "cat /etc/os-release",
-                remove=True
+                image_name, "cat /etc/os-release", remove=True
             )
             return self._parse_os_release(output)
         except APIError as e:
@@ -231,9 +235,7 @@ class ContainerAnalyzer:
         # Fallback: try /etc/issue
         try:
             output = self.docker_client.run_container(
-                image_name,
-                "cat /etc/issue",
-                remove=True
+                image_name, "cat /etc/issue", remove=True
             )
             return self._parse_issue(output)
         except APIError as e:
@@ -244,56 +246,58 @@ class ContainerAnalyzer:
 
     def _parse_os_release(self, output: bytes) -> Tuple[Optional[str], Optional[str]]:
         """Parse /etc/os-release file."""
-        content = output.decode('utf-8', errors='ignore')
+        content = output.decode("utf-8", errors="ignore")
         distro = None
         version = None
 
-        for line in content.split('\n'):
-            if line.startswith('ID='):
-                distro = line.split('=', 1)[1].strip().strip('"')
-            elif line.startswith('VERSION_ID='):
-                version = line.split('=', 1)[1].strip().strip('"')
+        for line in content.split("\n"):
+            if line.startswith("ID="):
+                distro = line.split("=", 1)[1].strip().strip('"')
+            elif line.startswith("VERSION_ID="):
+                version = line.split("=", 1)[1].strip().strip('"')
 
         return distro, version
 
     def _parse_issue(self, output: bytes) -> Tuple[Optional[str], Optional[str]]:
         """Parse /etc/issue file."""
-        content = output.decode('utf-8', errors='ignore').lower()
+        content = output.decode("utf-8", errors="ignore").lower()
 
-        if 'debian' in content:
-            return 'debian', None
-        elif 'ubuntu' in content:
-            return 'ubuntu', None
-        elif 'alpine' in content:
-            return 'alpine', None
-        elif 'centos' in content:
-            return 'centos', None
-        elif 'fedora' in content:
-            return 'fedora', None
-        elif 'red hat' in content or 'rhel' in content:
-            return 'rhel', None
+        if "debian" in content:
+            return "debian", None
+        elif "ubuntu" in content:
+            return "ubuntu", None
+        elif "alpine" in content:
+            return "alpine", None
+        elif "centos" in content:
+            return "centos", None
+        elif "fedora" in content:
+            return "fedora", None
+        elif "red hat" in content or "rhel" in content:
+            return "rhel", None
 
         return None, None
 
-    def _guess_distro_from_name(self, image_name: str) -> Tuple[Optional[str], Optional[str]]:
+    def _guess_distro_from_name(
+        self, image_name: str
+    ) -> Tuple[Optional[str], Optional[str]]:
         """Guess distribution from image name."""
         image_lower = image_name.lower()
 
         distros = {
-            'alpine': 'alpine',
-            'ubuntu': 'ubuntu',
-            'debian': 'debian',
-            'centos': 'centos',
-            'fedora': 'fedora',
-            'rhel': 'rhel',
-            'rocky': 'rocky',
-            'almalinux': 'almalinux'
+            "alpine": "alpine",
+            "ubuntu": "ubuntu",
+            "debian": "debian",
+            "centos": "centos",
+            "fedora": "fedora",
+            "rhel": "rhel",
+            "rocky": "rocky",
+            "almalinux": "almalinux",
         }
 
         for keyword, distro in distros.items():
             if keyword in image_lower:
                 # Try to extract version from tag
-                version_match = re.search(r':(\d+(?:\.\d+)*)', image_name)
+                version_match = re.search(r":(\d+(?:\.\d+)*)", image_name)
                 version = version_match.group(1) if version_match else None
                 return distro, version
 
@@ -301,17 +305,17 @@ class ContainerAnalyzer:
 
     def _get_base_image(self, image_info: Dict) -> Optional[str]:
         """Extract base image information from image config."""
-        config = image_info.get('Config', {})
-        labels = config.get('Labels')
+        config = image_info.get("Config", {})
+        labels = config.get("Labels")
 
         # Check common labels for base image
         if labels:
-            for label_key in ['org.opencontainers.image.base.name', 'base.image']:
+            for label_key in ["org.opencontainers.image.base.name", "base.image"]:
                 if label_key in labels:
                     return labels[label_key]
 
         # Try to get from history
-        history = image_info.get('RootFS', {})
+        history = image_info.get("RootFS", {})
         return None
 
     def _extract_packages(self, image_name: str, distro: str) -> List[Package]:
@@ -336,11 +340,7 @@ class ContainerAnalyzer:
             return []
 
         try:
-            output = self.docker_client.run_container(
-                image_name,
-                command,
-                remove=True
-            )
+            output = self.docker_client.run_container(image_name, command, remove=True)
             packages = extractor.parse_packages(output)
             return packages
         except APIError as e:
@@ -358,12 +358,14 @@ class ContainerAnalyzer:
         result = []
 
         for image in images:
-            result.append({
-                'id': image.id,
-                'tags': image.tags,
-                'created': image.attrs.get('Created'),
-                'size': image.attrs.get('Size'),
-            })
+            result.append(
+                {
+                    "id": image.id,
+                    "tags": image.tags,
+                    "created": image.attrs.get("Created"),
+                    "size": image.attrs.get("Size"),
+                }
+            )
 
         return result
 

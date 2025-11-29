@@ -29,7 +29,7 @@ def temp_config_file(tmp_path):
     config_data = {
         "scan": {"severity": "HIGH"},
         "ai": {"provider": "openai"},
-        "output": {"verbosity": 2}
+        "output": {"verbosity": 2},
     }
     config_file = tmp_path / "test-config.json"
     config_file.write_text(json.dumps(config_data))
@@ -53,7 +53,7 @@ class TestAppGlobalOptions:
     def test_app_with_verbose_flag(self):
         """Test app with verbose flag."""
         # Since we need a subcommand, use config show
-        with patch('threat_radar.cli.config.get_config_manager') as mock_get_config:
+        with patch("threat_radar.cli.config.get_config_manager") as mock_get_config:
             mock_manager = MagicMock()
             mock_config_obj = MagicMock()
             mock_config_obj.to_dict.return_value = {"scan": {"severity": None}}
@@ -68,7 +68,7 @@ class TestAppGlobalOptions:
 
     def test_app_with_quiet_flag(self):
         """Test app with quiet flag."""
-        with patch('threat_radar.cli.config.get_config_manager') as mock_get_config:
+        with patch("threat_radar.cli.config.get_config_manager") as mock_get_config:
             mock_manager = MagicMock()
             mock_config_obj = MagicMock()
             mock_config_obj.to_dict.return_value = {"scan": {"severity": None}}
@@ -82,7 +82,7 @@ class TestAppGlobalOptions:
 
     def test_app_with_output_format(self):
         """Test app with output format option."""
-        with patch('threat_radar.cli.config.get_config_manager') as mock_get_config:
+        with patch("threat_radar.cli.config.get_config_manager") as mock_get_config:
             mock_manager = MagicMock()
             mock_config_obj = MagicMock()
             mock_config_obj.to_dict.return_value = {"scan": {"severity": None}}
@@ -96,7 +96,7 @@ class TestAppGlobalOptions:
 
     def test_app_with_no_color(self):
         """Test app with no-color flag."""
-        with patch('threat_radar.cli.config.get_config_manager') as mock_get_config:
+        with patch("threat_radar.cli.config.get_config_manager") as mock_get_config:
             mock_manager = MagicMock()
             mock_config_obj = MagicMock()
             mock_config_obj.to_dict.return_value = {"scan": {"severity": None}}
@@ -110,7 +110,7 @@ class TestAppGlobalOptions:
 
     def test_app_with_config_file(self, temp_config_file):
         """Test app with config file option."""
-        with patch('threat_radar.cli.config.get_config_manager') as mock_get_config:
+        with patch("threat_radar.cli.config.get_config_manager") as mock_get_config:
             mock_manager = MagicMock()
             mock_config_obj = MagicMock()
             mock_config_obj.to_dict.return_value = {"scan": {"severity": "HIGH"}}
@@ -118,7 +118,9 @@ class TestAppGlobalOptions:
             mock_manager.config_path = temp_config_file
             mock_get_config.return_value = mock_manager
 
-            result = runner.invoke(app, ["--config", str(temp_config_file), "config", "show"])
+            result = runner.invoke(
+                app, ["--config", str(temp_config_file), "config", "show"]
+            )
 
             assert result.exit_code == 0
 
@@ -129,12 +131,12 @@ class TestConfigCommands:
 
     def test_config_show_all(self):
         """Test showing all configuration."""
-        with patch('threat_radar.cli.config.get_config_manager') as mock_get_config:
+        with patch("threat_radar.cli.config.get_config_manager") as mock_get_config:
             mock_manager = MagicMock(spec=ConfigManager)
             mock_config_obj = MagicMock()
             mock_config_obj.to_dict.return_value = {
                 "scan": {"severity": "HIGH"},
-                "ai": {"provider": "openai"}
+                "ai": {"provider": "openai"},
             }
             mock_manager.config = mock_config_obj
             mock_manager.config_path = None
@@ -147,7 +149,7 @@ class TestConfigCommands:
 
     def test_config_show_specific_key(self):
         """Test showing specific configuration key."""
-        with patch('threat_radar.cli.config.get_config_manager') as mock_get_config:
+        with patch("threat_radar.cli.config.get_config_manager") as mock_get_config:
             mock_manager = MagicMock(spec=ConfigManager)
             mock_manager.get.return_value = "HIGH"
             mock_get_config.return_value = mock_manager
@@ -160,7 +162,7 @@ class TestConfigCommands:
 
     def test_config_show_nonexistent_key(self):
         """Test showing nonexistent configuration key."""
-        with patch('threat_radar.cli.config.get_config_manager') as mock_get_config:
+        with patch("threat_radar.cli.config.get_config_manager") as mock_get_config:
             mock_manager = MagicMock(spec=ConfigManager)
             mock_manager.get.return_value = None
             mock_get_config.return_value = mock_manager
@@ -172,7 +174,7 @@ class TestConfigCommands:
 
     def test_config_set_string_value(self):
         """Test setting string configuration value."""
-        with patch('threat_radar.cli.config.get_config_manager') as mock_get_config:
+        with patch("threat_radar.cli.config.get_config_manager") as mock_get_config:
             mock_manager = MagicMock(spec=ConfigManager)
             mock_manager.save_config.return_value = Path("/tmp/config.json")
             mock_get_config.return_value = mock_manager
@@ -185,7 +187,7 @@ class TestConfigCommands:
 
     def test_config_set_boolean_value(self):
         """Test setting boolean configuration value."""
-        with patch('threat_radar.cli.config.get_config_manager') as mock_get_config:
+        with patch("threat_radar.cli.config.get_config_manager") as mock_get_config:
             mock_manager = MagicMock(spec=ConfigManager)
             mock_manager.save_config.return_value = Path("/tmp/config.json")
             mock_get_config.return_value = mock_manager
@@ -197,7 +199,7 @@ class TestConfigCommands:
 
     def test_config_set_integer_value(self):
         """Test setting integer configuration value."""
-        with patch('threat_radar.cli.config.get_config_manager') as mock_get_config:
+        with patch("threat_radar.cli.config.get_config_manager") as mock_get_config:
             mock_manager = MagicMock(spec=ConfigManager)
             mock_manager.save_config.return_value = Path("/tmp/config.json")
             mock_get_config.return_value = mock_manager
@@ -209,11 +211,13 @@ class TestConfigCommands:
 
     def test_config_set_without_save(self):
         """Test setting config without saving to file."""
-        with patch('threat_radar.cli.config.get_config_manager') as mock_get_config:
+        with patch("threat_radar.cli.config.get_config_manager") as mock_get_config:
             mock_manager = MagicMock(spec=ConfigManager)
             mock_get_config.return_value = mock_manager
 
-            result = runner.invoke(config_cmd.app, ["set", "scan.severity", "HIGH", "--no-save"])
+            result = runner.invoke(
+                config_cmd.app, ["set", "scan.severity", "HIGH", "--no-save"]
+            )
 
             assert result.exit_code == 0
             mock_manager.set.assert_called_once()
@@ -221,7 +225,7 @@ class TestConfigCommands:
 
     def test_config_set_invalid_key(self):
         """Test setting invalid configuration key."""
-        with patch('threat_radar.cli.config.get_config_manager') as mock_get_config:
+        with patch("threat_radar.cli.config.get_config_manager") as mock_get_config:
             mock_manager = MagicMock(spec=ConfigManager)
             mock_manager.set.side_effect = ValueError("Invalid key")
             mock_get_config.return_value = mock_manager
@@ -235,13 +239,15 @@ class TestConfigCommands:
         """Test initializing config file at default path."""
         config_path = tmp_path / "config.json"
 
-        with patch('threat_radar.cli.config.get_config_manager') as mock_get_config:
+        with patch("threat_radar.cli.config.get_config_manager") as mock_get_config:
             mock_manager = MagicMock()
             mock_manager.save_config.return_value = config_path
             mock_get_config.return_value = mock_manager
 
-            with patch('threat_radar.cli.config.Path.home', return_value=tmp_path):
-                result = runner.invoke(config_cmd.app, ["init", "--path", str(config_path)])
+            with patch("threat_radar.cli.config.Path.home", return_value=tmp_path):
+                result = runner.invoke(
+                    config_cmd.app, ["init", "--path", str(config_path)]
+                )
 
                 assert result.exit_code == 0
                 assert "Created" in result.stdout
@@ -250,7 +256,7 @@ class TestConfigCommands:
         """Test initializing config file at custom path."""
         custom_path = tmp_path / "custom-config.json"
 
-        with patch('threat_radar.cli.config.get_config_manager') as mock_get_config:
+        with patch("threat_radar.cli.config.get_config_manager") as mock_get_config:
             mock_manager = MagicMock(spec=ConfigManager)
             mock_manager.save_config.return_value = custom_path
             mock_get_config.return_value = mock_manager
@@ -274,18 +280,20 @@ class TestConfigCommands:
         existing_file = tmp_path / "config.json"
         existing_file.write_text("{}")
 
-        with patch('threat_radar.cli.config.get_config_manager') as mock_get_config:
+        with patch("threat_radar.cli.config.get_config_manager") as mock_get_config:
             mock_manager = MagicMock(spec=ConfigManager)
             mock_manager.save_config.return_value = existing_file
             mock_get_config.return_value = mock_manager
 
-            result = runner.invoke(config_cmd.app, ["init", "--path", str(existing_file), "--force"])
+            result = runner.invoke(
+                config_cmd.app, ["init", "--path", str(existing_file), "--force"]
+            )
 
             assert result.exit_code == 0
 
     def test_config_path_no_file_found(self):
         """Test showing config path when no file is found."""
-        with patch('threat_radar.cli.config.get_config_manager') as mock_get_config:
+        with patch("threat_radar.cli.config.get_config_manager") as mock_get_config:
             mock_manager = MagicMock()
             mock_manager.config_path = None
             mock_get_config.return_value = mock_manager
@@ -293,14 +301,17 @@ class TestConfigCommands:
             result = runner.invoke(config_cmd.app, ["path"])
 
             assert result.exit_code == 0
-            assert "No configuration file loaded" in result.stdout or "defaults" in result.stdout
+            assert (
+                "No configuration file loaded" in result.stdout
+                or "defaults" in result.stdout
+            )
 
     def test_config_path_file_found(self, tmp_path):
         """Test showing config path when file is found."""
         config_file = tmp_path / "config.json"
         config_file.write_text("{}")
 
-        with patch('threat_radar.cli.config.get_config_manager') as mock_get_config:
+        with patch("threat_radar.cli.config.get_config_manager") as mock_get_config:
             mock_manager = MagicMock()
             mock_manager.config_path = config_file
             mock_get_config.return_value = mock_manager
@@ -332,7 +343,7 @@ class TestConfigCommands:
 
     def test_config_validate_no_file_arg(self):
         """Test validate without file argument when no config loaded."""
-        with patch('threat_radar.cli.config.get_config_manager') as mock_get_config:
+        with patch("threat_radar.cli.config.get_config_manager") as mock_get_config:
             mock_manager = MagicMock()
             mock_manager.config_path = None
             mock_get_config.return_value = mock_manager
@@ -340,7 +351,9 @@ class TestConfigCommands:
             result = runner.invoke(config_cmd.app, ["validate"])
 
             assert result.exit_code == 1
-            assert "No config file" in result.stdout or "Specify a file" in result.stdout
+            assert (
+                "No config file" in result.stdout or "Specify a file" in result.stdout
+            )
 
 
 if __name__ == "__main__":

@@ -93,7 +93,9 @@ class GraphAnalytics:
             try:
                 centrality_scores = nx.eigenvector_centrality(self.graph, max_iter=1000)
             except nx.PowerIterationFailedConvergence:
-                logger.warning("Eigenvector centrality failed to converge, using degree centrality")
+                logger.warning(
+                    "Eigenvector centrality failed to converge, using degree centrality"
+                )
                 centrality_scores = nx.degree_centrality(self.graph)
         else:
             raise ValueError(f"Unsupported centrality metric: {metric}")
@@ -115,9 +117,7 @@ class GraphAnalytics:
                     rank=0,  # Will be set after sorting
                     node_type=node_type,
                     properties={
-                        k: v
-                        for k, v in node_data.items()
-                        if k not in ["node_type"]
+                        k: v for k, v in node_data.items() if k not in ["node_type"]
                     },
                 )
             )
@@ -165,15 +165,20 @@ class GraphAnalytics:
 
         # Detect communities based on algorithm
         if algorithm == CommunityAlgorithm.GREEDY_MODULARITY:
-            communities_generator = community.greedy_modularity_communities(undirected_graph)
+            communities_generator = community.greedy_modularity_communities(
+                undirected_graph
+            )
             detected_communities = list(communities_generator)
         elif algorithm == CommunityAlgorithm.LABEL_PROPAGATION:
-            communities_generator = community.label_propagation_communities(undirected_graph)
+            communities_generator = community.label_propagation_communities(
+                undirected_graph
+            )
             detected_communities = list(communities_generator)
         elif algorithm == CommunityAlgorithm.LOUVAIN:
             # Try to use python-louvain if available, else fall back to greedy
             try:
                 import community as louvain_community
+
                 partition = louvain_community.best_partition(undirected_graph)
                 # Convert partition dict to list of sets
                 community_dict = defaultdict(set)
@@ -181,8 +186,12 @@ class GraphAnalytics:
                     community_dict[comm_id].add(node)
                 detected_communities = list(community_dict.values())
             except ImportError:
-                logger.warning("python-louvain not installed, using greedy_modularity instead")
-                communities_generator = community.greedy_modularity_communities(undirected_graph)
+                logger.warning(
+                    "python-louvain not installed, using greedy_modularity instead"
+                )
+                communities_generator = community.greedy_modularity_communities(
+                    undirected_graph
+                )
                 detected_communities = list(communities_generator)
         else:
             raise ValueError(f"Unsupported community algorithm: {algorithm}")
@@ -238,7 +247,9 @@ class GraphAnalytics:
 
         # Calculate coverage (fraction of nodes in communities)
         total_nodes = self.graph.number_of_nodes()
-        coverage = sum(c.size for c in communities) / total_nodes if total_nodes > 0 else 0.0
+        coverage = (
+            sum(c.size for c in communities) / total_nodes if total_nodes > 0 else 0.0
+        )
 
         result = CommunityDetectionResult(
             algorithm=algorithm,
@@ -313,12 +324,16 @@ class GraphAnalytics:
                         queue.append((neighbor, depth + 1, new_path))
 
         # Convert all paths to PropagationStep format
-        propagation_paths = [self._path_to_steps(path) for path in all_paths if len(path) > 1]
+        propagation_paths = [
+            self._path_to_steps(path) for path in all_paths if len(path) > 1
+        ]
 
         # Calculate infection score
         total_nodes = self.graph.number_of_nodes()
         affected_ratio = len(visited) / total_nodes if total_nodes > 0 else 0.0
-        infection_score = min(100.0, affected_ratio * 100 * (1 + max_observed_depth / 10))
+        infection_score = min(
+            100.0, affected_ratio * 100 * (1 + max_observed_depth / 10)
+        )
 
         # Find critical path
         critical_path = self._find_critical_path(propagation_paths)
@@ -412,7 +427,9 @@ class GraphAnalytics:
         # Calculate infection score (0-100) based on affected nodes
         total_nodes = self.graph.number_of_nodes()
         affected_ratio = len(visited) / total_nodes if total_nodes > 0 else 0.0
-        infection_score = min(100.0, affected_ratio * 100 * (1 + max_observed_depth / 10))
+        infection_score = min(
+            100.0, affected_ratio * 100 * (1 + max_observed_depth / 10)
+        )
 
         # Find critical path (highest CVSS scores)
         critical_path = self._find_critical_path(propagation_paths)
@@ -481,7 +498,9 @@ class GraphAnalytics:
 
         # Path length and diameter (on largest weakly connected component)
         weakly_connected_components = list(nx.weakly_connected_components(self.graph))
-        connected_components_count = len(weakly_connected_components) if weakly_connected_components else 0
+        connected_components_count = (
+            len(weakly_connected_components) if weakly_connected_components else 0
+        )
 
         if weakly_connected_components:
             largest_cc = max(weakly_connected_components, key=len)
@@ -507,19 +526,25 @@ class GraphAnalytics:
 
         # Vulnerability concentration (Gini coefficient)
         vulnerability_counts = self._calculate_vulnerability_distribution()
-        vulnerability_concentration = self._calculate_gini_coefficient(vulnerability_counts)
+        vulnerability_concentration = self._calculate_gini_coefficient(
+            vulnerability_counts
+        )
 
         # Count critical nodes (high betweenness centrality)
         betweenness = nx.betweenness_centrality(self.graph)
         critical_threshold = 0.1  # Nodes with betweenness > 0.1
-        critical_node_count = sum(1 for score in betweenness.values() if score > critical_threshold)
+        critical_node_count = sum(
+            1 for score in betweenness.values() if score > critical_threshold
+        )
 
         # Calculate security score (0-100, higher is better)
         security_score = self._calculate_security_score(
             density=density,
             avg_clustering=avg_clustering,
             vulnerability_concentration=vulnerability_concentration,
-            critical_node_ratio=critical_node_count / total_nodes if total_nodes > 0 else 0,
+            critical_node_ratio=(
+                critical_node_count / total_nodes if total_nodes > 0 else 0
+            ),
         )
 
         # Calculate node type distribution
@@ -553,7 +578,9 @@ class GraphAnalytics:
         self, nodes: Set[str], node_types: Dict[str, int]
     ) -> str:
         """Generate human-readable description of a community."""
-        primary_type = max(node_types.items(), key=lambda x: x[1])[0] if node_types else "unknown"
+        primary_type = (
+            max(node_types.items(), key=lambda x: x[1])[0] if node_types else "unknown"
+        )
         size = len(nodes)
 
         if primary_type == "package":
@@ -647,10 +674,10 @@ class GraphAnalytics:
 
         # Weighted average
         security_score = (
-            density_score * 0.3 +
-            clustering_score * 0.2 +
-            concentration_score * 0.3 +
-            critical_score * 0.2
+            density_score * 0.3
+            + clustering_score * 0.2
+            + concentration_score * 0.3
+            + critical_score * 0.2
         )
 
         return max(0.0, min(100.0, security_score))
@@ -707,9 +734,7 @@ class GraphAnalytics:
                 if data.get("node_type") == "vulnerability"
             ]
             # Sort by CVSS score (descending)
-            vuln_nodes.sort(
-                key=lambda x: x[1].get("cvss_score", 0.0), reverse=True
-            )
+            vuln_nodes.sort(key=lambda x: x[1].get("cvss_score", 0.0), reverse=True)
 
             # Analyze propagation for top 5 vulnerabilities
             for node_id, data in vuln_nodes[:5]:

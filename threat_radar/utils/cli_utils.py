@@ -1,4 +1,5 @@
 """CLI utility functions for command-line interface."""
+
 from contextlib import contextmanager
 from typing import Optional, List, Any, Iterator
 from rich.console import Console
@@ -8,7 +9,9 @@ import typer
 
 
 @contextmanager
-def handle_cli_error(action: str, console: Console, progress: Optional[Progress] = None) -> Iterator[None]:
+def handle_cli_error(
+    action: str, console: Console, progress: Optional[Progress] = None
+) -> Iterator[None]:
     """
     Context manager for standardized CLI error handling.
 
@@ -43,7 +46,7 @@ def create_package_table(
     packages: List[Any],
     title: str = "Packages",
     show_architecture: bool = False,
-    limit: Optional[int] = None
+    limit: Optional[int] = None,
 ) -> Table:
     """
     Create a standardized Rich table for displaying package information.
@@ -75,7 +78,7 @@ def create_package_table(
     for pkg in display_packages:
         row = [pkg.name, pkg.version]
         if show_architecture:
-            arch = getattr(pkg, 'architecture', None) or "N/A"
+            arch = getattr(pkg, "architecture", None) or "N/A"
             row.append(arch)
         table.add_row(*row)
 

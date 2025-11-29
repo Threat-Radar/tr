@@ -1,4 +1,5 @@
 """Comprehensive report generation commands."""
+
 import typer
 from pathlib import Path
 from typing import Optional
@@ -22,66 +23,87 @@ def load_scan_results(scan_file: Path) -> GrypeScanResult:
     if not scan_file.exists():
         raise FileNotFoundError(f"Scan results file not found: {scan_file}")
 
-    with open(scan_file, 'r') as f:
+    with open(scan_file, "r") as f:
         data = json.load(f)
 
     # Parse vulnerabilities
     vulnerabilities = []
-    for v in data.get('vulnerabilities', []):
+    for v in data.get("vulnerabilities", []):
         # Handle both old and new formats
-        if 'package_name' in v:
-            package_name = v['package_name']
-            package_version = v['package_version']
-        elif 'package' in v:
-            package_full = v['package']
-            if '@' in package_full:
-                package_name, package_version = package_full.rsplit('@', 1)
+        if "package_name" in v:
+            package_name = v["package_name"]
+            package_version = v["package_version"]
+        elif "package" in v:
+            package_full = v["package"]
+            if "@" in package_full:
+                package_name, package_version = package_full.rsplit("@", 1)
             else:
                 package_name = package_full
-                package_version = 'unknown'
+                package_version = "unknown"
         else:
-            package_name = 'unknown'
-            package_version = 'unknown'
+            package_name = "unknown"
+            package_version = "unknown"
 
-        fixed_in_version = v.get('fixed_in_version') or v.get('fixed_in')
+        fixed_in_version = v.get("fixed_in_version") or v.get("fixed_in")
 
         vulnerabilities.append(
             GrypeVulnerability(
-                id=v['id'],
-                severity=v['severity'],
+                id=v["id"],
+                severity=v["severity"],
                 package_name=package_name,
                 package_version=package_version,
-                package_type=v.get('package_type', 'unknown'),
+                package_type=v.get("package_type", "unknown"),
                 fixed_in_version=fixed_in_version,
-                description=v.get('description'),
-                cvss_score=v.get('cvss_score'),
-                urls=v.get('urls', []),
-                data_source=v.get('data_source'),
-                namespace=v.get('namespace'),
-                artifact_path=v.get('artifact_path'),
-                artifact_location=v.get('artifact_location'),
+                description=v.get("description"),
+                cvss_score=v.get("cvss_score"),
+                urls=v.get("urls", []),
+                data_source=v.get("data_source"),
+                namespace=v.get("namespace"),
+                artifact_path=v.get("artifact_path"),
+                artifact_location=v.get("artifact_location"),
             )
         )
 
     return GrypeScanResult(
-        target=data.get('target', 'unknown'),
+        target=data.get("target", "unknown"),
         vulnerabilities=vulnerabilities,
         total_count=len(vulnerabilities),
-        severity_counts=data.get('severity_counts', {}),
-        scan_metadata=data.get('scan_metadata'),
+        severity_counts=data.get("severity_counts", {}),
+        scan_metadata=data.get("scan_metadata"),
     )
 
 
 @app.command("generate")
 def generate_report(
-    scan_file: Path = typer.Argument(..., exists=True, help="Path to CVE scan results JSON file"),
-    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Output file path (format inferred from extension)"),
-    format: str = typer.Option("json", "--format", "-f", help="Output format (json, markdown, html, pdf)"),
-    level: str = typer.Option("detailed", "--level", "-l", help="Report level (executive, summary, detailed, critical-only)"),
-    include_executive_summary: bool = typer.Option(True, "--executive/--no-executive", help="Include AI-powered executive summary"),
-    include_dashboard_data: bool = typer.Option(True, "--dashboard/--no-dashboard", help="Include dashboard visualization data"),
-    attack_paths_file: Optional[Path] = typer.Option(None, "--attack-paths", help="Path to attack paths JSON file (from graph attack-paths command)"),
-    ai_provider: Optional[str] = typer.Option(None, "--ai-provider", help="AI provider for executive summary (openai, ollama)"),
+    scan_file: Path = typer.Argument(
+        ..., exists=True, help="Path to CVE scan results JSON file"
+    ),
+    output: Optional[Path] = typer.Option(
+        None, "--output", "-o", help="Output file path (format inferred from extension)"
+    ),
+    format: str = typer.Option(
+        "json", "--format", "-f", help="Output format (json, markdown, html, pdf)"
+    ),
+    level: str = typer.Option(
+        "detailed",
+        "--level",
+        "-l",
+        help="Report level (executive, summary, detailed, critical-only)",
+    ),
+    include_executive_summary: bool = typer.Option(
+        True, "--executive/--no-executive", help="Include AI-powered executive summary"
+    ),
+    include_dashboard_data: bool = typer.Option(
+        True, "--dashboard/--no-dashboard", help="Include dashboard visualization data"
+    ),
+    attack_paths_file: Optional[Path] = typer.Option(
+        None,
+        "--attack-paths",
+        help="Path to attack paths JSON file (from graph attack-paths command)",
+    ),
+    ai_provider: Optional[str] = typer.Option(
+        None, "--ai-provider", help="AI provider for executive summary (openai, ollama)"
+    ),
     ai_model: Optional[str] = typer.Option(None, "--ai-model", help="AI model name"),
 ):
     """
@@ -123,7 +145,11 @@ def generate_report(
         ) as progress:
             task = progress.add_task("Loading scan results...", total=None)
             scan_result = load_scan_results(scan_file)
-            progress.update(task, completed=True, description=f"Loaded {scan_result.total_count} vulnerabilities")
+            progress.update(
+                task,
+                completed=True,
+                description=f"Loaded {scan_result.total_count} vulnerabilities",
+            )
 
         if scan_result.total_count == 0:
             console.print("[yellow]No vulnerabilities found in scan results.[/yellow]")
@@ -137,7 +163,9 @@ def generate_report(
         ) as progress:
             task = progress.add_task("Generating comprehensive report...", total=None)
 
-            generator = ComprehensiveReportGenerator(ai_provider=ai_provider, ai_model=ai_model)
+            generator = ComprehensiveReportGenerator(
+                ai_provider=ai_provider, ai_model=ai_model
+            )
 
             report = generator.generate_report(
                 scan_result=scan_result,
@@ -151,20 +179,24 @@ def generate_report(
 
         # Display summary
         console.print("\n")
-        console.print(Panel(
-            f"[bold]Report Generated Successfully[/bold]\n\n"
-            f"Report ID: {report.report_id}\n"
-            f"Target: {report.target}\n"
-            f"Level: {report.report_level}\n"
-            f"Total Vulnerabilities: {report.summary.total_vulnerabilities}\n"
-            f"Critical/High: {report.summary.critical + report.summary.high}",
-            border_style="green"
-        ))
+        console.print(
+            Panel(
+                f"[bold]Report Generated Successfully[/bold]\n\n"
+                f"Report ID: {report.report_id}\n"
+                f"Target: {report.target}\n"
+                f"Level: {report.report_level}\n"
+                f"Total Vulnerabilities: {report.summary.total_vulnerabilities}\n"
+                f"Critical/High: {report.summary.critical + report.summary.high}",
+                border_style="green",
+            )
+        )
 
         # Show executive summary if present
         if report.executive_summary:
             console.print(f"\n[bold cyan]Executive Summary:[/bold cyan]")
-            console.print(f"Risk Rating: [bold]{report.executive_summary.overall_risk_rating}[/bold]")
+            console.print(
+                f"Risk Rating: [bold]{report.executive_summary.overall_risk_rating}[/bold]"
+            )
             console.print(f"\nKey Findings:")
             for finding in report.executive_summary.key_findings[:3]:
                 console.print(f"  • {finding}")
@@ -172,17 +204,25 @@ def generate_report(
         # Show attack surface data if present
         if report.attack_surface_data:
             console.print(f"\n[bold cyan]Attack Surface Analysis:[/bold cyan]")
-            console.print(f"Total Attack Paths: {report.attack_surface_data.total_attack_paths}")
-            console.print(f"Critical Paths: {report.attack_surface_data.critical_paths}")
+            console.print(
+                f"Total Attack Paths: {report.attack_surface_data.total_attack_paths}"
+            )
+            console.print(
+                f"Critical Paths: {report.attack_surface_data.critical_paths}"
+            )
             console.print(f"High Paths: {report.attack_surface_data.high_paths}")
-            console.print(f"Risk Score: {report.attack_surface_data.total_risk_score:.2f}/100")
+            console.print(
+                f"Risk Score: {report.attack_surface_data.total_risk_score:.2f}/100"
+            )
 
         # Determine output format
         output_format = format
         if output and not format:
             # Infer from file extension
-            ext = output.suffix.lstrip('.')
-            output_format = ext if ext in ['json', 'md', 'markdown', 'html', 'pdf'] else 'json'
+            ext = output.suffix.lstrip(".")
+            output_format = (
+                ext if ext in ["json", "md", "markdown", "html", "pdf"] else "json"
+            )
 
         # Format output
         formatter = get_formatter(output_format)
@@ -193,19 +233,21 @@ def generate_report(
             output.parent.mkdir(parents=True, exist_ok=True)
 
             # Handle binary formats (PDF)
-            if output_format == 'pdf':
-                with open(output, 'wb') as f:
+            if output_format == "pdf":
+                with open(output, "wb") as f:
                     f.write(formatted_output)
             else:
-                with open(output, 'w') as f:
+                with open(output, "w") as f:
                     f.write(formatted_output)
 
             console.print(f"\n[green]✓ Report saved to: {output}[/green]")
         else:
             # Print to console (JSON only for readability)
-            if output_format == 'pdf':
-                console.print("[yellow]PDF output requires --output file path.[/yellow]")
-            elif output_format == 'json':
+            if output_format == "pdf":
+                console.print(
+                    "[yellow]PDF output requires --output file path.[/yellow]"
+                )
+            elif output_format == "json":
                 console.print_json(formatted_output)
             else:
                 console.print(formatted_output)
@@ -213,8 +255,12 @@ def generate_report(
 
 @app.command("dashboard-export")
 def export_dashboard_data(
-    scan_file: Path = typer.Argument(..., exists=True, help="Path to CVE scan results JSON file"),
-    output: Path = typer.Option(..., "--output", "-o", help="Output JSON file for dashboard data"),
+    scan_file: Path = typer.Argument(
+        ..., exists=True, help="Path to CVE scan results JSON file"
+    ),
+    output: Path = typer.Option(
+        ..., "--output", "-o", help="Output JSON file for dashboard data"
+    ),
 ):
     """
     Export dashboard-ready visualization data from scan results.
@@ -243,24 +289,34 @@ def export_dashboard_data(
 
         # Save dashboard data
         output.parent.mkdir(parents=True, exist_ok=True)
-        with open(output, 'w') as f:
+        with open(output, "w") as f:
             json.dump(report.dashboard_data.to_dict(), f, indent=2)
 
         console.print(f"\n[green]✓ Dashboard data exported to: {output}[/green]")
 
         # Show summary
         console.print(f"\n[bold]Dashboard Data Summary:[/bold]")
-        console.print(f"  • Summary Cards: {len(report.dashboard_data.summary_cards)} metrics")
-        console.print(f"  • Severity Distribution: {len(report.dashboard_data.severity_distribution_chart)} categories")
-        console.print(f"  • Top Packages: {len(report.dashboard_data.top_vulnerable_packages_chart)} packages")
-        console.print(f"  • Critical Items: {len(report.dashboard_data.critical_items)} items")
+        console.print(
+            f"  • Summary Cards: {len(report.dashboard_data.summary_cards)} metrics"
+        )
+        console.print(
+            f"  • Severity Distribution: {len(report.dashboard_data.severity_distribution_chart)} categories"
+        )
+        console.print(
+            f"  • Top Packages: {len(report.dashboard_data.top_vulnerable_packages_chart)} packages"
+        )
+        console.print(
+            f"  • Critical Items: {len(report.dashboard_data.critical_items)} items"
+        )
 
 
 @app.command("compare")
 def compare_reports(
     report1: Path = typer.Argument(..., exists=True, help="First report JSON file"),
     report2: Path = typer.Argument(..., exists=True, help="Second report JSON file"),
-    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Output comparison report"),
+    output: Optional[Path] = typer.Option(
+        None, "--output", "-o", help="Output comparison report"
+    ),
 ):
     """
     Compare two vulnerability reports to track changes over time.
@@ -306,40 +362,54 @@ def compare_reports(
         if new_cves:
             console.print(f"[bold red]New Vulnerabilities:[/bold red]")
             new_vulns = [v for v in scan2.vulnerabilities if v.id in new_cves]
-            for v in sorted(new_vulns, key=lambda x: (0 if x.severity == 'critical' else 1 if x.severity == 'high' else 2))[:10]:
+            for v in sorted(
+                new_vulns,
+                key=lambda x: (
+                    0 if x.severity == "critical" else 1 if x.severity == "high" else 2
+                ),
+            )[:10]:
                 console.print(f"  • {v.id} - {v.package_name} ({v.severity.upper()})")
 
         # Show fixed vulnerabilities
         if fixed_cves:
             console.print(f"\n[bold green]Fixed Vulnerabilities:[/bold green]")
             fixed_vulns = [v for v in scan1.vulnerabilities if v.id in fixed_cves]
-            for v in sorted(fixed_vulns, key=lambda x: (0 if x.severity == 'critical' else 1 if x.severity == 'high' else 2))[:10]:
+            for v in sorted(
+                fixed_vulns,
+                key=lambda x: (
+                    0 if x.severity == "critical" else 1 if x.severity == "high" else 2
+                ),
+            )[:10]:
                 console.print(f"  • {v.id} - {v.package_name} ({v.severity.upper()})")
 
         # Generate comparison report if output specified
         if output:
             comparison_data = {
-                'comparison_date': typer.get_text_stream('stdin').isatty(),
-                'report1': {
-                    'file': str(report1),
-                    'total_vulnerabilities': scan1.total_count,
-                    'severity_counts': scan1.severity_counts,
+                "comparison_date": typer.get_text_stream("stdin").isatty(),
+                "report1": {
+                    "file": str(report1),
+                    "total_vulnerabilities": scan1.total_count,
+                    "severity_counts": scan1.severity_counts,
                 },
-                'report2': {
-                    'file': str(report2),
-                    'total_vulnerabilities': scan2.total_count,
-                    'severity_counts': scan2.severity_counts,
+                "report2": {
+                    "file": str(report2),
+                    "total_vulnerabilities": scan2.total_count,
+                    "severity_counts": scan2.severity_counts,
                 },
-                'changes': {
-                    'new_vulnerabilities': list(new_cves),
-                    'fixed_vulnerabilities': list(fixed_cves),
-                    'common_vulnerabilities': len(common_cves),
+                "changes": {
+                    "new_vulnerabilities": list(new_cves),
+                    "fixed_vulnerabilities": list(fixed_cves),
+                    "common_vulnerabilities": len(common_cves),
                 },
-                'trend': 'improving' if len(fixed_cves) > len(new_cves) else 'worsening' if len(new_cves) > len(fixed_cves) else 'stable',
+                "trend": (
+                    "improving"
+                    if len(fixed_cves) > len(new_cves)
+                    else "worsening" if len(new_cves) > len(fixed_cves) else "stable"
+                ),
             }
 
             output.parent.mkdir(parents=True, exist_ok=True)
-            with open(output, 'w') as f:
+            with open(output, "w") as f:
                 json.dump(comparison_data, f, indent=2)
 
             console.print(f"\n[green]✓ Comparison report saved to: {output}[/green]")

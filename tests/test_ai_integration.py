@@ -1,13 +1,28 @@
 """Tests for AI integration modules."""
+
 import pytest
 import json
 from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
 
-from threat_radar.ai.llm_client import LLMClient, OpenAIClient, OllamaClient, get_llm_client
-from threat_radar.ai.vulnerability_analyzer import VulnerabilityAnalyzer, VulnerabilityAnalysis
-from threat_radar.ai.prioritization import PrioritizationEngine, PrioritizedVulnerabilityList
-from threat_radar.ai.remediation_generator import RemediationGenerator, RemediationReport
+from threat_radar.ai.llm_client import (
+    LLMClient,
+    OpenAIClient,
+    OllamaClient,
+    get_llm_client,
+)
+from threat_radar.ai.vulnerability_analyzer import (
+    VulnerabilityAnalyzer,
+    VulnerabilityAnalysis,
+)
+from threat_radar.ai.prioritization import (
+    PrioritizationEngine,
+    PrioritizedVulnerabilityList,
+)
+from threat_radar.ai.remediation_generator import (
+    RemediationGenerator,
+    RemediationReport,
+)
 from threat_radar.ai.prompt_templates import (
     create_analysis_prompt,
     create_prioritization_prompt,
@@ -43,7 +58,7 @@ SAMPLE_SCAN_RESULT = GrypeScanResult(
 class TestLLMClient:
     """Test LLM client implementations."""
 
-    @patch('openai.OpenAI')
+    @patch("openai.OpenAI")
     def test_openai_client_generate(self, mock_openai_class):
         """Test OpenAI client text generation."""
         # Mock the OpenAI client response
@@ -62,7 +77,7 @@ class TestLLMClient:
         assert result == "Test response"
         mock_client.chat.completions.create.assert_called_once()
 
-    @patch('threat_radar.ai.llm_client.requests.post')
+    @patch("threat_radar.ai.llm_client.requests.post")
     def test_ollama_client_generate(self, mock_post):
         """Test Ollama client text generation."""
         # Mock the requests.post response
@@ -78,14 +93,14 @@ class TestLLMClient:
         assert result == "Test response from Ollama"
         mock_post.assert_called_once()
 
-    @patch.dict('os.environ', {'AI_PROVIDER': 'openai', 'OPENAI_API_KEY': 'test-key'})
-    @patch('openai.OpenAI')
+    @patch.dict("os.environ", {"AI_PROVIDER": "openai", "OPENAI_API_KEY": "test-key"})
+    @patch("openai.OpenAI")
     def test_get_llm_client_openai(self, mock_openai_class):
         """Test factory function returns OpenAI client."""
         client = get_llm_client()
         assert isinstance(client, OpenAIClient)
 
-    @patch.dict('os.environ', {'AI_PROVIDER': 'ollama'})
+    @patch.dict("os.environ", {"AI_PROVIDER": "ollama"})
     def test_get_llm_client_ollama(self):
         """Test factory function returns Ollama client."""
         client = get_llm_client()
@@ -275,8 +290,8 @@ class TestAIStorage:
 
         storage = get_ai_storage()
         assert storage is not None
-        assert hasattr(storage, 'save_analysis')
-        assert hasattr(storage, 'list_analyses')
+        assert hasattr(storage, "save_analysis")
+        assert hasattr(storage, "list_analyses")
 
 
 if __name__ == "__main__":

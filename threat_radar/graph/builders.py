@@ -53,12 +53,14 @@ class GraphBuilder:
             container_node_id = self._add_container_node(container)
 
             # Link scan to container
-            self.client.add_edge(GraphEdge(
-                source_id=container_node_id,
-                target_id=scan_node_id,
-                edge_type=EdgeType.SCANNED_BY,
-                properties={"scan_date": datetime.now().isoformat()}
-            ))
+            self.client.add_edge(
+                GraphEdge(
+                    source_id=container_node_id,
+                    target_id=scan_node_id,
+                    edge_type=EdgeType.SCANNED_BY,
+                    properties={"scan_date": datetime.now().isoformat()},
+                )
+            )
 
             # Add packages from container analysis
             self._add_packages_from_container(container, container_node_id)
@@ -68,8 +70,7 @@ class GraphBuilder:
 
         metadata = self.client.get_metadata()
         logger.info(
-            f"Graph built: {metadata.node_count} nodes, "
-            f"{metadata.edge_count} edges"
+            f"Graph built: {metadata.node_count} nodes, " f"{metadata.edge_count} edges"
         )
 
     def _add_scan_result_node(self, scan: GrypeScanResult) -> str:
@@ -87,7 +88,7 @@ class GraphBuilder:
                 "medium_count": scan.severity_counts.get("medium", 0),
                 "low_count": scan.severity_counts.get("low", 0),
                 "timestamp": datetime.now().isoformat(),
-            }
+            },
         )
         self.client.add_node(scan_node)
         logger.debug(f"Added scan result node: {scan_node_id}")
@@ -110,7 +111,7 @@ class GraphBuilder:
                 "os": container.os,
                 "size": container.size,
                 "created": container.created,
-            }
+            },
         )
         self.client.add_node(container_node)
         logger.debug(f"Added container node: {container_node_id}")
@@ -118,9 +119,7 @@ class GraphBuilder:
         return container_node_id
 
     def _add_packages_from_container(
-        self,
-        container: ContainerAnalysis,
-        container_node_id: str
+        self, container: ContainerAnalysis, container_node_id: str
     ) -> None:
         """Add package nodes from container analysis and link to container."""
         if not container.packages:
@@ -130,11 +129,13 @@ class GraphBuilder:
             pkg_node_id = self._add_package_node(pkg)
 
             # Container CONTAINS package
-            self.client.add_edge(GraphEdge(
-                source_id=container_node_id,
-                target_id=pkg_node_id,
-                edge_type=EdgeType.CONTAINS,
-            ))
+            self.client.add_edge(
+                GraphEdge(
+                    source_id=container_node_id,
+                    target_id=pkg_node_id,
+                    edge_type=EdgeType.CONTAINS,
+                )
+            )
 
     def _add_package_node(self, pkg: Package) -> str:
         """Add package node to graph."""
@@ -153,7 +154,7 @@ class GraphBuilder:
                 "version": pkg.version,
                 "architecture": pkg.architecture,
                 "ecosystem": getattr(pkg, "package_type", "unknown"),
-            }
+            },
         )
         self.client.add_node(pkg_node)
         logger.debug(f"Added package node: {pkg_node_id}")
@@ -161,9 +162,7 @@ class GraphBuilder:
         return pkg_node_id
 
     def _add_vulnerabilities_from_scan(
-        self,
-        scan: GrypeScanResult,
-        container_node_id: Optional[str] = None
+        self, scan: GrypeScanResult, container_node_id: Optional[str] = None
     ) -> None:
         """Add vulnerability nodes from scan and link to packages."""
         for vuln in scan.vulnerabilities:
@@ -183,27 +182,31 @@ class GraphBuilder:
                         "name": vuln.package_name,
                         "version": vuln.package_version,
                         "ecosystem": vuln.package_type,
-                    }
+                    },
                 )
                 self.client.add_node(pkg_node)
 
                 # Link to container if available
                 if container_node_id:
-                    self.client.add_edge(GraphEdge(
-                        source_id=container_node_id,
-                        target_id=pkg_node_id,
-                        edge_type=EdgeType.CONTAINS,
-                    ))
+                    self.client.add_edge(
+                        GraphEdge(
+                            source_id=container_node_id,
+                            target_id=pkg_node_id,
+                            edge_type=EdgeType.CONTAINS,
+                        )
+                    )
 
             # Package HAS_VULNERABILITY
-            self.client.add_edge(GraphEdge(
-                source_id=pkg_node_id,
-                target_id=vuln_node_id,
-                edge_type=EdgeType.HAS_VULNERABILITY,
-                properties={
-                    "detected_version": vuln.package_version,
-                }
-            ))
+            self.client.add_edge(
+                GraphEdge(
+                    source_id=pkg_node_id,
+                    target_id=vuln_node_id,
+                    edge_type=EdgeType.HAS_VULNERABILITY,
+                    properties={
+                        "detected_version": vuln.package_version,
+                    },
+                )
+            )
 
             # Add FIXED_BY edge if fix available
             if vuln.fixed_in_version:
@@ -220,16 +223,18 @@ class GraphBuilder:
                             "version": vuln.fixed_in_version,
                             "ecosystem": vuln.package_type,
                             "is_fix": True,
-                        }
+                        },
                     )
                     self.client.add_node(fixed_node)
 
                 # Vulnerability FIXED_BY package version
-                self.client.add_edge(GraphEdge(
-                    source_id=vuln_node_id,
-                    target_id=fixed_pkg_id,
-                    edge_type=EdgeType.FIXED_BY,
-                ))
+                self.client.add_edge(
+                    GraphEdge(
+                        source_id=vuln_node_id,
+                        target_id=fixed_pkg_id,
+                        edge_type=EdgeType.FIXED_BY,
+                    )
+                )
 
     def _add_vulnerability_node(self, vuln: GrypeVulnerability) -> str:
         """Add vulnerability node to graph."""
@@ -246,12 +251,14 @@ class GraphBuilder:
             properties={
                 "cve_id": vuln.id,
                 "severity": vuln.severity,
-                "cvss_score": float(vuln.cvss_score) if vuln.cvss_score is not None else None,
+                "cvss_score": (
+                    float(vuln.cvss_score) if vuln.cvss_score is not None else None
+                ),
                 "description": vuln.description,
                 "data_source": vuln.data_source,
                 "namespace": vuln.namespace,
                 "urls": vuln.urls,
-            }
+            },
         )
         self.client.add_node(vuln_node)
         logger.debug(f"Added vulnerability node: {vuln_node_id}")
@@ -259,9 +266,7 @@ class GraphBuilder:
         return vuln_node_id
 
     def add_container_dependencies(
-        self,
-        container_id: str,
-        depends_on: List[str]
+        self, container_id: str, depends_on: List[str]
     ) -> None:
         """
         Add DEPENDS_ON edges between containers.
@@ -275,21 +280,20 @@ class GraphBuilder:
         for dep_id in depends_on:
             target_node_id = f"container:{dep_id}"
 
-            self.client.add_edge(GraphEdge(
-                source_id=source_node_id,
-                target_id=target_node_id,
-                edge_type=EdgeType.DEPENDS_ON,
-            ))
+            self.client.add_edge(
+                GraphEdge(
+                    source_id=source_node_id,
+                    target_id=target_node_id,
+                    edge_type=EdgeType.DEPENDS_ON,
+                )
+            )
 
         logger.info(
             f"Added {len(depends_on)} dependencies for container {container_id}"
         )
 
     def add_service_exposure(
-        self,
-        container_id: str,
-        service_name: str,
-        service_properties: dict
+        self, container_id: str, service_name: str, service_properties: dict
     ) -> None:
         """
         Add service node and EXPOSES edge.
@@ -306,15 +310,17 @@ class GraphBuilder:
         service_node = GraphNode(
             node_id=service_node_id,
             node_type=NodeType.SERVICE,
-            properties=service_properties
+            properties=service_properties,
         )
         self.client.add_node(service_node)
 
         # Container EXPOSES service
-        self.client.add_edge(GraphEdge(
-            source_id=container_node_id,
-            target_id=service_node_id,
-            edge_type=EdgeType.EXPOSES,
-        ))
+        self.client.add_edge(
+            GraphEdge(
+                source_id=container_node_id,
+                target_id=service_node_id,
+                edge_type=EdgeType.EXPOSES,
+            )
+        )
 
         logger.info(f"Added service {service_name} exposed by {container_id}")

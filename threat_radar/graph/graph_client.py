@@ -48,7 +48,9 @@ class GraphClient(ABC):
         pass
 
     @abstractmethod
-    def get_neighbors(self, node_id: str, edge_type: Optional[EdgeType] = None) -> List[str]:
+    def get_neighbors(
+        self, node_id: str, edge_type: Optional[EdgeType] = None
+    ) -> List[str]:
         """
         Get neighboring nodes.
 
@@ -113,9 +115,7 @@ class NetworkXClient(GraphClient):
             node: GraphNode to add
         """
         self.graph.add_node(
-            node.node_id,
-            node_type=node.node_type.value,
-            **node.properties
+            node.node_id, node_type=node.node_type.value, **node.properties
         )
         logger.debug(f"Added node: {node.node_id} (type: {node.node_type.value})")
 
@@ -130,7 +130,7 @@ class NetworkXClient(GraphClient):
             edge.source_id,
             edge.target_id,
             edge_type=edge.edge_type.value,
-            **(edge.properties or {})
+            **(edge.properties or {}),
         )
         logger.debug(
             f"Added edge: {edge.source_id} -> {edge.target_id} "
@@ -158,17 +158,13 @@ class NetworkXClient(GraphClient):
 
         node_type = NodeType(node_type_str)
 
-        return GraphNode(
-            node_id=node_id,
-            node_type=node_type,
-            properties=node_data
-        )
+        return GraphNode(node_id=node_id, node_type=node_type, properties=node_data)
 
     def get_neighbors(
         self,
         node_id: str,
         edge_type: Optional[EdgeType] = None,
-        direction: str = "outgoing"
+        direction: str = "outgoing",
     ) -> List[str]:
         """
         Get neighboring nodes.
@@ -233,17 +229,16 @@ class NetworkXClient(GraphClient):
 
         # Find packages with this vulnerability (incoming edges to vuln)
         for package_node in self.get_neighbors(
-            vuln_node,
-            edge_type=None,
-            direction="incoming"
+            vuln_node, edge_type=None, direction="incoming"
         ):
             # Find containers that contain these packages
             for container_node in self.get_neighbors(
-                package_node,
-                edge_type=None,
-                direction="incoming"
+                package_node, edge_type=None, direction="incoming"
             ):
-                if self.graph.nodes[container_node].get("node_type") == NodeType.CONTAINER.value:
+                if (
+                    self.graph.nodes[container_node].get("node_type")
+                    == NodeType.CONTAINER.value
+                ):
                     affected_containers.add(container_node)
 
         return list(affected_containers)
@@ -261,7 +256,9 @@ class NetworkXClient(GraphClient):
             if data.get("node_type") == NodeType.PACKAGE.value:
                 vulns = [
                     target
-                    for target in self.get_neighbors(node_id, edge_type=EdgeType.HAS_VULNERABILITY)
+                    for target in self.get_neighbors(
+                        node_id, edge_type=EdgeType.HAS_VULNERABILITY
+                    )
                 ]
                 if vulns:
                     package_vulns[node_id] = vulns
@@ -316,6 +313,7 @@ class NetworkXClient(GraphClient):
                 elif isinstance(data[key], (list, dict)):
                     # Convert complex types to JSON string
                     import json
+
                     data[key] = json.dumps(data[key])
 
         for u, v, data in G.edges(data=True):
@@ -325,6 +323,7 @@ class NetworkXClient(GraphClient):
                 elif isinstance(data[key], (list, dict)):
                     # Convert complex types to JSON string
                     import json
+
                     data[key] = json.dumps(data[key])
 
         nx.write_graphml(G, str(output_path))
@@ -351,6 +350,7 @@ class NetworkXClient(GraphClient):
             Dictionary representation of the graph
         """
         from networkx.readwrite import json_graph
+
         return json_graph.node_link_data(self.graph)
 
     def import_from_dict(self, data: Dict[str, Any]) -> None:
@@ -361,5 +361,6 @@ class NetworkXClient(GraphClient):
             data: Dictionary representation of the graph
         """
         from networkx.readwrite import json_graph
+
         self.graph = json_graph.node_link_graph(data)
         logger.info("Imported graph from dictionary")

@@ -1,4 +1,5 @@
 """Configuration management for Threat Radar CLI."""
+
 import os
 import json
 import logging
@@ -12,6 +13,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ScanDefaults:
     """Default settings for vulnerability scanning."""
+
     severity: Optional[str] = None  # Minimum severity filter
     only_fixed: bool = False
     auto_save: bool = False
@@ -23,6 +25,7 @@ class ScanDefaults:
 @dataclass
 class AIDefaults:
     """Default settings for AI analysis."""
+
     provider: Optional[str] = None
     model: Optional[str] = None
     temperature: float = 0.3
@@ -33,6 +36,7 @@ class AIDefaults:
 @dataclass
 class ReportDefaults:
     """Default settings for report generation."""
+
     level: str = "detailed"
     format: str = "json"
     include_executive_summary: bool = True
@@ -42,6 +46,7 @@ class ReportDefaults:
 @dataclass
 class OutputDefaults:
     """Default output settings."""
+
     format: str = "table"  # table, json, yaml, csv
     verbosity: int = 1  # 0=quiet, 1=normal, 2=verbose, 3=debug
     color: bool = True
@@ -51,6 +56,7 @@ class OutputDefaults:
 @dataclass
 class PathDefaults:
     """Default path settings."""
+
     cve_storage: str = "./storage/cve_storage"
     ai_storage: str = "./storage/ai_analysis"
     sbom_storage: str = "./sbom_storage"
@@ -61,6 +67,7 @@ class PathDefaults:
 @dataclass
 class ThreatRadarConfig:
     """Complete Threat Radar configuration."""
+
     scan: ScanDefaults = field(default_factory=ScanDefaults)
     ai: AIDefaults = field(default_factory=AIDefaults)
     report: ReportDefaults = field(default_factory=ReportDefaults)
@@ -72,14 +79,14 @@ class ThreatRadarConfig:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'ThreatRadarConfig':
+    def from_dict(cls, data: Dict[str, Any]) -> "ThreatRadarConfig":
         """Create configuration from dictionary."""
         return cls(
-            scan=ScanDefaults(**data.get('scan', {})),
-            ai=AIDefaults(**data.get('ai', {})),
-            report=ReportDefaults(**data.get('report', {})),
-            output=OutputDefaults(**data.get('output', {})),
-            paths=PathDefaults(**data.get('paths', {}))
+            scan=ScanDefaults(**data.get("scan", {})),
+            ai=AIDefaults(**data.get("ai", {})),
+            report=ReportDefaults(**data.get("report", {})),
+            output=OutputDefaults(**data.get("output", {})),
+            paths=PathDefaults(**data.get("paths", {})),
         )
 
 
@@ -130,7 +137,7 @@ class ConfigManager:
             return
 
         try:
-            with open(config_file, 'r') as f:
+            with open(config_file, "r") as f:
                 data = json.load(f)
 
             self.config = ThreatRadarConfig.from_dict(data)
@@ -144,37 +151,41 @@ class ConfigManager:
     def _apply_env_overrides(self):
         """Apply environment variable overrides to configuration."""
         # Scan defaults
-        if os.getenv('THREAT_RADAR_SCAN_SEVERITY'):
-            self.config.scan.severity = os.getenv('THREAT_RADAR_SCAN_SEVERITY')
-        elif os.getenv('THREAT_RADAR_SEVERITY'):  # Backward compatibility
-            self.config.scan.severity = os.getenv('THREAT_RADAR_SEVERITY')
-        if os.getenv('THREAT_RADAR_AUTO_SAVE'):
-            self.config.scan.auto_save = os.getenv('THREAT_RADAR_AUTO_SAVE').lower() == 'true'
+        if os.getenv("THREAT_RADAR_SCAN_SEVERITY"):
+            self.config.scan.severity = os.getenv("THREAT_RADAR_SCAN_SEVERITY")
+        elif os.getenv("THREAT_RADAR_SEVERITY"):  # Backward compatibility
+            self.config.scan.severity = os.getenv("THREAT_RADAR_SEVERITY")
+        if os.getenv("THREAT_RADAR_AUTO_SAVE"):
+            self.config.scan.auto_save = (
+                os.getenv("THREAT_RADAR_AUTO_SAVE").lower() == "true"
+            )
 
         # AI defaults
-        if os.getenv('THREAT_RADAR_AI_PROVIDER'):
-            self.config.ai.provider = os.getenv('THREAT_RADAR_AI_PROVIDER')
-        elif os.getenv('AI_PROVIDER'):  # Backward compatibility
-            self.config.ai.provider = os.getenv('AI_PROVIDER')
-        if os.getenv('THREAT_RADAR_AI_MODEL'):
-            self.config.ai.model = os.getenv('THREAT_RADAR_AI_MODEL')
-        elif os.getenv('AI_MODEL'):  # Backward compatibility
-            self.config.ai.model = os.getenv('AI_MODEL')
+        if os.getenv("THREAT_RADAR_AI_PROVIDER"):
+            self.config.ai.provider = os.getenv("THREAT_RADAR_AI_PROVIDER")
+        elif os.getenv("AI_PROVIDER"):  # Backward compatibility
+            self.config.ai.provider = os.getenv("AI_PROVIDER")
+        if os.getenv("THREAT_RADAR_AI_MODEL"):
+            self.config.ai.model = os.getenv("THREAT_RADAR_AI_MODEL")
+        elif os.getenv("AI_MODEL"):  # Backward compatibility
+            self.config.ai.model = os.getenv("AI_MODEL")
 
         # Output defaults
-        if os.getenv('THREAT_RADAR_OUTPUT_VERBOSITY'):
+        if os.getenv("THREAT_RADAR_OUTPUT_VERBOSITY"):
             try:
-                self.config.output.verbosity = int(os.getenv('THREAT_RADAR_OUTPUT_VERBOSITY'))
+                self.config.output.verbosity = int(
+                    os.getenv("THREAT_RADAR_OUTPUT_VERBOSITY")
+                )
             except ValueError:
                 pass
-        elif os.getenv('THREAT_RADAR_VERBOSITY'):  # Backward compatibility
+        elif os.getenv("THREAT_RADAR_VERBOSITY"):  # Backward compatibility
             try:
-                self.config.output.verbosity = int(os.getenv('THREAT_RADAR_VERBOSITY'))
+                self.config.output.verbosity = int(os.getenv("THREAT_RADAR_VERBOSITY"))
             except ValueError:
                 pass
 
-        if os.getenv('THREAT_RADAR_OUTPUT_FORMAT'):
-            self.config.output.format = os.getenv('THREAT_RADAR_OUTPUT_FORMAT')
+        if os.getenv("THREAT_RADAR_OUTPUT_FORMAT"):
+            self.config.output.format = os.getenv("THREAT_RADAR_OUTPUT_FORMAT")
 
     def load_from_file(self, path: Path):
         """
@@ -191,7 +202,7 @@ class ConfigManager:
             raise FileNotFoundError(f"Configuration file not found: {path}")
 
         try:
-            with open(path, 'r') as f:
+            with open(path, "r") as f:
                 data = json.load(f)
 
             self.config = ThreatRadarConfig.from_dict(data)
@@ -229,7 +240,7 @@ class ConfigManager:
         path.parent.mkdir(parents=True, exist_ok=True)
 
         # Save configuration
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             json.dump(self.config.to_dict(), f, indent=2)
 
         logger.info(f"Saved configuration to: {path}")
@@ -255,7 +266,7 @@ class ConfigManager:
         Returns:
             Configuration value
         """
-        parts = key.split('.')
+        parts = key.split(".")
         value = self.config
 
         for part in parts:
@@ -277,7 +288,7 @@ class ConfigManager:
         Raises:
             KeyError: If configuration key is invalid
         """
-        parts = key.split('.')
+        parts = key.split(".")
         obj = self.config
 
         # Navigate to parent object
@@ -305,27 +316,40 @@ class ConfigManager:
 
         # Validate verbosity level
         if self.config.output.verbosity < 0 or self.config.output.verbosity > 3:
-            errors.append(f"Invalid verbosity level: {self.config.output.verbosity}. Must be 0-3.")
+            errors.append(
+                f"Invalid verbosity level: {self.config.output.verbosity}. Must be 0-3."
+            )
 
         # Validate severity if set
         valid_severities = ["NEGLIGIBLE", "LOW", "MEDIUM", "HIGH", "CRITICAL", None]
-        if self.config.scan.severity and self.config.scan.severity not in valid_severities:
-            errors.append(f"Invalid severity: {self.config.scan.severity}. Must be one of {valid_severities}")
+        if (
+            self.config.scan.severity
+            and self.config.scan.severity not in valid_severities
+        ):
+            errors.append(
+                f"Invalid severity: {self.config.scan.severity}. Must be one of {valid_severities}"
+            )
 
         # Validate AI provider if set
         valid_providers = ["openai", "anthropic", "ollama", "openrouter", None]
         if self.config.ai.provider and self.config.ai.provider not in valid_providers:
-            errors.append(f"Invalid AI provider: {self.config.ai.provider}. Must be one of {valid_providers}")
+            errors.append(
+                f"Invalid AI provider: {self.config.ai.provider}. Must be one of {valid_providers}"
+            )
 
         # Validate output format
         valid_formats = ["table", "json", "yaml", "csv"]
         if self.config.output.format not in valid_formats:
-            errors.append(f"Invalid output format: {self.config.output.format}. Must be one of {valid_formats}")
+            errors.append(
+                f"Invalid output format: {self.config.output.format}. Must be one of {valid_formats}"
+            )
 
         # Validate report format
         valid_report_formats = ["json", "markdown", "html", "pdf"]
         if self.config.report.format not in valid_report_formats:
-            errors.append(f"Invalid report format: {self.config.report.format}. Must be one of {valid_report_formats}")
+            errors.append(
+                f"Invalid report format: {self.config.report.format}. Must be one of {valid_report_formats}"
+            )
 
         return len(errors) == 0, errors
 
@@ -345,7 +369,7 @@ class ConfigManager:
         override_config = ThreatRadarConfig.from_dict(override_dict)
 
         # Merge each section
-        for section in ['scan', 'ai', 'report', 'output', 'paths']:
+        for section in ["scan", "ai", "report", "output", "paths"]:
             override_section = getattr(override_config, section)
             current_section = getattr(self.config, section)
 

@@ -1,4 +1,5 @@
 """CVE storage utilities for automatic report saving."""
+
 import os
 import logging
 from pathlib import Path
@@ -38,10 +39,7 @@ class CVEStorageManager:
             raise
 
     def generate_filename(
-        self,
-        target: str,
-        scan_type: str = "image",
-        extension: str = "json"
+        self, target: str, scan_type: str = "image", extension: str = "json"
     ) -> str:
         """
         Generate a filename for CVE scan results.
@@ -81,10 +79,10 @@ class CVEStorageManager:
         """
         # Remove or replace problematic characters
         clean = target.replace(":", "_")  # Docker image tags
-        clean = clean.replace("/", "_")   # Paths and registry prefixes
-        clean = clean.replace("@", "_")   # Digests
-        clean = clean.replace(" ", "_")   # Spaces
-        clean = clean.replace(".", "_")   # Dots (except extension)
+        clean = clean.replace("/", "_")  # Paths and registry prefixes
+        clean = clean.replace("@", "_")  # Digests
+        clean = clean.replace(" ", "_")  # Spaces
+        clean = clean.replace(".", "_")  # Dots (except extension)
 
         # Remove leading/trailing underscores
         clean = clean.strip("_")
@@ -96,10 +94,7 @@ class CVEStorageManager:
         return clean
 
     def get_storage_path(
-        self,
-        target: str,
-        scan_type: str = "image",
-        extension: str = "json"
+        self, target: str, scan_type: str = "image", extension: str = "json"
     ) -> Path:
         """
         Get full path for storing CVE scan results.
@@ -115,12 +110,7 @@ class CVEStorageManager:
         filename = self.generate_filename(target, scan_type, extension)
         return self.storage_dir / filename
 
-    def save_report(
-        self,
-        data: dict,
-        target: str,
-        scan_type: str = "image"
-    ) -> Path:
+    def save_report(self, data: dict, target: str, scan_type: str = "image") -> Path:
         """
         Save CVE scan report to storage.
 
@@ -137,7 +127,7 @@ class CVEStorageManager:
         file_path = self.get_storage_path(target, scan_type)
 
         try:
-            with open(file_path, 'w') as f:
+            with open(file_path, "w") as f:
                 json.dump(data, f, indent=2)
 
             logger.info(f"Saved CVE report to: {file_path}")
@@ -148,9 +138,7 @@ class CVEStorageManager:
             raise
 
     def list_reports(
-        self,
-        scan_type: Optional[str] = None,
-        limit: Optional[int] = None
+        self, scan_type: Optional[str] = None, limit: Optional[int] = None
     ) -> list:
         """
         List all CVE reports in storage.
@@ -168,10 +156,7 @@ class CVEStorageManager:
 
             # Filter by scan type if specified
             if scan_type:
-                all_reports = [
-                    r for r in all_reports
-                    if f"_{scan_type}_" in r.name
-                ]
+                all_reports = [r for r in all_reports if f"_{scan_type}_" in r.name]
 
             # Sort by modification time (newest first)
             all_reports.sort(key=lambda p: p.stat().st_mtime, reverse=True)
@@ -224,14 +209,10 @@ class CVEStorageManager:
             return {
                 "storage_dir": str(self.storage_dir),
                 "total_reports": 0,
-                "error": str(e)
+                "error": str(e),
             }
 
-    def cleanup_old_reports(
-        self,
-        days: int = 30,
-        keep_latest: int = 10
-    ) -> int:
+    def cleanup_old_reports(self, days: int = 30, keep_latest: int = 10) -> int:
         """
         Clean up old CVE reports.
 
@@ -248,7 +229,9 @@ class CVEStorageManager:
             all_reports = self.list_reports()
 
             if len(all_reports) <= keep_latest:
-                logger.info(f"Skipping cleanup - only {len(all_reports)} reports (keep_latest={keep_latest})")
+                logger.info(
+                    f"Skipping cleanup - only {len(all_reports)} reports (keep_latest={keep_latest})"
+                )
                 return 0
 
             # Keep the latest N reports

@@ -1,4 +1,5 @@
 """CVE scan storage management and retrieval."""
+
 from pathlib import Path
 from typing import List, Dict, Optional, Any, Tuple
 from dataclasses import dataclass
@@ -78,7 +79,7 @@ class CVEStorageManager:
         type_filter: str = "all",
         severity_filter: Optional[str] = None,
         limit: Optional[int] = None,
-        sort_by: str = "date"
+        sort_by: str = "date",
     ) -> List[CVEScanMetadata]:
         """List all stored CVE scans with optional filtering.
 
@@ -91,7 +92,11 @@ class CVEStorageManager:
         Returns:
             List of CVE scan metadata objects
         """
-        scan_files = sorted(self.storage_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+        scan_files = sorted(
+            self.storage_dir.glob("*.json"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
 
         scans = []
         for scan_file in scan_files:
@@ -104,7 +109,9 @@ class CVEStorageManager:
 
                 # Apply severity filter
                 if severity_filter:
-                    if not self._meets_severity_threshold(metadata.severity_counts, severity_filter):
+                    if not self._meets_severity_threshold(
+                        metadata.severity_counts, severity_filter
+                    ):
                         continue
 
                 scans.append(metadata)
@@ -131,7 +138,7 @@ class CVEStorageManager:
         Returns:
             CVEScanMetadata object
         """
-        with open(scan_path, 'r') as f:
+        with open(scan_path, "r") as f:
             data = json.load(f)
 
         # Determine scan type from data structure
@@ -144,7 +151,11 @@ class CVEStorageManager:
             scan_type = "directory"
 
         # Extract target name
-        target = data.get("target") or data.get("sbom_file") or data.get("directory", "unknown")
+        target = (
+            data.get("target")
+            or data.get("sbom_file")
+            or data.get("directory", "unknown")
+        )
 
         # Get severity counts
         severity_counts = data.get("severity_counts", {})
@@ -156,7 +167,9 @@ class CVEStorageManager:
             if timestamp_str:
                 try:
                     # Parse ISO format with timezone
-                    scan_date = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                    scan_date = datetime.fromisoformat(
+                        timestamp_str.replace("Z", "+00:00")
+                    )
                 except:
                     pass
 
@@ -178,7 +191,8 @@ class CVEStorageManager:
             critical_count=severity_counts.get("critical", 0),
             high_count=severity_counts.get("high", 0),
             medium_count=severity_counts.get("medium", 0),
-            low_count=severity_counts.get("low", 0) + severity_counts.get("negligible", 0),
+            low_count=severity_counts.get("low", 0)
+            + severity_counts.get("negligible", 0),
             scan_date=scan_date,
             file_size=file_size,
             file_size_str=file_size_str,
@@ -193,7 +207,7 @@ class CVEStorageManager:
         Returns:
             Full scan data dictionary
         """
-        with open(scan_path, 'r') as f:
+        with open(scan_path, "r") as f:
             return json.load(f)
 
     def search_scans(
@@ -203,7 +217,7 @@ class CVEStorageManager:
         severity_filter: Optional[str] = None,
         scan_pattern: str = "*",
         case_sensitive: bool = False,
-        exact_match: bool = False
+        exact_match: bool = False,
     ) -> List[CVESearchResult]:
         """Search across all CVE scans for matching vulnerabilities.
 
@@ -235,15 +249,17 @@ class CVEStorageManager:
                     query_type,
                     severity_filter,
                     case_sensitive,
-                    exact_match
+                    exact_match,
                 )
 
                 if matching_vulns:
-                    results.append(CVESearchResult(
-                        scan_metadata=metadata,
-                        matching_vulnerabilities=matching_vulns,
-                        total_matches=len(matching_vulns)
-                    ))
+                    results.append(
+                        CVESearchResult(
+                            scan_metadata=metadata,
+                            matching_vulnerabilities=matching_vulns,
+                            total_matches=len(matching_vulns),
+                        )
+                    )
 
             except Exception:
                 continue
@@ -251,9 +267,7 @@ class CVEStorageManager:
         return results
 
     def get_aggregate_stats(
-        self,
-        scan_pattern: str = "*",
-        type_filter: str = "all"
+        self, scan_pattern: str = "*", type_filter: str = "all"
     ) -> CVEAggregateStats:
         """Calculate aggregate statistics across stored CVE scans.
 
@@ -318,10 +332,12 @@ class CVEStorageManager:
 
         # Get top CVEs
         top_cves = sorted(
-            [(cve_id, data["scan_count"], data["package_count"])
-             for cve_id, data in cve_occurrences.items()],
+            [
+                (cve_id, data["scan_count"], data["package_count"])
+                for cve_id, data in cve_occurrences.items()
+            ],
             key=lambda x: (x[1], x[2]),
-            reverse=True
+            reverse=True,
         )[:10]
 
         return CVEAggregateStats(
@@ -331,11 +347,9 @@ class CVEStorageManager:
             unique_cve_ids=len(cve_occurrences),
             severity_breakdown=dict(severity_breakdown),
             top_cves=top_cves,
-            package_type_breakdown=dict(sorted(
-                package_type_breakdown.items(),
-                key=lambda x: x[1],
-                reverse=True
-            )),
+            package_type_breakdown=dict(
+                sorted(package_type_breakdown.items(), key=lambda x: x[1], reverse=True)
+            ),
             fix_availability=fix_counts,
         )
 
@@ -346,7 +360,7 @@ class CVEStorageManager:
         query_type: str,
         severity_filter: Optional[str],
         case_sensitive: bool,
-        exact_match: bool
+        exact_match: bool,
     ) -> List[Dict[str, Any]]:
         """Search vulnerabilities for matching entries."""
         matches = []
@@ -366,7 +380,9 @@ class CVEStorageManager:
                     continue
 
             # Check if vulnerability matches query
-            if self._matches_query(vuln, query, query_type, case_sensitive, exact_match):
+            if self._matches_query(
+                vuln, query, query_type, case_sensitive, exact_match
+            ):
                 matches.append(vuln)
 
         return matches
@@ -377,7 +393,7 @@ class CVEStorageManager:
         query: str,
         query_type: str,
         case_sensitive: bool,
-        exact_match: bool
+        exact_match: bool,
     ) -> bool:
         """Check if vulnerability matches search query."""
         if not case_sensitive:
@@ -418,9 +434,7 @@ class CVEStorageManager:
         return False
 
     def _meets_severity_threshold(
-        self,
-        severity_counts: Dict[str, int],
-        min_severity: str
+        self, severity_counts: Dict[str, int], min_severity: str
     ) -> bool:
         """Check if scan has vulnerabilities meeting severity threshold."""
         severity_order = ["critical", "high", "medium", "low", "negligible"]
@@ -445,9 +459,7 @@ class CVEStorageManager:
             return False
 
     def _sort_scans(
-        self,
-        scans: List[CVEScanMetadata],
-        sort_by: str
+        self, scans: List[CVEScanMetadata], sort_by: str
     ) -> List[CVEScanMetadata]:
         """Sort scans by specified field."""
         if sort_by == "date":
@@ -463,7 +475,7 @@ class CVEStorageManager:
 
     def _format_file_size(self, size_bytes: int) -> str:
         """Format file size in human-readable format."""
-        for unit in ['B', 'KB', 'MB', 'GB']:
+        for unit in ["B", "KB", "MB", "GB"]:
             if size_bytes < 1024.0:
                 return f"{size_bytes:.1f}{unit}"
             size_bytes /= 1024.0

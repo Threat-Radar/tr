@@ -23,7 +23,9 @@ class TestCLIContextCreation:
 
     def test_create_default_context(self):
         """Test creating CLI context with default values."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -39,7 +41,9 @@ class TestCLIContextCreation:
 
     def test_create_with_custom_verbosity(self):
         """Test creating context with custom verbosity."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -50,7 +54,9 @@ class TestCLIContextCreation:
 
     def test_create_with_custom_output_format(self):
         """Test creating context with custom output format."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -61,7 +67,9 @@ class TestCLIContextCreation:
 
     def test_create_with_no_color(self):
         """Test creating context with colors disabled."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -73,7 +81,9 @@ class TestCLIContextCreation:
 
     def test_create_with_no_progress(self):
         """Test creating context with progress disabled."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -87,7 +97,9 @@ class TestCLIContextCreation:
         config_file = tmp_path / "config.json"
         config_file.write_text('{"output": {"verbosity": 2}}')
 
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -103,10 +115,12 @@ class TestCLIContextConfigIntegration:
 
     def test_verbosity_from_config(self):
         """Test that verbosity is loaded from config when not explicitly set."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.side_effect = lambda key, default=None: {
-                'output.verbosity': 2,
+                "output.verbosity": 2,
             }.get(key, default)
             mock_get_config.return_value = mock_config
 
@@ -117,10 +131,12 @@ class TestCLIContextConfigIntegration:
 
     def test_output_format_from_config(self):
         """Test that output format is loaded from config when not explicitly set."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.side_effect = lambda key, default=None: {
-                'output.format': 'json',
+                "output.format": "json",
             }.get(key, default)
             mock_get_config.return_value = mock_config
 
@@ -130,10 +146,12 @@ class TestCLIContextConfigIntegration:
 
     def test_color_setting_from_config(self):
         """Test that color setting is loaded from config."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.side_effect = lambda key, default=None: {
-                'output.color': False,
+                "output.color": False,
             }.get(key, default)
             mock_get_config.return_value = mock_config
 
@@ -143,10 +161,12 @@ class TestCLIContextConfigIntegration:
 
     def test_progress_setting_from_config(self):
         """Test that progress setting is loaded from config."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.side_effect = lambda key, default=None: {
-                'output.progress': False,
+                "output.progress": False,
             }.get(key, default)
             mock_get_config.return_value = mock_config
 
@@ -156,19 +176,18 @@ class TestCLIContextConfigIntegration:
 
     def test_explicit_args_override_config(self):
         """Test that explicit arguments override config values."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.side_effect = lambda key, default=None: {
-                'output.verbosity': 1,
-                'output.format': 'table',
+                "output.verbosity": 1,
+                "output.format": "table",
             }.get(key, default)
             mock_get_config.return_value = mock_config
 
             # Explicitly set different values
-            context = CLIContext.create(
-                verbosity=3,
-                output_format="json"
-            )
+            context = CLIContext.create(verbosity=3, output_format="json")
 
             # Explicit values should take precedence
             assert context.verbosity == 3
@@ -236,7 +255,9 @@ class TestCLIContextConsole:
 
     def test_console_with_color(self):
         """Test console with color enabled."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -247,7 +268,9 @@ class TestCLIContextConsole:
 
     def test_console_without_color(self):
         """Test console with color disabled."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -258,7 +281,9 @@ class TestCLIContextConsole:
 
     def test_console_force_terminal(self):
         """Test console force_terminal setting."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -277,7 +302,9 @@ class TestCLIContextDataClass:
 
     def test_context_attributes(self):
         """Test that context has all required attributes."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -285,16 +312,18 @@ class TestCLIContextDataClass:
             context = CLIContext.create()
 
             # Check all required attributes exist
-            assert hasattr(context, 'config_manager')
-            assert hasattr(context, 'verbosity')
-            assert hasattr(context, 'output_format')
-            assert hasattr(context, 'no_color')
-            assert hasattr(context, 'no_progress')
-            assert hasattr(context, 'console')
+            assert hasattr(context, "config_manager")
+            assert hasattr(context, "verbosity")
+            assert hasattr(context, "output_format")
+            assert hasattr(context, "no_color")
+            assert hasattr(context, "no_progress")
+            assert hasattr(context, "console")
 
     def test_context_config_manager_type(self):
         """Test that config_manager is correct type."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock(spec=ConfigManager)
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -309,7 +338,9 @@ class TestCLIContextEdgeCases:
 
     def test_create_with_all_custom_values(self):
         """Test creating context with all custom values."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -328,7 +359,9 @@ class TestCLIContextEdgeCases:
 
     def test_create_multiple_contexts(self):
         """Test creating multiple independent contexts."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -343,7 +376,9 @@ class TestCLIContextEdgeCases:
 
     def test_negative_verbosity(self):
         """Test handling negative verbosity (edge case)."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -355,7 +390,9 @@ class TestCLIContextEdgeCases:
 
     def test_very_high_verbosity(self):
         """Test handling very high verbosity."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -366,7 +403,9 @@ class TestCLIContextEdgeCases:
 
     def test_unusual_output_format(self):
         """Test with unusual but valid output format."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -381,7 +420,9 @@ class TestCLIContextUsageScenarios:
 
     def test_quiet_mode_scenario(self):
         """Test quiet mode (errors only) scenario."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -401,7 +442,9 @@ class TestCLIContextUsageScenarios:
 
     def test_debug_mode_scenario(self):
         """Test debug mode (verbose output) scenario."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -421,7 +464,9 @@ class TestCLIContextUsageScenarios:
 
     def test_ci_cd_integration_scenario(self):
         """Test CI/CD integration scenario."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -441,7 +486,9 @@ class TestCLIContextUsageScenarios:
 
     def test_interactive_terminal_scenario(self):
         """Test interactive terminal scenario."""
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -481,13 +528,15 @@ class TestCLIContextWithRealConfig:
 
         # This would use the real ConfigManager
         # For now, we mock it since we're testing CLIContext, not ConfigManager
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.side_effect = lambda key, default=None: {
-                'output.verbosity': 2,
-                'output.format': 'json',
-                'output.color': False,
-                'output.progress': False,
+                "output.verbosity": 2,
+                "output.format": "json",
+                "output.color": False,
+                "output.progress": False,
             }.get(key, default)
             mock_get_config.return_value = mock_config
 
@@ -513,9 +562,15 @@ class TestGlobalContextManagement:
 
     def test_set_and_get_cli_context(self):
         """Test setting and getting global CLI context."""
-        from threat_radar.utils.cli_context import get_cli_context, set_cli_context, reset_cli_context
+        from threat_radar.utils.cli_context import (
+            get_cli_context,
+            set_cli_context,
+            reset_cli_context,
+        )
 
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config
@@ -538,9 +593,15 @@ class TestGlobalContextManagement:
 
     def test_reset_cli_context(self):
         """Test resetting global CLI context."""
-        from threat_radar.utils.cli_context import get_cli_context, set_cli_context, reset_cli_context
+        from threat_radar.utils.cli_context import (
+            get_cli_context,
+            set_cli_context,
+            reset_cli_context,
+        )
 
-        with patch('threat_radar.utils.cli_context.get_config_manager') as mock_get_config:
+        with patch(
+            "threat_radar.utils.cli_context.get_config_manager"
+        ) as mock_get_config:
             mock_config = MagicMock()
             mock_config.get.return_value = None
             mock_get_config.return_value = mock_config

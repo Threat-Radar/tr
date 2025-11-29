@@ -8,6 +8,7 @@ import networkx as nx
 try:
     import plotly.graph_objects as go
     from plotly.subplots import make_subplots
+
     PLOTLY_AVAILABLE = True
 except ImportError:
     PLOTLY_AVAILABLE = False
@@ -60,20 +61,20 @@ class NetworkGraphVisualizer:
     # Color schemes
     NODE_COLORS = {
         NodeType.CONTAINER.value: "#3498db",  # Blue
-        NodeType.PACKAGE.value: "#2ecc71",    # Green
+        NodeType.PACKAGE.value: "#2ecc71",  # Green
         NodeType.VULNERABILITY.value: "#e74c3c",  # Red
-        NodeType.SERVICE.value: "#f39c12",    # Orange
-        NodeType.HOST.value: "#9b59b6",       # Purple
+        NodeType.SERVICE.value: "#f39c12",  # Orange
+        NodeType.HOST.value: "#9b59b6",  # Purple
         NodeType.SCAN_RESULT.value: "#95a5a6",  # Gray
     }
 
     SEVERITY_COLORS = {
-        "critical": "#8b0000",    # Dark red
-        "high": "#dc143c",        # Crimson
-        "medium": "#ffa500",      # Orange
-        "low": "#ffd700",         # Gold
+        "critical": "#8b0000",  # Dark red
+        "high": "#dc143c",  # Crimson
+        "medium": "#ffa500",  # Orange
+        "low": "#ffd700",  # Gold
         "negligible": "#90ee90",  # Light green
-        "unknown": "#808080",     # Gray
+        "unknown": "#808080",  # Gray
     }
 
     EDGE_COLORS = {
@@ -98,7 +99,9 @@ class NetworkGraphVisualizer:
 
         self.client = client
         self.graph = client.graph
-        logger.info(f"Initialized visualizer for graph with {self.graph.number_of_nodes()} nodes")
+        logger.info(
+            f"Initialized visualizer for graph with {self.graph.number_of_nodes()} nodes"
+        )
 
     def visualize(
         self,
@@ -156,10 +159,7 @@ class NetworkGraphVisualizer:
         return fig
 
     def _calculate_layout(
-        self,
-        layout: str,
-        three_d: bool = False,
-        seed: int = 42
+        self, layout: str, three_d: bool = False, seed: int = 42
     ) -> Dict[str, Tuple[float, ...]]:
         """
         Calculate node positions using NetworkX layout algorithms.
@@ -244,7 +244,9 @@ class NetworkGraphVisualizer:
 
         return pos
 
-    def _hierarchical_layout(self, three_d: bool = False) -> Dict[str, Tuple[float, ...]]:
+    def _hierarchical_layout(
+        self, three_d: bool = False
+    ) -> Dict[str, Tuple[float, ...]]:
         """
         Create hierarchical layout with vulnerability nodes at top.
 
@@ -316,7 +318,9 @@ class NetworkGraphVisualizer:
 
         return pos
 
-    def _add_spiral_z_dimension(self, pos_2d: Dict[str, Tuple[float, float]]) -> Dict[str, Tuple[float, float, float]]:
+    def _add_spiral_z_dimension(
+        self, pos_2d: Dict[str, Tuple[float, float]]
+    ) -> Dict[str, Tuple[float, float, float]]:
         """
         Add z-dimension to circular layout to create a 3D spiral/helix pattern.
 
@@ -344,7 +348,9 @@ class NetworkGraphVisualizer:
 
         return pos_3d
 
-    def _add_degree_based_z_dimension(self, pos_2d: Dict[str, Tuple[float, float]]) -> Dict[str, Tuple[float, float, float]]:
+    def _add_degree_based_z_dimension(
+        self, pos_2d: Dict[str, Tuple[float, float]]
+    ) -> Dict[str, Tuple[float, float, float]]:
         """
         Add z-dimension based on node degree (connectivity).
 
@@ -371,7 +377,9 @@ class NetworkGraphVisualizer:
 
         return pos_3d
 
-    def _add_shell_z_dimension(self, pos_2d: Dict[str, Tuple[float, float]]) -> Dict[str, Tuple[float, float, float]]:
+    def _add_shell_z_dimension(
+        self, pos_2d: Dict[str, Tuple[float, float]]
+    ) -> Dict[str, Tuple[float, float, float]]:
         """
         Add z-dimension to shell layout based on distance from center.
 
@@ -445,7 +453,7 @@ class NetworkGraphVisualizer:
                 width=width,
                 height=height,
                 showlegend=False,
-                hovermode='closest',
+                hovermode="closest",
                 margin=dict(b=0, l=0, r=0, t=40),
                 scene=dict(
                     xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
@@ -459,7 +467,7 @@ class NetworkGraphVisualizer:
                 width=width,
                 height=height,
                 showlegend=False,
-                hovermode='closest',
+                hovermode="closest",
                 margin=dict(b=0, l=0, r=0, t=40),
                 xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                 yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
@@ -517,24 +525,24 @@ class NetworkGraphVisualizer:
                     x=x_coords,
                     y=y_coords,
                     z=z_coords,
-                    mode='lines',
+                    mode="lines",
                     line=dict(
                         color=self.EDGE_COLORS.get(edge_type, "#bdc3c7"),
                         width=edge_width,
                     ),
-                    hoverinfo='none',
+                    hoverinfo="none",
                     name=edge_type,
                 )
             else:
                 trace = go.Scatter(
                     x=x_coords,
                     y=y_coords,
-                    mode='lines',
+                    mode="lines",
                     line=dict(
                         color=self.EDGE_COLORS.get(edge_type, "#bdc3c7"),
                         width=edge_width,
                     ),
-                    hoverinfo='none',
+                    hoverinfo="none",
                     name=edge_type,
                 )
 
@@ -597,27 +605,27 @@ class NetworkGraphVisualizer:
                 x=x_coords,
                 y=y_coords,
                 z=z_coords,
-                mode='markers',
+                mode="markers",
                 marker=dict(
                     size=sizes,
                     color=colors,
-                    line=dict(width=1, color='white'),
+                    line=dict(width=1, color="white"),
                 ),
                 text=hover_texts,
-                hoverinfo='text',
+                hoverinfo="text",
             )
         else:
             trace = go.Scatter(
                 x=x_coords,
                 y=y_coords,
-                mode='markers',
+                mode="markers",
                 marker=dict(
                     size=sizes,
                     color=colors,
-                    line=dict(width=1, color='white'),
+                    line=dict(width=1, color="white"),
                 ),
                 text=hover_texts,
-                hoverinfo='text',
+                hoverinfo="text",
             )
 
         return trace
@@ -630,18 +638,18 @@ class NetworkGraphVisualizer:
         # Add type-specific information
         if node_type == NodeType.VULNERABILITY.value:
             lines.append(f"Severity: {node_data.get('severity', 'N/A')}")
-            cvss = node_data.get('cvss_score')
+            cvss = node_data.get("cvss_score")
             if cvss:
                 lines.append(f"CVSS: {cvss}")
 
         elif node_type == NodeType.PACKAGE.value:
-            name = node_data.get('name', '')
-            version = node_data.get('version', '')
+            name = node_data.get("name", "")
+            version = node_data.get("version", "")
             if name:
                 lines.append(f"Package: {name}@{version}")
 
         elif node_type == NodeType.CONTAINER.value:
-            name = node_data.get('name', '')
+            name = node_data.get("name", "")
             if name:
                 lines.append(f"Container: {name}")
 
@@ -680,9 +688,9 @@ class NetworkGraphVisualizer:
                     y=y,
                     text=label,
                     showarrow=False,
-                    font=dict(size=8, color='#333'),
-                    xanchor='center',
-                    yanchor='bottom',
+                    font=dict(size=8, color="#333"),
+                    xanchor="center",
+                    yanchor="bottom",
                 )
             )
 
@@ -693,7 +701,7 @@ class NetworkGraphVisualizer:
         fig: go.Figure,
         output_path: Path,
         auto_open: bool = False,
-        include_plotlyjs: str = 'inline',
+        include_plotlyjs: str = "inline",
     ) -> None:
         """
         Save figure as standalone HTML file.
@@ -711,12 +719,12 @@ class NetworkGraphVisualizer:
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Validate include_plotlyjs value
-        valid_options = ['inline', 'cdn', 'directory', True, False]
+        valid_options = ["inline", "cdn", "directory", True, False]
         if include_plotlyjs not in valid_options:
             logger.warning(
                 f"Invalid include_plotlyjs value '{include_plotlyjs}', using 'inline'"
             )
-            include_plotlyjs = 'inline'
+            include_plotlyjs = "inline"
 
         fig.write_html(
             str(output_path),

@@ -6,6 +6,7 @@ from pathlib import Path
 
 try:
     import plotly.graph_objects as go
+
     PLOTLY_AVAILABLE = True
 except ImportError:
     PLOTLY_AVAILABLE = False
@@ -80,24 +81,24 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
 
     # Zone colors
     ZONE_COLORS = {
-        "dmz": "#ff6b6b",           # Red
-        "public": "#ff8c42",        # Orange
-        "internet": "#ffa07a",      # Light salmon
-        "untrusted": "#ff6347",     # Tomato
-        "internal": "#4ecdc4",      # Teal
-        "trusted": "#45b7d1",       # Sky blue
-        "secure": "#96ceb4",        # Sage
-        "database": "#574b90",      # Purple
-        "unknown": "#95a5a6",       # Gray
+        "dmz": "#ff6b6b",  # Red
+        "public": "#ff8c42",  # Orange
+        "internet": "#ffa07a",  # Light salmon
+        "untrusted": "#ff6347",  # Tomato
+        "internal": "#4ecdc4",  # Teal
+        "trusted": "#45b7d1",  # Sky blue
+        "secure": "#96ceb4",  # Sage
+        "database": "#574b90",  # Purple
+        "unknown": "#95a5a6",  # Gray
     }
 
     # Criticality colors
     CRITICALITY_COLORS = {
-        "critical": "#c0392b",      # Dark red
-        "high": "#e74c3c",          # Red
-        "medium": "#f39c12",        # Orange
-        "low": "#3498db",           # Blue
-        "unknown": "#95a5a6",       # Gray
+        "critical": "#c0392b",  # Dark red
+        "high": "#e74c3c",  # Red
+        "medium": "#f39c12",  # Orange
+        "low": "#3498db",  # Blue
+        "unknown": "#95a5a6",  # Gray
     }
 
     # Compliance scope markers
@@ -272,14 +273,22 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
         return zones
 
     def _create_zone_layout(
-        self,
-        zones: Dict[str, List[str]]
+        self, zones: Dict[str, List[str]]
     ) -> Dict[str, Tuple[float, float]]:
         """Create layout optimized for zone visualization."""
         pos = {}
 
         # Define zone positions (x offset)
-        zone_order = ["internet", "dmz", "public", "untrusted", "internal", "trusted", "secure", "database"]
+        zone_order = [
+            "internet",
+            "dmz",
+            "public",
+            "untrusted",
+            "internal",
+            "trusted",
+            "secure",
+            "database",
+        ]
         zone_x_positions = {}
 
         defined_zones = [z for z in zone_order if z in zones]
@@ -341,13 +350,15 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
             node_traces = self._create_compliance_colored_nodes(pos)
         else:
             # Default to type-based coloring
-            node_traces = [self._create_node_trace(
-                pos,
-                highlight_nodes=set(),
-                node_size=12,
-                color_by="node_type",
-                three_d=False,
-            )]
+            node_traces = [
+                self._create_node_trace(
+                    pos,
+                    highlight_nodes=set(),
+                    node_size=12,
+                    color_by="node_type",
+                    three_d=False,
+                )
+            ]
 
         data.extend(node_traces)
 
@@ -357,11 +368,11 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
             width=width,
             height=height,
             showlegend=True,
-            hovermode='closest',
+            hovermode="closest",
             margin=dict(b=50, l=50, r=50, t=80),
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            plot_bgcolor='#f8f9fa',
+            plot_bgcolor="#f8f9fa",
             shapes=zone_shapes,
         )
 
@@ -402,11 +413,11 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
             width=width,
             height=height,
             showlegend=True,
-            hovermode='closest',
+            hovermode="closest",
             margin=dict(b=50, l=50, r=50, t=80),
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            plot_bgcolor='#ffffff',
+            plot_bgcolor="#ffffff",
             shapes=zone_shapes,
         )
 
@@ -469,11 +480,11 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
             width=width,
             height=height,
             showlegend=True,
-            hovermode='closest',
+            hovermode="closest",
             margin=dict(b=50, l=50, r=50, t=80),
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            plot_bgcolor='#f8f9fa',
+            plot_bgcolor="#f8f9fa",
         )
 
         fig = go.Figure(data=data, layout=layout)
@@ -556,9 +567,9 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
         trace = go.Scatter(
             x=x_coords,
             y=y_coords,
-            mode='lines',
-            line=dict(color='#bdc3c7', width=1),
-            hoverinfo='none',
+            mode="lines",
+            line=dict(color="#bdc3c7", width=1),
+            hoverinfo="none",
             showlegend=False,
         )
 
@@ -605,14 +616,14 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
         trace = go.Scatter(
             x=x_coords,
             y=y_coords,
-            mode='markers',
+            mode="markers",
             marker=dict(
                 size=14,
                 color=color,
-                line=dict(width=2, color='white'),
+                line=dict(width=2, color="white"),
             ),
             text=hover_texts,
-            hoverinfo='text',
+            hoverinfo="text",
             name=f"{zone_name.upper()} Zone",
         )
 
@@ -654,14 +665,14 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
             trace = go.Scatter(
                 x=x_coords,
                 y=y_coords,
-                mode='markers',
+                mode="markers",
                 marker=dict(
                     size=16 if criticality == "critical" else 12,
                     color=color,
-                    line=dict(width=2, color='white'),
+                    line=dict(width=2, color="white"),
                 ),
                 text=hover_texts,
-                hoverinfo='text',
+                hoverinfo="text",
                 name=f"{criticality.upper()} Criticality",
             )
 
@@ -729,14 +740,14 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
         trace = go.Scatter(
             x=x_coords,
             y=y_coords,
-            mode='markers',
+            mode="markers",
             marker=dict(
                 size=16,
                 color=color,
-                line=dict(width=2, color='white'),
+                line=dict(width=2, color="white"),
             ),
             text=hover_texts,
-            hoverinfo='text',
+            hoverinfo="text",
             name=f"{marker_symbol} {compliance_type.upper()} Scope",
         )
 
@@ -760,9 +771,9 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
         trace = go.Scatter(
             x=x_coords,
             y=y_coords,
-            mode='lines',
-            line=dict(color='#e0e0e0', width=0.5),
-            hoverinfo='none',
+            mode="lines",
+            line=dict(color="#e0e0e0", width=0.5),
+            hoverinfo="none",
             showlegend=False,
         )
 
@@ -792,15 +803,15 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
         trace = go.Scatter(
             x=x_coords,
             y=y_coords,
-            mode='markers',
+            mode="markers",
             marker=dict(
                 size=8,
-                color='#bdc3c7',
+                color="#bdc3c7",
                 opacity=0.5,
-                line=dict(width=1, color='white'),
+                line=dict(width=1, color="white"),
             ),
             text=hover_texts,
-            hoverinfo='text',
+            hoverinfo="text",
             name="Other Assets",
         )
 
@@ -850,8 +861,7 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
         return "<br>".join(lines)
 
     def _find_compliance_nodes(
-        self,
-        compliance_type: Optional[str] = None
+        self, compliance_type: Optional[str] = None
     ) -> Dict[str, Set[str]]:
         """Find nodes in compliance scope."""
         compliance_nodes = {
@@ -897,13 +907,13 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
             text=legend_text,
             showarrow=False,
             font=dict(size=11),
-            align='left',
-            bgcolor='rgba(255,255,255,0.9)',
-            bordercolor='#333',
+            align="left",
+            bgcolor="rgba(255,255,255,0.9)",
+            bordercolor="#333",
             borderwidth=1,
             borderpad=10,
-            xanchor='left',
-            yanchor='top',
+            xanchor="left",
+            yanchor="top",
         )
 
     def _add_zone_labels(
@@ -933,11 +943,8 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
                     y=center_y,
                     text=f"<b>{zone_name.upper()} ZONE</b>",
                     showarrow=False,
-                    font=dict(
-                        size=14,
-                        color=self.ZONE_COLORS.get(zone_name, "#333")
-                    ),
-                    bgcolor='rgba(255,255,255,0.8)',
+                    font=dict(size=14, color=self.ZONE_COLORS.get(zone_name, "#333")),
+                    bgcolor="rgba(255,255,255,0.8)",
                     borderpad=6,
                 )
             )
@@ -957,9 +964,9 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
         # Threat level colors (matching AttackPathVisualizer)
         THREAT_LEVEL_COLORS = {
             ThreatLevel.CRITICAL: "#8b0000",  # Dark red
-            ThreatLevel.HIGH: "#dc143c",      # Crimson
-            ThreatLevel.MEDIUM: "#ffa500",    # Orange
-            ThreatLevel.LOW: "#4682b4",       # Steel blue
+            ThreatLevel.HIGH: "#dc143c",  # Crimson
+            ThreatLevel.MEDIUM: "#ffa500",  # Orange
+            ThreatLevel.LOW: "#4682b4",  # Steel blue
         }
 
         data = []
@@ -1001,9 +1008,9 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
             edge_trace = go.Scatter(
                 x=x_coords,
                 y=y_coords,
-                mode='lines',
+                mode="lines",
                 line=dict(color=color, width=5),
-                hoverinfo='text',
+                hoverinfo="text",
                 text=f"Attack Path: {threat_level.value.upper()}",
                 name=f"Attack Path ({threat_level.value.upper()})",
             )
@@ -1027,14 +1034,20 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
             regular_zone_nodes = [n for n in zone_nodes if n not in attack_path_nodes]
 
             if regular_zone_nodes:
-                zone_trace = self._create_zone_node_trace(pos, zone_name, regular_zone_nodes)
+                zone_trace = self._create_zone_node_trace(
+                    pos, zone_name, regular_zone_nodes
+                )
                 data.append(zone_trace)
 
         # Create highlighted attack path nodes
-        for threat_level in [ThreatLevel.CRITICAL, ThreatLevel.HIGH, ThreatLevel.MEDIUM, ThreatLevel.LOW]:
+        for threat_level in [
+            ThreatLevel.CRITICAL,
+            ThreatLevel.HIGH,
+            ThreatLevel.MEDIUM,
+            ThreatLevel.LOW,
+        ]:
             threat_nodes = [
-                node for node, level in node_to_threat.items()
-                if level == threat_level
+                node for node, level in node_to_threat.items() if level == threat_level
             ]
 
             if not threat_nodes:
@@ -1072,15 +1085,15 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
             attack_node_trace = go.Scatter(
                 x=x_coords,
                 y=y_coords,
-                mode='markers',
+                mode="markers",
                 marker=dict(
                     size=20,
                     color=color,
-                    line=dict(width=3, color='white'),
-                    symbol='star',
+                    line=dict(width=3, color="white"),
+                    symbol="star",
                 ),
                 text=hover_texts,
-                hoverinfo='text',
+                hoverinfo="text",
                 name=f"Attack Node ({threat_level.value.upper()})",
             )
             data.append(attack_node_trace)
@@ -1091,11 +1104,11 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
             width=width,
             height=height,
             showlegend=True,
-            hovermode='closest',
+            hovermode="closest",
             margin=dict(b=50, l=50, r=50, t=100),
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            plot_bgcolor='#ffffff',
+            plot_bgcolor="#ffffff",
             shapes=zone_shapes,
         )
 
@@ -1139,16 +1152,16 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
         summary_lines = [
             "<b>Attack Path Summary:</b>",
             f"Total Paths: {len(attack_paths)}",
-            ""
+            "",
         ]
 
-        if threat_counts.get('critical', 0) > 0:
+        if threat_counts.get("critical", 0) > 0:
             summary_lines.append(f"🔴 Critical: {threat_counts['critical']}")
-        if threat_counts.get('high', 0) > 0:
+        if threat_counts.get("high", 0) > 0:
             summary_lines.append(f"🟠 High: {threat_counts['high']}")
-        if threat_counts.get('medium', 0) > 0:
+        if threat_counts.get("medium", 0) > 0:
             summary_lines.append(f"🟡 Medium: {threat_counts['medium']}")
-        if threat_counts.get('low', 0) > 0:
+        if threat_counts.get("low", 0) > 0:
             summary_lines.append(f"🔵 Low: {threat_counts['low']}")
 
         if zone_crossings:
@@ -1166,12 +1179,12 @@ class NetworkTopologyVisualizer(NetworkGraphVisualizer):
             y=0.98,
             text=summary_text,
             showarrow=False,
-            font=dict(size=11, color='#333'),
-            align='left',
-            bgcolor='rgba(255,255,255,0.95)',
-            bordercolor='#333',
+            font=dict(size=11, color="#333"),
+            align="left",
+            bgcolor="rgba(255,255,255,0.95)",
+            bordercolor="#333",
             borderwidth=2,
             borderpad=10,
-            xanchor='left',
-            yanchor='top',
+            xanchor="left",
+            yanchor="top",
         )

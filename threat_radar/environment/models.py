@@ -14,8 +14,10 @@ from pydantic import BaseModel, Field, field_validator
 # Enums
 # ============================================================================
 
+
 class EnvironmentType(str, Enum):
     """Environment type classification."""
+
     PRODUCTION = "production"
     STAGING = "staging"
     DEVELOPMENT = "development"
@@ -25,6 +27,7 @@ class EnvironmentType(str, Enum):
 
 class CloudProvider(str, Enum):
     """Cloud infrastructure provider."""
+
     AWS = "aws"
     AZURE = "azure"
     GCP = "gcp"
@@ -35,6 +38,7 @@ class CloudProvider(str, Enum):
 
 class ComplianceFramework(str, Enum):
     """Compliance and regulatory frameworks."""
+
     HIPAA = "hipaa"
     PCI_DSS = "pci-dss"
     SOX = "sox"
@@ -46,6 +50,7 @@ class ComplianceFramework(str, Enum):
 
 class AssetType(str, Enum):
     """Infrastructure asset types."""
+
     CONTAINER = "container"
     VM = "vm"
     BARE_METAL = "bare-metal"
@@ -59,6 +64,7 @@ class AssetType(str, Enum):
 
 class Criticality(str, Enum):
     """Business criticality levels."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -67,6 +73,7 @@ class Criticality(str, Enum):
 
 class DataClassification(str, Enum):
     """Data sensitivity classification."""
+
     PUBLIC = "public"
     INTERNAL = "internal"
     CONFIDENTIAL = "confidential"
@@ -78,6 +85,7 @@ class DataClassification(str, Enum):
 
 class DependencyType(str, Enum):
     """Asset dependency relationship types."""
+
     DEPENDS_ON = "depends_on"
     COMMUNICATES_WITH = "communicates_with"
     READS_FROM = "reads_from"
@@ -87,6 +95,7 @@ class DependencyType(str, Enum):
 
 class TrustLevel(str, Enum):
     """Network zone trust levels."""
+
     UNTRUSTED = "untrusted"
     LOW = "low"
     MEDIUM = "medium"
@@ -96,6 +105,7 @@ class TrustLevel(str, Enum):
 
 class RiskTolerance(str, Enum):
     """Organization risk tolerance."""
+
     VERY_LOW = "very-low"
     LOW = "low"
     MEDIUM = "medium"
@@ -106,8 +116,10 @@ class RiskTolerance(str, Enum):
 # Sub-Models
 # ============================================================================
 
+
 class Package(BaseModel):
     """Software package information."""
+
     name: str
     version: str
     ecosystem: Optional[str] = None
@@ -118,6 +130,7 @@ class Package(BaseModel):
 
 class Software(BaseModel):
     """Software running on an asset."""
+
     image: Optional[str] = None
     os: Optional[str] = None
     runtime: Optional[str] = None
@@ -129,6 +142,7 @@ class Software(BaseModel):
 
 class ExposedPort(BaseModel):
     """Network port configuration."""
+
     port: int = Field(gt=0, lt=65536)
     protocol: str
     public: Optional[bool] = False
@@ -140,6 +154,7 @@ class ExposedPort(BaseModel):
 
 class FirewallRule(BaseModel):
     """Firewall or security group rule."""
+
     source: str
     destination_port: int
     action: str
@@ -150,9 +165,12 @@ class FirewallRule(BaseModel):
 
 class Network(BaseModel):
     """Network configuration for an asset."""
+
     internal_ip: Optional[str] = None
     public_ip: Optional[str] = None
-    zone: Optional[str] = None  # Network zone assignment (e.g., "dmz", "internal", "trusted")
+    zone: Optional[str] = (
+        None  # Network zone assignment (e.g., "dmz", "internal", "trusted")
+    )
     exposed_ports: List[ExposedPort] = Field(default_factory=list)
     firewall_rules: List[FirewallRule] = Field(default_factory=list)
 
@@ -162,6 +180,7 @@ class Network(BaseModel):
 
 class BusinessContext(BaseModel):
     """Business criticality and context for an asset."""
+
     criticality: Criticality
     criticality_score: Optional[int] = Field(None, ge=0, le=100)
     function: Optional[str] = None
@@ -170,28 +189,33 @@ class BusinessContext(BaseModel):
     customer_facing: Optional[bool] = None
     sla_tier: Optional[str] = None
     compliance_scope: List[ComplianceFramework] = Field(default_factory=list)
-    mttr_target: Optional[int] = Field(None, description="Mean time to remediate target (hours)")
+    mttr_target: Optional[int] = Field(
+        None, description="Mean time to remediate target (hours)"
+    )
     owner_team: Optional[str] = None
     cost_center: Optional[str] = None
 
     class Config:
         extra = "allow"
 
-    @field_validator('criticality_score')
+    @field_validator("criticality_score")
     @classmethod
     def validate_criticality_score(cls, v, info):
         """Ensure criticality_score aligns with criticality level if both provided."""
         if v is not None:
-            criticality = info.data.get('criticality')
+            criticality = info.data.get("criticality")
             if criticality == Criticality.CRITICAL and v < 80:
                 raise ValueError("Critical assets should have criticality_score >= 80")
             elif criticality == Criticality.LOW and v > 40:
-                raise ValueError("Low criticality assets should have criticality_score <= 40")
+                raise ValueError(
+                    "Low criticality assets should have criticality_score <= 40"
+                )
         return v
 
 
 class AssetMetadata(BaseModel):
     """Additional metadata for an asset."""
+
     created_at: Optional[datetime] = None
     last_scanned: Optional[datetime] = None
     last_patched: Optional[datetime] = None
@@ -205,8 +229,10 @@ class AssetMetadata(BaseModel):
 # Main Models
 # ============================================================================
 
+
 class Asset(BaseModel):
     """Infrastructure asset definition."""
+
     id: str
     name: str
     type: AssetType
@@ -222,6 +248,7 @@ class Asset(BaseModel):
 
 class Dependency(BaseModel):
     """Dependency relationship between assets."""
+
     source: str
     target: str
     type: DependencyType
@@ -237,6 +264,7 @@ class Dependency(BaseModel):
 
 class NetworkZone(BaseModel):
     """Network security zone definition."""
+
     id: str
     name: str
     trust_level: TrustLevel
@@ -249,6 +277,7 @@ class NetworkZone(BaseModel):
 
 class SegmentationRule(BaseModel):
     """Network segmentation policy rule."""
+
     from_zone: str
     to_zone: str
     allowed: bool
@@ -260,6 +289,7 @@ class SegmentationRule(BaseModel):
 
 class NetworkTopology(BaseModel):
     """Network segmentation and zones."""
+
     zones: List[NetworkZone] = Field(default_factory=list)
     segmentation_rules: List[SegmentationRule] = Field(default_factory=list)
 
@@ -269,6 +299,7 @@ class NetworkTopology(BaseModel):
 
 class IncidentCostEstimates(BaseModel):
     """Estimated costs of security incidents."""
+
     data_breach_per_record: Optional[float] = None
     downtime_per_hour: Optional[float] = None
     reputation_damage: Optional[float] = None
@@ -279,6 +310,7 @@ class IncidentCostEstimates(BaseModel):
 
 class GlobalBusinessContext(BaseModel):
     """Global business context for the environment."""
+
     organization: Optional[str] = None
     business_unit: Optional[str] = None
     regulatory_requirements: List[str] = Field(default_factory=list)
@@ -291,6 +323,7 @@ class GlobalBusinessContext(BaseModel):
 
 class EnvironmentMetadata(BaseModel):
     """Environment metadata and classification."""
+
     name: str
     type: EnvironmentType
     cloud_provider: Optional[CloudProvider] = None
@@ -305,6 +338,7 @@ class EnvironmentMetadata(BaseModel):
 
 class Environment(BaseModel):
     """Complete environment configuration with business context."""
+
     environment: EnvironmentMetadata
     assets: List[Asset]
     dependencies: List[Dependency] = Field(default_factory=list)
@@ -314,7 +348,7 @@ class Environment(BaseModel):
     class Config:
         extra = "allow"
 
-    @field_validator('assets')
+    @field_validator("assets")
     @classmethod
     def validate_unique_asset_ids(cls, v):
         """Ensure all asset IDs are unique."""
@@ -324,19 +358,23 @@ class Environment(BaseModel):
             raise ValueError(f"Duplicate asset IDs found: {set(duplicates)}")
         return v
 
-    @field_validator('dependencies')
+    @field_validator("dependencies")
     @classmethod
     def validate_dependency_references(cls, v, info):
         """Ensure dependencies reference valid assets."""
-        if 'assets' not in info.data:
+        if "assets" not in info.data:
             return v
 
-        asset_ids = {asset.id for asset in info.data['assets']}
+        asset_ids = {asset.id for asset in info.data["assets"]}
         for dep in v:
             if dep.source not in asset_ids:
-                raise ValueError(f"Dependency source '{dep.source}' not found in assets")
+                raise ValueError(
+                    f"Dependency source '{dep.source}' not found in assets"
+                )
             if dep.target not in asset_ids:
-                raise ValueError(f"Dependency target '{dep.target}' not found in assets")
+                raise ValueError(
+                    f"Dependency target '{dep.target}' not found in assets"
+                )
         return v
 
     def get_asset(self, asset_id: str) -> Optional[Asset]:
@@ -349,14 +387,16 @@ class Environment(BaseModel):
     def get_dependencies_for_asset(self, asset_id: str) -> List[Dependency]:
         """Get all dependencies where asset is source or target."""
         return [
-            dep for dep in self.dependencies
+            dep
+            for dep in self.dependencies
             if dep.source == asset_id or dep.target == asset_id
         ]
 
     def get_critical_assets(self) -> List[Asset]:
         """Get all critical assets."""
         return [
-            asset for asset in self.assets
+            asset
+            for asset in self.assets
             if asset.business_context.criticality == Criticality.CRITICAL
         ]
 
@@ -382,7 +422,8 @@ class Environment(BaseModel):
     def get_pci_scope_assets(self) -> List[Asset]:
         """Get all assets in PCI-DSS scope."""
         return [
-            asset for asset in self.assets
+            asset
+            for asset in self.assets
             if asset.business_context.data_classification == DataClassification.PCI
             or ComplianceFramework.PCI_DSS in asset.business_context.compliance_scope
         ]
@@ -415,5 +456,9 @@ class Environment(BaseModel):
             "internet_facing_assets": internet_facing,
             "pci_scope_assets": pci_scope,
             "average_criticality": round(avg_criticality, 2),
-            "high_risk_percentage": round((critical_assets / total_assets * 100), 1) if total_assets > 0 else 0,
+            "high_risk_percentage": (
+                round((critical_assets / total_assets * 100), 1)
+                if total_assets > 0
+                else 0
+            ),
         }

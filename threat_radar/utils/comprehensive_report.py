@@ -1,4 +1,5 @@
 """Comprehensive vulnerability report generator with AI-powered summaries."""
+
 import uuid
 import logging
 import json
@@ -29,7 +30,9 @@ logger = logging.getLogger(__name__)
 class ComprehensiveReportGenerator:
     """Generate comprehensive vulnerability reports with AI-powered insights."""
 
-    def __init__(self, ai_provider: Optional[str] = None, ai_model: Optional[str] = None):
+    def __init__(
+        self, ai_provider: Optional[str] = None, ai_model: Optional[str] = None
+    ):
         """
         Initialize report generator.
 
@@ -110,7 +113,9 @@ class ComprehensiveReportGenerator:
             report.dashboard_data = self._generate_dashboard_data(report)
 
         # Generate remediation recommendations
-        report.remediation_recommendations = self._generate_remediation_recommendations(packages)
+        report.remediation_recommendations = self._generate_remediation_recommendations(
+            packages
+        )
 
         # Apply report level filtering if needed
         if report_level == ReportLevel.CRITICAL_ONLY:
@@ -119,7 +124,9 @@ class ComprehensiveReportGenerator:
         logger.info(f"Report generation complete: {report_id}")
         return report
 
-    def _build_findings(self, scan_result: GrypeScanResult) -> List[VulnerabilityFinding]:
+    def _build_findings(
+        self, scan_result: GrypeScanResult
+    ) -> List[VulnerabilityFinding]:
         """Build vulnerability findings from scan result with deduplication."""
         findings = []
         seen_vulns = set()
@@ -135,7 +142,9 @@ class ComprehensiveReportGenerator:
 
             # Skip if we've already seen this exact vulnerability
             if vuln_key in seen_vulns:
-                logger.debug(f"Skipping duplicate vulnerability: {vuln.id} in {vuln.package_name}@{vuln.package_version}")
+                logger.debug(
+                    f"Skipping duplicate vulnerability: {vuln.id} in {vuln.package_name}@{vuln.package_version}"
+                )
                 continue
 
             seen_vulns.add(vuln_key)
@@ -173,11 +182,19 @@ class ComprehensiveReportGenerator:
         # Create package objects
         packages = []
         for key, vulns in package_map.items():
-            package_name, package_version = key.rsplit('@', 1)
+            package_name, package_version = key.rsplit("@", 1)
 
             # Find highest severity and CVSS
-            severity_order = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3, 'negligible': 4}
-            highest_severity = min(vulns, key=lambda v: severity_order.get(v.severity, 5)).severity
+            severity_order = {
+                "critical": 0,
+                "high": 1,
+                "medium": 2,
+                "low": 3,
+                "negligible": 4,
+            }
+            highest_severity = min(
+                vulns, key=lambda v: severity_order.get(v.severity, 5)
+            ).severity
 
             cvss_scores = [v.cvss_score for v in vulns if v.cvss_score]
             highest_cvss = max(cvss_scores) if cvss_scores else 0.0
@@ -217,17 +234,19 @@ class ComprehensiveReportGenerator:
 
         summary = VulnerabilitySummary(
             total_vulnerabilities=len(findings),  # Use deduplicated count
-            critical=severity_counts.get('critical', 0),
-            high=severity_counts.get('high', 0),
-            medium=severity_counts.get('medium', 0),
-            low=severity_counts.get('low', 0),
-            negligible=severity_counts.get('negligible', 0),
-            unknown=severity_counts.get('unknown', 0),
+            critical=severity_counts.get("critical", 0),
+            high=severity_counts.get("high", 0),
+            medium=severity_counts.get("medium", 0),
+            low=severity_counts.get("low", 0),
+            negligible=severity_counts.get("negligible", 0),
+            unknown=severity_counts.get("unknown", 0),
         )
 
         # Calculate fix availability
         summary.vulnerabilities_with_fix = sum(1 for f in findings if f.has_fix)
-        summary.vulnerabilities_without_fix = len(findings) - summary.vulnerabilities_with_fix
+        summary.vulnerabilities_without_fix = (
+            len(findings) - summary.vulnerabilities_with_fix
+        )
 
         # Calculate CVSS scores
         cvss_scores = [f.cvss_score for f in findings if f.cvss_score]
@@ -247,7 +266,9 @@ class ComprehensiveReportGenerator:
 
         return summary
 
-    def _generate_executive_summary(self, report: ComprehensiveReport) -> ExecutiveSummary:
+    def _generate_executive_summary(
+        self, report: ComprehensiveReport
+    ) -> ExecutiveSummary:
         """Generate AI-powered executive summary using existing prompt templates."""
         try:
             llm_client = get_llm_client(provider=self.ai_provider, model=self.ai_model)
@@ -255,13 +276,13 @@ class ComprehensiveReportGenerator:
             # Convert findings to dictionary format for prompt
             vulnerabilities = [
                 {
-                    'id': f.cve_id,
-                    'package_name': f.package_name,
-                    'package_version': f.package_version,
-                    'severity': f.severity,
-                    'cvss_score': f.cvss_score,
-                    'fixed_in_version': f.fixed_in_version,
-                    'description': f.description,
+                    "id": f.cve_id,
+                    "package_name": f.package_name,
+                    "package_version": f.package_version,
+                    "severity": f.severity,
+                    "cvss_score": f.cvss_score,
+                    "fixed_in_version": f.fixed_in_version,
+                    "description": f.description,
                 }
                 for f in report.findings
             ]
@@ -272,21 +293,22 @@ class ComprehensiveReportGenerator:
                 target=report.target,
                 total_count=report.summary.total_vulnerabilities,
                 severity_distribution={
-                    'critical': report.summary.critical,
-                    'high': report.summary.high,
-                    'medium': report.summary.medium,
-                    'low': report.summary.low,
+                    "critical": report.summary.critical,
+                    "high": report.summary.high,
+                    "medium": report.summary.medium,
+                    "low": report.summary.low,
                 },
             )
 
             # Get AI response as JSON
             import json
+
             risk_assessment = llm_client.generate_json(prompt)
 
             # Extract key findings from risk assessment (deduplicated)
             key_findings = []
             seen_findings = set()
-            for risk in risk_assessment.get('key_risks', []):
+            for risk in risk_assessment.get("key_risks", []):
                 finding = f"{risk.get('risk', 'Risk identified')} (Likelihood: {risk.get('likelihood', 'Unknown')}, Impact: {risk.get('impact', 'Unknown')})"
                 # Deduplicate by checking if we've seen this finding before
                 if finding not in seen_findings:
@@ -298,9 +320,9 @@ class ComprehensiveReportGenerator:
             # Extract immediate actions from recommended actions (deduplicated)
             immediate_actions = []
             seen_actions = set()
-            for action in risk_assessment.get('recommended_actions', []):
-                if action.get('priority', '').upper() in ['CRITICAL', 'HIGH']:
-                    action_text = action.get('action', 'Action required')
+            for action in risk_assessment.get("recommended_actions", []):
+                if action.get("priority", "").upper() in ["CRITICAL", "HIGH"]:
+                    action_text = action.get("action", "Action required")
                     # Deduplicate by checking if we've seen this action before
                     if action_text not in seen_actions:
                         immediate_actions.append(action_text)
@@ -309,7 +331,7 @@ class ComprehensiveReportGenerator:
                             break
 
             # Determine compliance impact
-            compliance_concerns = risk_assessment.get('compliance_concerns', [])
+            compliance_concerns = risk_assessment.get("compliance_concerns", [])
             compliance_impact = (
                 f"May impact compliance with: {', '.join(compliance_concerns)}"
                 if compliance_concerns
@@ -317,7 +339,7 @@ class ComprehensiveReportGenerator:
             )
 
             # Map risk level to overall rating
-            risk_level = risk_assessment.get('risk_level', 'UNKNOWN').upper()
+            risk_level = risk_assessment.get("risk_level", "UNKNOWN").upper()
 
             # Estimate remediation effort based on vulnerability counts
             total_critical_high = report.summary.critical + report.summary.high
@@ -333,7 +355,11 @@ class ComprehensiveReportGenerator:
 
             # Calculate fix availability percentage
             total_vulns = report.summary.total_vulnerabilities
-            fix_percentage = (report.summary.vulnerabilities_with_fix / total_vulns * 100) if total_vulns > 0 else 0.0
+            fix_percentage = (
+                (report.summary.vulnerabilities_with_fix / total_vulns * 100)
+                if total_vulns > 0
+                else 0.0
+            )
 
             # Get internet-facing assets count from attack surface data if available
             internet_facing = 0
@@ -342,9 +368,19 @@ class ComprehensiveReportGenerator:
 
             return ExecutiveSummary(
                 overall_risk_rating=risk_level,
-                key_findings=key_findings if key_findings else ["Vulnerability assessment completed"],
-                immediate_actions=immediate_actions if immediate_actions else ["Review and prioritize critical vulnerabilities"],
-                risk_summary=risk_assessment.get('risk_summary', 'Risk assessment in progress'),
+                key_findings=(
+                    key_findings
+                    if key_findings
+                    else ["Vulnerability assessment completed"]
+                ),
+                immediate_actions=(
+                    immediate_actions
+                    if immediate_actions
+                    else ["Review and prioritize critical vulnerabilities"]
+                ),
+                risk_summary=risk_assessment.get(
+                    "risk_summary", "Risk assessment in progress"
+                ),
                 compliance_impact=compliance_impact,
                 business_context=f"Security vulnerabilities identified across {report.summary.vulnerable_packages} packages requiring attention",
                 critical_items_requiring_attention=total_critical_high,
@@ -359,8 +395,9 @@ class ComprehensiveReportGenerator:
             # Return fallback summary
             return self._generate_fallback_executive_summary(report)
 
-
-    def _generate_fallback_executive_summary(self, report: ComprehensiveReport) -> ExecutiveSummary:
+    def _generate_fallback_executive_summary(
+        self, report: ComprehensiveReport
+    ) -> ExecutiveSummary:
         """Generate a fallback executive summary without AI."""
         # Determine risk rating based on critical/high counts
         critical_high_count = report.summary.critical + report.summary.high
@@ -392,7 +429,11 @@ class ComprehensiveReportGenerator:
 
         # Calculate fix availability percentage
         total_vulns = report.summary.total_vulnerabilities
-        fix_percentage = (report.summary.vulnerabilities_with_fix / total_vulns * 100) if total_vulns > 0 else 0.0
+        fix_percentage = (
+            (report.summary.vulnerabilities_with_fix / total_vulns * 100)
+            if total_vulns > 0
+            else 0.0
+        )
 
         # Get internet-facing assets count from attack surface data if available
         internet_facing = 0
@@ -419,32 +460,48 @@ class ComprehensiveReportGenerator:
 
         # Summary cards
         dashboard.summary_cards = {
-            'total_vulnerabilities': report.summary.total_vulnerabilities,
-            'critical_vulnerabilities': report.summary.critical,
-            'high_vulnerabilities': report.summary.high,
-            'vulnerable_packages': report.summary.vulnerable_packages,
-            'average_cvss_score': report.summary.average_cvss_score,
-            'fix_available_percentage': round(
-                (report.summary.vulnerabilities_with_fix / report.summary.total_vulnerabilities * 100)
-                if report.summary.total_vulnerabilities > 0 else 0, 2
+            "total_vulnerabilities": report.summary.total_vulnerabilities,
+            "critical_vulnerabilities": report.summary.critical,
+            "high_vulnerabilities": report.summary.high,
+            "vulnerable_packages": report.summary.vulnerable_packages,
+            "average_cvss_score": report.summary.average_cvss_score,
+            "fix_available_percentage": round(
+                (
+                    (
+                        report.summary.vulnerabilities_with_fix
+                        / report.summary.total_vulnerabilities
+                        * 100
+                    )
+                    if report.summary.total_vulnerabilities > 0
+                    else 0
+                ),
+                2,
             ),
         }
 
         # Severity distribution chart (for pie/bar chart)
         dashboard.severity_distribution_chart = [
-            {'severity': 'Critical', 'count': report.summary.critical, 'color': '#dc2626'},
-            {'severity': 'High', 'count': report.summary.high, 'color': '#ea580c'},
-            {'severity': 'Medium', 'count': report.summary.medium, 'color': '#eab308'},
-            {'severity': 'Low', 'count': report.summary.low, 'color': '#3b82f6'},
-            {'severity': 'Negligible', 'count': report.summary.negligible, 'color': '#10b981'},
+            {
+                "severity": "Critical",
+                "count": report.summary.critical,
+                "color": "#dc2626",
+            },
+            {"severity": "High", "count": report.summary.high, "color": "#ea580c"},
+            {"severity": "Medium", "count": report.summary.medium, "color": "#eab308"},
+            {"severity": "Low", "count": report.summary.low, "color": "#3b82f6"},
+            {
+                "severity": "Negligible",
+                "count": report.summary.negligible,
+                "color": "#10b981",
+            },
         ]
 
         # Top vulnerable packages (for horizontal bar chart)
         dashboard.top_vulnerable_packages_chart = [
             {
-                'package': f"{pkg.package_name}@{pkg.package_version}",
-                'vulnerability_count': pkg.vulnerability_count,
-                'severity': pkg.highest_severity,
+                "package": f"{pkg.package_name}@{pkg.package_version}",
+                "vulnerability_count": pkg.vulnerability_count,
+                "severity": pkg.highest_severity,
             }
             for pkg in report.packages[:10]
         ]
@@ -457,14 +514,14 @@ class ComprehensiveReportGenerator:
                 cvss_buckets[bucket] += 1
 
         dashboard.cvss_score_histogram = [
-            {'score_range': f"{i}-{i+1}", 'count': cvss_buckets.get(i, 0)}
+            {"score_range": f"{i}-{i+1}", "count": cvss_buckets.get(i, 0)}
             for i in range(0, 10)
         ]
 
         # Fix availability pie chart
         dashboard.fix_availability_pie = {
-            'with_fix': report.summary.vulnerabilities_with_fix,
-            'without_fix': report.summary.vulnerabilities_without_fix,
+            "with_fix": report.summary.vulnerabilities_with_fix,
+            "without_fix": report.summary.vulnerabilities_without_fix,
         }
 
         # Package type breakdown
@@ -473,27 +530,31 @@ class ComprehensiveReportGenerator:
             package_types[pkg.package_type] += pkg.vulnerability_count
 
         dashboard.package_type_breakdown = [
-            {'package_type': pkg_type, 'vulnerability_count': count}
-            for pkg_type, count in sorted(package_types.items(), key=lambda x: x[1], reverse=True)
+            {"package_type": pkg_type, "vulnerability_count": count}
+            for pkg_type, count in sorted(
+                package_types.items(), key=lambda x: x[1], reverse=True
+            )
         ]
 
         # Critical items list
-        critical_findings = [f for f in report.findings if f.severity in ['critical', 'high']]
+        critical_findings = [
+            f for f in report.findings if f.severity in ["critical", "high"]
+        ]
         dashboard.critical_items = [
             {
-                'cve_id': f.cve_id,
-                'severity': f.severity,
-                'cvss_score': f.cvss_score,
-                'package': f"{f.package_name}@{f.package_version}",
-                'has_fix': f.has_fix,
-                'fixed_in': f.fixed_in_version,
+                "cve_id": f.cve_id,
+                "severity": f.severity,
+                "cvss_score": f.cvss_score,
+                "package": f"{f.package_name}@{f.package_version}",
+                "has_fix": f.has_fix,
+                "fixed_in": f.fixed_in_version,
             }
             for f in sorted(
                 critical_findings,
                 key=lambda x: (
-                    0 if x.severity == 'critical' else 1,
-                    -(x.cvss_score or 0)
-                )
+                    0 if x.severity == "critical" else 1,
+                    -(x.cvss_score or 0),
+                ),
             )[:20]
         ]
 
@@ -526,7 +587,9 @@ class ComprehensiveReportGenerator:
                     f"Priority: Upgrade {pkg.package_name} from {pkg.package_version} to {pkg.recommended_version}"
                 )
 
-        recommendations.append("Conduct regular vulnerability scans to track new issues")
+        recommendations.append(
+            "Conduct regular vulnerability scans to track new issues"
+        )
         recommendations.append("Implement automated dependency updates where possible")
 
         return recommendations
@@ -535,9 +598,9 @@ class ComprehensiveReportGenerator:
         """Determine the type of scan target."""
         target = scan_result.target.lower()
 
-        if any(keyword in target for keyword in ['docker', 'image', ':']):
+        if any(keyword in target for keyword in ["docker", "image", ":"]):
             return "docker_image"
-        elif target.endswith('.json') or target.endswith('.xml'):
+        elif target.endswith(".json") or target.endswith(".xml"):
             return "sbom"
         else:
             return "directory"
@@ -552,30 +615,32 @@ class ComprehensiveReportGenerator:
         Returns:
             AttackSurfaceData object with parsed attack path information
         """
-        with open(attack_paths_file, 'r') as f:
+        with open(attack_paths_file, "r") as f:
             data = json.load(f)
 
         # Parse attack paths
         attack_paths = []
-        for path_data in data.get('attack_paths', []):
+        for path_data in data.get("attack_paths", []):
             # Extract steps summary
             steps_summary = []
             vulnerabilities = []
-            for step in path_data.get('steps', []):
-                steps_summary.append(step.get('description', ''))
-                vulnerabilities.extend(step.get('vulnerabilities', []))
+            for step in path_data.get("steps", []):
+                steps_summary.append(step.get("description", ""))
+                vulnerabilities.extend(step.get("vulnerabilities", []))
 
             attack_path = AttackPathSummary(
-                path_id=path_data.get('path_id', ''),
-                entry_point=path_data.get('entry_point', ''),
-                target=path_data.get('target', ''),
-                threat_level=path_data.get('threat_level', 'medium'),
-                total_cvss=path_data.get('total_cvss', 0.0),
-                path_length=path_data.get('path_length', 0),
-                exploitability=path_data.get('exploitability', 0.5),
-                requires_privileges=path_data.get('requires_privileges', False),
-                description=path_data.get('description', ''),
-                vulnerabilities_exploited=list(set(vulnerabilities)),  # Remove duplicates
+                path_id=path_data.get("path_id", ""),
+                entry_point=path_data.get("entry_point", ""),
+                target=path_data.get("target", ""),
+                threat_level=path_data.get("threat_level", "medium"),
+                total_cvss=path_data.get("total_cvss", 0.0),
+                path_length=path_data.get("path_length", 0),
+                exploitability=path_data.get("exploitability", 0.5),
+                requires_privileges=path_data.get("requires_privileges", False),
+                description=path_data.get("description", ""),
+                vulnerabilities_exploited=list(
+                    set(vulnerabilities)
+                ),  # Remove duplicates
                 steps_summary=steps_summary,
             )
             attack_paths.append(attack_path)
@@ -583,17 +648,21 @@ class ComprehensiveReportGenerator:
         # Create attack surface data
         attack_surface = AttackSurfaceData(
             total_attack_paths=len(attack_paths),
-            critical_paths=sum(1 for ap in attack_paths if ap.threat_level == 'critical'),
-            high_paths=sum(1 for ap in attack_paths if ap.threat_level == 'high'),
-            entry_points_count=len(data.get('entry_points', [])),
-            high_value_targets_count=len(data.get('high_value_targets', [])),
-            privilege_escalation_opportunities=len(data.get('privilege_escalations', [])),
-            lateral_movement_opportunities=len(data.get('lateral_movements', [])),
-            total_risk_score=data.get('total_risk_score', 0.0),
+            critical_paths=sum(
+                1 for ap in attack_paths if ap.threat_level == "critical"
+            ),
+            high_paths=sum(1 for ap in attack_paths if ap.threat_level == "high"),
+            entry_points_count=len(data.get("entry_points", [])),
+            high_value_targets_count=len(data.get("high_value_targets", [])),
+            privilege_escalation_opportunities=len(
+                data.get("privilege_escalations", [])
+            ),
+            lateral_movement_opportunities=len(data.get("lateral_movements", [])),
+            total_risk_score=data.get("total_risk_score", 0.0),
             attack_paths=attack_paths,
-            top_entry_points=data.get('entry_points', [])[:10],
-            top_targets=data.get('high_value_targets', [])[:10],
-            recommendations=data.get('recommendations', []),
+            top_entry_points=data.get("entry_points", [])[:10],
+            top_targets=data.get("high_value_targets", [])[:10],
+            recommendations=data.get("recommendations", []),
         )
 
         return attack_surface

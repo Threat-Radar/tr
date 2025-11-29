@@ -1,4 +1,5 @@
 """AI-powered vulnerability analysis and remediation commands."""
+
 import typer
 from typing import Optional
 from pathlib import Path
@@ -84,29 +85,33 @@ def load_cve_results(file_path: str) -> GrypeScanResult:
 @app.command("analyze")
 def analyze_vulnerabilities(
     cve_results: str = typer.Argument(..., help="Path to CVE scan results JSON file"),
-    provider: Optional[str] = typer.Option(None, "--provider", "-p", help="AI provider (openai, anthropic, ollama)"),
-    model: Optional[str] = typer.Option(None, "--model", "-m", help="Model name (e.g., gpt-4o, llama2)"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save analysis to JSON file"),
-    auto_save: bool = typer.Option(False, "--auto-save", "--as", help="Auto-save to storage/ai_analysis/"),
+    provider: Optional[str] = typer.Option(
+        None, "--provider", "-p", help="AI provider (openai, anthropic, ollama)"
+    ),
+    model: Optional[str] = typer.Option(
+        None, "--model", "-m", help="Model name (e.g., gpt-4o, llama2)"
+    ),
+    output: Optional[str] = typer.Option(
+        None, "--output", "-o", help="Save analysis to JSON file"
+    ),
+    auto_save: bool = typer.Option(
+        False, "--auto-save", "--as", help="Auto-save to storage/ai_analysis/"
+    ),
     batch_mode: str = typer.Option(
         "auto",
         "--batch-mode",
-        help="Batch processing mode: auto (default), enabled, disabled"
+        help="Batch processing mode: auto (default), enabled, disabled",
     ),
     batch_size: int = typer.Option(
-        25,
-        "--batch-size",
-        help="Vulnerabilities per batch (default: 25)"
+        25, "--batch-size", help="Vulnerabilities per batch (default: 25)"
     ),
     show_progress: bool = typer.Option(
-        True,
-        "--progress/--no-progress",
-        help="Show progress bar for batch processing"
+        True, "--progress/--no-progress", help="Show progress bar for batch processing"
     ),
     severity: Optional[str] = typer.Option(
         None,
         "--severity",
-        help="Filter to minimum severity: critical, high, medium, low"
+        help="Filter to minimum severity: critical, high, medium, low",
     ),
 ):
     """
@@ -151,7 +156,11 @@ def analyze_vulnerabilities(
         ) as progress:
             task = progress.add_task("Loading CVE results...", total=None)
             scan_result = load_cve_results(cve_results)
-            progress.update(task, completed=True, description=f"Loaded {scan_result.total_count} vulnerabilities")
+            progress.update(
+                task,
+                completed=True,
+                description=f"Loaded {scan_result.total_count} vulnerabilities",
+            )
 
         if scan_result.total_count == 0:
             console.print("[yellow]No vulnerabilities found in scan results.[/yellow]")
@@ -159,7 +168,9 @@ def analyze_vulnerabilities(
 
         # Validate batch_mode
         if batch_mode not in ["auto", "enabled", "disabled"]:
-            console.print(f"[red]Invalid --batch-mode: {batch_mode}. Use: auto, enabled, or disabled[/red]")
+            console.print(
+                f"[red]Invalid --batch-mode: {batch_mode}. Use: auto, enabled, or disabled[/red]"
+            )
             return
 
         # Create analyzer with batch configuration
@@ -176,16 +187,25 @@ def analyze_vulnerabilities(
             try:
                 scan_result = analyzer.filter_by_severity(scan_result, severity)
                 if scan_result.total_count == 0:
-                    console.print(f"[yellow]No vulnerabilities found at {severity.upper()} severity or above.[/yellow]")
-                    console.print(f"[dim]Original scan had {original_count} vulnerabilities[/dim]")
+                    console.print(
+                        f"[yellow]No vulnerabilities found at {severity.upper()} severity or above.[/yellow]"
+                    )
+                    console.print(
+                        f"[dim]Original scan had {original_count} vulnerabilities[/dim]"
+                    )
                     return
-                console.print(f"[cyan]Filtered to {scan_result.total_count} vulnerabilities (>= {severity.upper()}) from {original_count} total[/cyan]")
+                console.print(
+                    f"[cyan]Filtered to {scan_result.total_count} vulnerabilities (>= {severity.upper()}) from {original_count} total[/cyan]"
+                )
             except ValueError as e:
                 console.print(f"[red]Error: {str(e)}[/red]")
                 return
 
         # Analyze with AI - with batch progress tracking
-        if show_progress and (batch_mode == "enabled" or (batch_mode == "auto" and scan_result.total_count > 30)):
+        if show_progress and (
+            batch_mode == "enabled"
+            or (batch_mode == "auto" and scan_result.total_count > 30)
+        ):
             # Use batch progress display
             from rich.progress import BarColumn, TimeRemainingColumn
 
@@ -200,14 +220,14 @@ def analyze_vulnerabilities(
                 total_batches = (scan_result.total_count + batch_size - 1) // batch_size
                 task = progress.add_task(
                     f"Analyzing {scan_result.total_count} vulnerabilities...",
-                    total=total_batches
+                    total=total_batches,
                 )
 
                 def progress_callback(batch_num, total_batches, analyzed_count):
                     progress.update(
                         task,
                         completed=batch_num,
-                        description=f"Batch {batch_num}/{total_batches} - {analyzed_count} analyzed"
+                        description=f"Batch {batch_num}/{total_batches} - {analyzed_count} analyzed",
                     )
 
                 analysis = analyzer.analyze_scan_result(
@@ -216,7 +236,9 @@ def analyze_vulnerabilities(
                     progress_callback=progress_callback,
                 )
 
-                progress.update(task, completed=total_batches, description="Analysis complete!")
+                progress.update(
+                    task, completed=total_batches, description="Analysis complete!"
+                )
         else:
             # Simple progress for single-pass analysis
             with Progress(
@@ -252,7 +274,9 @@ def analyze_vulnerabilities(
         # Show high-priority vulnerabilities
         high_priority = analyzer.get_high_priority_vulnerabilities(analysis)
         if high_priority:
-            console.print(f"\n[bold red]High Priority Vulnerabilities ({len(high_priority)}):[/bold red]")
+            console.print(
+                f"\n[bold red]High Priority Vulnerabilities ({len(high_priority)}):[/bold red]"
+            )
 
             table = Table(show_header=True)
             table.add_column("CVE ID", style="cyan")
@@ -271,7 +295,9 @@ def analyze_vulnerabilities(
             console.print(table)
 
             if len(high_priority) > 10:
-                console.print(f"[dim]... and {len(high_priority) - 10} more high priority vulnerabilities[/dim]")
+                console.print(
+                    f"[dim]... and {len(high_priority) - 10} more high priority vulnerabilities[/dim]"
+                )
 
         # Save results
         output_data = analysis.to_dict()
@@ -282,37 +308,43 @@ def analyze_vulnerabilities(
 
         if auto_save:
             storage = get_ai_storage()
-            saved_path = storage.save_analysis(scan_result.target, output_data, "analysis")
+            saved_path = storage.save_analysis(
+                scan_result.target, output_data, "analysis"
+            )
             console.print(f"[green]Analysis auto-saved to {saved_path}[/green]")
 
 
 @app.command("prioritize")
 def prioritize_vulnerabilities(
     cve_results: str = typer.Argument(..., help="Path to CVE scan results JSON file"),
-    provider: Optional[str] = typer.Option(None, "--provider", "-p", help="AI provider (openai, ollama)"),
-    model: Optional[str] = typer.Option(None, "--model", "-m", help="Model name (e.g., gpt-4o, llama2)"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save prioritized list to JSON file"),
-    auto_save: bool = typer.Option(False, "--auto-save", "--as", help="Auto-save to storage/ai_analysis/"),
+    provider: Optional[str] = typer.Option(
+        None, "--provider", "-p", help="AI provider (openai, ollama)"
+    ),
+    model: Optional[str] = typer.Option(
+        None, "--model", "-m", help="Model name (e.g., gpt-4o, llama2)"
+    ),
+    output: Optional[str] = typer.Option(
+        None, "--output", "-o", help="Save prioritized list to JSON file"
+    ),
+    auto_save: bool = typer.Option(
+        False, "--auto-save", "--as", help="Auto-save to storage/ai_analysis/"
+    ),
     top_n: int = typer.Option(10, "--top", "-n", help="Show top N priorities"),
     batch_mode: str = typer.Option(
         "auto",
         "--batch-mode",
-        help="Batch processing mode: auto (default), enabled, disabled"
+        help="Batch processing mode: auto (default), enabled, disabled",
     ),
     batch_size: int = typer.Option(
-        25,
-        "--batch-size",
-        help="Vulnerabilities per batch (default: 25)"
+        25, "--batch-size", help="Vulnerabilities per batch (default: 25)"
     ),
     show_progress: bool = typer.Option(
-        True,
-        "--progress/--no-progress",
-        help="Show progress bar for batch processing"
+        True, "--progress/--no-progress", help="Show progress bar for batch processing"
     ),
     severity: Optional[str] = typer.Option(
         None,
         "--severity",
-        help="Filter to minimum severity: critical, high, medium, low"
+        help="Filter to minimum severity: critical, high, medium, low",
     ),
 ):
     """
@@ -344,7 +376,11 @@ def prioritize_vulnerabilities(
         ) as progress:
             task = progress.add_task("Loading CVE results...", total=None)
             scan_result = load_cve_results(cve_results)
-            progress.update(task, completed=True, description=f"Loaded {scan_result.total_count} vulnerabilities")
+            progress.update(
+                task,
+                completed=True,
+                description=f"Loaded {scan_result.total_count} vulnerabilities",
+            )
 
         if scan_result.total_count == 0:
             console.print("[yellow]No vulnerabilities found in scan results.[/yellow]")
@@ -352,7 +388,9 @@ def prioritize_vulnerabilities(
 
         # Validate batch_mode
         if batch_mode not in ["auto", "enabled", "disabled"]:
-            console.print(f"[red]Invalid --batch-mode: {batch_mode}. Use: auto, enabled, or disabled[/red]")
+            console.print(
+                f"[red]Invalid --batch-mode: {batch_mode}. Use: auto, enabled, or disabled[/red]"
+            )
             return
 
         # Create analyzer with batch configuration
@@ -369,17 +407,29 @@ def prioritize_vulnerabilities(
             try:
                 scan_result = analyzer.filter_by_severity(scan_result, severity)
                 if scan_result.total_count == 0:
-                    console.print(f"[yellow]No vulnerabilities found at {severity.upper()} severity or above.[/yellow]")
-                    console.print(f"[dim]Original scan had {original_count} vulnerabilities[/dim]")
+                    console.print(
+                        f"[yellow]No vulnerabilities found at {severity.upper()} severity or above.[/yellow]"
+                    )
+                    console.print(
+                        f"[dim]Original scan had {original_count} vulnerabilities[/dim]"
+                    )
                     return
-                console.print(f"[cyan]Filtered to {scan_result.total_count} vulnerabilities (>= {severity.upper()}) from {original_count} total[/cyan]")
+                console.print(
+                    f"[cyan]Filtered to {scan_result.total_count} vulnerabilities (>= {severity.upper()}) from {original_count} total[/cyan]"
+                )
             except ValueError as e:
                 console.print(f"[red]Error: {str(e)}[/red]")
                 return
 
         # Analyze with AI - with batch progress tracking
         # Use analyzer's auto_batch_threshold to ensure consistency
-        if show_progress and (batch_mode == "enabled" or (batch_mode == "auto" and scan_result.total_count > analyzer.auto_batch_threshold)):
+        if show_progress and (
+            batch_mode == "enabled"
+            or (
+                batch_mode == "auto"
+                and scan_result.total_count > analyzer.auto_batch_threshold
+            )
+        ):
             # Use batch progress display
             from rich.progress import BarColumn, TimeRemainingColumn
 
@@ -394,14 +444,14 @@ def prioritize_vulnerabilities(
                 total_batches = (scan_result.total_count + batch_size - 1) // batch_size
                 task = progress.add_task(
                     f"Analyzing {scan_result.total_count} vulnerabilities...",
-                    total=total_batches
+                    total=total_batches,
                 )
 
                 def progress_callback(batch_num, total_batches, analyzed_count):
                     progress.update(
                         task,
                         completed=batch_num,
-                        description=f"Batch {batch_num}/{total_batches} - {analyzed_count} analyzed"
+                        description=f"Batch {batch_num}/{total_batches} - {analyzed_count} analyzed",
                     )
 
                 analysis = analyzer.analyze_scan_result(
@@ -410,7 +460,9 @@ def prioritize_vulnerabilities(
                     progress_callback=progress_callback,
                 )
 
-                progress.update(task, completed=total_batches, description="Analysis complete!")
+                progress.update(
+                    task, completed=total_batches, description="Analysis complete!"
+                )
         else:
             # Simple progress for single-pass analysis
             with Progress(
@@ -438,10 +490,12 @@ def prioritize_vulnerabilities(
 
         # Display results
         console.print("\n")
-        console.print(Panel(
-            f"[bold]Prioritized Vulnerability List[/bold]\n\nTarget: {scan_result.target}",
-            border_style="blue"
-        ))
+        console.print(
+            Panel(
+                f"[bold]Prioritized Vulnerability List[/bold]\n\nTarget: {scan_result.target}",
+                border_style="blue",
+            )
+        )
 
         console.print(f"\n[bold]Overall Strategy:[/bold]")
         console.print(prioritized.overall_strategy)
@@ -463,7 +517,11 @@ def prioritize_vulnerabilities(
         table.add_column("Reason", style="white")
 
         for idx, vuln in enumerate(top_priorities, 1):
-            urgency_color = "red" if vuln.urgency_score >= 80 else "yellow" if vuln.urgency_score >= 60 else "white"
+            urgency_color = (
+                "red"
+                if vuln.urgency_score >= 80
+                else "yellow" if vuln.urgency_score >= 60 else "white"
+            )
             table.add_row(
                 str(idx),
                 vuln.cve_id,
@@ -490,37 +548,45 @@ def prioritize_vulnerabilities(
 
         if auto_save:
             storage = get_ai_storage()
-            saved_path = storage.save_analysis(scan_result.target, output_data, "prioritization")
+            saved_path = storage.save_analysis(
+                scan_result.target, output_data, "prioritization"
+            )
             console.print(f"[green]Priorities auto-saved to {saved_path}[/green]")
 
 
 @app.command("remediate")
 def generate_remediation(
     cve_results: str = typer.Argument(..., help="Path to CVE scan results JSON file"),
-    provider: Optional[str] = typer.Option(None, "--provider", "-p", help="AI provider (openai, ollama)"),
-    model: Optional[str] = typer.Option(None, "--model", "-m", help="Model name (e.g., gpt-4o, llama2)"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save remediation plan to JSON file"),
-    auto_save: bool = typer.Option(False, "--auto-save", "--as", help="Auto-save to storage/ai_analysis/"),
-    show_commands: bool = typer.Option(True, "--show-commands/--no-commands", help="Display upgrade commands"),
+    provider: Optional[str] = typer.Option(
+        None, "--provider", "-p", help="AI provider (openai, ollama)"
+    ),
+    model: Optional[str] = typer.Option(
+        None, "--model", "-m", help="Model name (e.g., gpt-4o, llama2)"
+    ),
+    output: Optional[str] = typer.Option(
+        None, "--output", "-o", help="Save remediation plan to JSON file"
+    ),
+    auto_save: bool = typer.Option(
+        False, "--auto-save", "--as", help="Auto-save to storage/ai_analysis/"
+    ),
+    show_commands: bool = typer.Option(
+        True, "--show-commands/--no-commands", help="Display upgrade commands"
+    ),
     batch_mode: str = typer.Option(
         "auto",
         "--batch-mode",
-        help="Batch processing mode: auto (default), enabled, disabled"
+        help="Batch processing mode: auto (default), enabled, disabled",
     ),
     batch_size: int = typer.Option(
-        25,
-        "--batch-size",
-        help="Vulnerabilities per batch (default: 25)"
+        25, "--batch-size", help="Vulnerabilities per batch (default: 25)"
     ),
     show_progress: bool = typer.Option(
-        True,
-        "--progress/--no-progress",
-        help="Show progress bar for batch processing"
+        True, "--progress/--no-progress", help="Show progress bar for batch processing"
     ),
     severity: Optional[str] = typer.Option(
         None,
         "--severity",
-        help="Filter to minimum severity: critical, high, medium, low"
+        help="Filter to minimum severity: critical, high, medium, low",
     ),
 ):
     """
@@ -553,7 +619,11 @@ def generate_remediation(
         ) as progress:
             task = progress.add_task("Loading CVE results...", total=None)
             scan_result = load_cve_results(cve_results)
-            progress.update(task, completed=True, description=f"Loaded {scan_result.total_count} vulnerabilities")
+            progress.update(
+                task,
+                completed=True,
+                description=f"Loaded {scan_result.total_count} vulnerabilities",
+            )
 
         if scan_result.total_count == 0:
             console.print("[yellow]No vulnerabilities found in scan results.[/yellow]")
@@ -561,7 +631,9 @@ def generate_remediation(
 
         # Validate batch_mode
         if batch_mode not in ["auto", "enabled", "disabled"]:
-            console.print(f"[red]Invalid --batch-mode: {batch_mode}. Use: auto, enabled, or disabled[/red]")
+            console.print(
+                f"[red]Invalid --batch-mode: {batch_mode}. Use: auto, enabled, or disabled[/red]"
+            )
             return
 
         # Create generator with batch configuration
@@ -577,20 +649,33 @@ def generate_remediation(
         if severity:
             try:
                 from threat_radar.ai.vulnerability_analyzer import VulnerabilityAnalyzer
+
                 analyzer = VulnerabilityAnalyzer()
                 scan_result = analyzer.filter_by_severity(scan_result, severity)
                 if scan_result.total_count == 0:
-                    console.print(f"[yellow]No vulnerabilities found at {severity.upper()} severity or above.[/yellow]")
-                    console.print(f"[dim]Original scan had {original_count} vulnerabilities[/dim]")
+                    console.print(
+                        f"[yellow]No vulnerabilities found at {severity.upper()} severity or above.[/yellow]"
+                    )
+                    console.print(
+                        f"[dim]Original scan had {original_count} vulnerabilities[/dim]"
+                    )
                     return
-                console.print(f"[cyan]Filtered to {scan_result.total_count} vulnerabilities (>= {severity.upper()}) from {original_count} total[/cyan]")
+                console.print(
+                    f"[cyan]Filtered to {scan_result.total_count} vulnerabilities (>= {severity.upper()}) from {original_count} total[/cyan]"
+                )
             except ValueError as e:
                 console.print(f"[red]Error: {str(e)}[/red]")
                 return
 
         # Generate remediation plan - with batch progress tracking
         # Use generator's auto_batch_threshold to ensure consistency
-        if show_progress and (batch_mode == "enabled" or (batch_mode == "auto" and scan_result.total_count > generator.auto_batch_threshold)):
+        if show_progress and (
+            batch_mode == "enabled"
+            or (
+                batch_mode == "auto"
+                and scan_result.total_count > generator.auto_batch_threshold
+            )
+        ):
             # Use batch progress display
             from rich.progress import BarColumn, TimeRemainingColumn
 
@@ -605,14 +690,14 @@ def generate_remediation(
                 total_batches = (scan_result.total_count + batch_size - 1) // batch_size
                 task = progress.add_task(
                     f"Generating remediation for {scan_result.total_count} vulnerabilities...",
-                    total=total_batches
+                    total=total_batches,
                 )
 
                 def progress_callback(batch_num, total_batches, processed_count):
                     progress.update(
                         task,
                         completed=batch_num,
-                        description=f"Batch {batch_num}/{total_batches} - {processed_count} remediation plans"
+                        description=f"Batch {batch_num}/{total_batches} - {processed_count} remediation plans",
                     )
 
                 remediation = generator.generate_remediation_plan(
@@ -621,7 +706,11 @@ def generate_remediation(
                     progress_callback=progress_callback,
                 )
 
-                progress.update(task, completed=total_batches, description="Remediation plan complete!")
+                progress.update(
+                    task,
+                    completed=total_batches,
+                    description="Remediation plan complete!",
+                )
         else:
             # Simple progress for single-pass generation
             with Progress(
@@ -638,16 +727,22 @@ def generate_remediation(
 
         # Display results
         console.print("\n")
-        console.print(Panel(
-            f"[bold]Remediation Plan[/bold]\n\nTarget: {scan_result.target}\nVulnerabilities: {remediation.metadata['total_vulnerabilities']}\nPackages Affected: {remediation.metadata['packages_affected']}",
-            border_style="blue"
-        ))
+        console.print(
+            Panel(
+                f"[bold]Remediation Plan[/bold]\n\nTarget: {scan_result.target}\nVulnerabilities: {remediation.metadata['total_vulnerabilities']}\nPackages Affected: {remediation.metadata['packages_affected']}",
+                border_style="blue",
+            )
+        )
 
         # Show package groups
         console.print(f"\n[bold]Packages Requiring Updates:[/bold]")
         for pkg, group in remediation.grouped_by_package.items():
-            status = "✓ Upgrade fixes all" if group.upgrade_fixes_all else "⚠ Partial fix"
-            console.print(f"  • {pkg}: {group.vulnerabilities_count} vulnerabilities → {group.recommended_version or 'No fix'} [{status}]")
+            status = (
+                "✓ Upgrade fixes all" if group.upgrade_fixes_all else "⚠ Partial fix"
+            )
+            console.print(
+                f"  • {pkg}: {group.vulnerabilities_count} vulnerabilities → {group.recommended_version or 'No fix'} [{status}]"
+            )
 
         # Show upgrade commands if requested
         if show_commands:
@@ -659,16 +754,24 @@ def generate_remediation(
                     for cmd in cmds[:5]:  # Limit to 5 per package manager
                         console.print(f"  {cmd}")
                     if len(cmds) > 5:
-                        console.print(f"  [dim]... and {len(cmds) - 5} more commands[/dim]")
+                        console.print(
+                            f"  [dim]... and {len(cmds) - 5} more commands[/dim]"
+                        )
 
         # Show quick fixes
         quick_fixes = generator.get_quick_fixes(remediation)
         if quick_fixes:
-            console.print(f"\n[bold green]Quick Fixes ({len(quick_fixes)} low-effort remediations):[/bold green]")
+            console.print(
+                f"\n[bold green]Quick Fixes ({len(quick_fixes)} low-effort remediations):[/bold green]"
+            )
             for fix in quick_fixes[:5]:
-                console.print(f"  • {fix.cve_id} ({fix.package_name}): {fix.upgrade_command or 'See workarounds'}")
+                console.print(
+                    f"  • {fix.cve_id} ({fix.package_name}): {fix.upgrade_command or 'See workarounds'}"
+                )
             if len(quick_fixes) > 5:
-                console.print(f"  [dim]... and {len(quick_fixes) - 5} more quick fixes[/dim]")
+                console.print(
+                    f"  [dim]... and {len(quick_fixes) - 5} more quick fixes[/dim]"
+                )
 
         # Save results
         output_data = remediation.to_dict()
@@ -679,23 +782,37 @@ def generate_remediation(
 
         if auto_save:
             storage = get_ai_storage()
-            saved_path = storage.save_analysis(scan_result.target, output_data, "remediation")
+            saved_path = storage.save_analysis(
+                scan_result.target, output_data, "remediation"
+            )
             console.print(f"[green]Remediation plan auto-saved to {saved_path}[/green]")
 
 
 @app.command("analyze-with-context")
 def analyze_with_business_context(
     cve_results: str = typer.Argument(..., help="Path to CVE scan results JSON file"),
-    environment: str = typer.Argument(..., help="Path to environment configuration JSON file"),
-    provider: Optional[str] = typer.Option(None, "--provider", "-p", help="AI provider (openai, anthropic, ollama)"),
-    model: Optional[str] = typer.Option(None, "--model", "-m", help="Model name (e.g., gpt-4o, llama2)"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save analysis to JSON file"),
-    auto_save: bool = typer.Option(False, "--auto-save", "--as", help="Auto-save to storage/ai_analysis/"),
-    asset_id: Optional[str] = typer.Option(None, "--asset-id", help="Explicit asset ID from environment"),
+    environment: str = typer.Argument(
+        ..., help="Path to environment configuration JSON file"
+    ),
+    provider: Optional[str] = typer.Option(
+        None, "--provider", "-p", help="AI provider (openai, anthropic, ollama)"
+    ),
+    model: Optional[str] = typer.Option(
+        None, "--model", "-m", help="Model name (e.g., gpt-4o, llama2)"
+    ),
+    output: Optional[str] = typer.Option(
+        None, "--output", "-o", help="Save analysis to JSON file"
+    ),
+    auto_save: bool = typer.Option(
+        False, "--auto-save", "--as", help="Auto-save to storage/ai_analysis/"
+    ),
+    asset_id: Optional[str] = typer.Option(
+        None, "--asset-id", help="Explicit asset ID from environment"
+    ),
     batch_mode: str = typer.Option(
         "auto",
         "--batch-mode",
-        help="Batch processing mode: auto (default), enabled, disabled"
+        help="Batch processing mode: auto (default), enabled, disabled",
     ),
     show_top: int = typer.Option(10, "--show-top", help="Show top N business risks"),
 ):
@@ -737,7 +854,11 @@ def analyze_with_business_context(
         ) as progress:
             task = progress.add_task("Loading CVE results...", total=None)
             scan_result = load_cve_results(cve_results)
-            progress.update(task, completed=True, description=f"Loaded {scan_result.total_count} vulnerabilities")
+            progress.update(
+                task,
+                completed=True,
+                description=f"Loaded {scan_result.total_count} vulnerabilities",
+            )
 
         if scan_result.total_count == 0:
             console.print("[yellow]No vulnerabilities found in scan results.[/yellow]")
@@ -751,13 +872,21 @@ def analyze_with_business_context(
         ) as progress:
             task = progress.add_task("Loading environment configuration...", total=None)
             env = EnvironmentParser.load_from_file(environment)
-            progress.update(task, completed=True, description=f"Loaded environment: {env.environment.name}")
+            progress.update(
+                task,
+                completed=True,
+                description=f"Loaded environment: {env.environment.name}",
+            )
 
-        console.print(f"\n[cyan]Environment:[/cyan] {env.environment.name} ({env.environment.type.value})")
+        console.print(
+            f"\n[cyan]Environment:[/cyan] {env.environment.name} ({env.environment.type.value})"
+        )
         console.print(f"[cyan]Assets:[/cyan] {len(env.assets)}")
 
         if env.environment.compliance_requirements:
-            frameworks = ", ".join([f.value.upper() for f in env.environment.compliance_requirements])
+            frameworks = ", ".join(
+                [f.value.upper() for f in env.environment.compliance_requirements]
+            )
             console.print(f"[cyan]Compliance:[/cyan] {frameworks}")
 
         # Create analyzer with business context
@@ -779,7 +908,9 @@ def analyze_with_business_context(
             TextColumn("[progress.description]{task.description}"),
             console=console,
         ) as progress:
-            task = progress.add_task("Analyzing with AI and business context...", total=None)
+            task = progress.add_task(
+                "Analyzing with AI and business context...", total=None
+            )
 
             analysis = analyzer.analyze_with_business_context(
                 scan_result=scan_result,
@@ -797,23 +928,29 @@ def analyze_with_business_context(
         if analysis.metadata.get("asset_id"):
             asset_criticality = analysis.metadata.get("asset_criticality", "unknown")
             criticality_score = analysis.metadata.get("criticality_score", 0)
-            internet_facing = "Yes" if analysis.metadata.get("internet_facing") else "No"
+            internet_facing = (
+                "Yes" if analysis.metadata.get("internet_facing") else "No"
+            )
 
-            console.print(Panel(
-                f"[bold]Business Context Analysis[/bold]\n\n"
-                f"Asset: {analysis.metadata.get('asset_name', 'Unknown')}\n"
-                f"Criticality: {asset_criticality.upper()} (Score: {criticality_score}/100)\n"
-                f"Internet-Facing: {internet_facing}\n"
-                f"Overall Risk Rating: [bold red]{analysis.overall_risk_rating}[/bold red]",
-                border_style="blue"
-            ))
+            console.print(
+                Panel(
+                    f"[bold]Business Context Analysis[/bold]\n\n"
+                    f"Asset: {analysis.metadata.get('asset_name', 'Unknown')}\n"
+                    f"Criticality: {asset_criticality.upper()} (Score: {criticality_score}/100)\n"
+                    f"Internet-Facing: {internet_facing}\n"
+                    f"Overall Risk Rating: [bold red]{analysis.overall_risk_rating}[/bold red]",
+                    border_style="blue",
+                )
+            )
         else:
-            console.print(Panel(
-                f"[bold]Vulnerability Analysis[/bold]\n\n"
-                f"[yellow]Warning: Could not map scan target to environment asset[/yellow]\n"
-                f"Using technical analysis only",
-                border_style="yellow"
-            ))
+            console.print(
+                Panel(
+                    f"[bold]Vulnerability Analysis[/bold]\n\n"
+                    f"[yellow]Warning: Could not map scan target to environment asset[/yellow]\n"
+                    f"Using technical analysis only",
+                    border_style="yellow",
+                )
+            )
 
         # Environment summary
         if analysis.environment_summary:
@@ -871,9 +1008,21 @@ def analyze_with_business_context(
             console.print(table)
 
             # Summary statistics
-            critical_count = sum(1 for r in analysis.business_assessments if r.business_risk_level == "CRITICAL")
-            high_count = sum(1 for r in analysis.business_assessments if r.business_risk_level == "HIGH")
-            immediate_count = sum(1 for r in analysis.business_assessments if r.remediation_urgency == "IMMEDIATE")
+            critical_count = sum(
+                1
+                for r in analysis.business_assessments
+                if r.business_risk_level == "CRITICAL"
+            )
+            high_count = sum(
+                1
+                for r in analysis.business_assessments
+                if r.business_risk_level == "HIGH"
+            )
+            immediate_count = sum(
+                1
+                for r in analysis.business_assessments
+                if r.remediation_urgency == "IMMEDIATE"
+            )
 
             console.print(f"\n[bold]Business Risk Distribution:[/bold]")
             console.print(f"  Critical Business Risk: {critical_count}")
@@ -889,53 +1038,52 @@ def analyze_with_business_context(
 
         if auto_save:
             storage = get_ai_storage()
-            saved_path = storage.save_analysis(scan_result.target, output_data, "business_context_analysis")
+            saved_path = storage.save_analysis(
+                scan_result.target, output_data, "business_context_analysis"
+            )
             console.print(f"[green]Analysis auto-saved to {saved_path}[/green]")
 
 
 @app.command("threat-model")
 def threat_model(
-    graph_file: str = typer.Argument(..., help="Path to vulnerability graph file (.graphml)"),
+    graph_file: str = typer.Argument(
+        ..., help="Path to vulnerability graph file (.graphml)"
+    ),
     threat_actor: Optional[str] = typer.Option(
         None,
-        "--threat-actor", "-t",
-        help="Threat actor type: apt28, ransomware, script-kiddie, insider, nation-state"
+        "--threat-actor",
+        "-t",
+        help="Threat actor type: apt28, ransomware, script-kiddie, insider, nation-state",
     ),
     max_scenarios: int = typer.Option(
-        10,
-        "--scenarios", "-s",
-        help="Maximum number of scenarios to generate"
+        10, "--scenarios", "-s", help="Maximum number of scenarios to generate"
     ),
     environment: Optional[str] = typer.Option(
         None,
-        "--environment", "-e",
-        help="Path to environment configuration JSON (for business context)"
+        "--environment",
+        "-e",
+        help="Path to environment configuration JSON (for business context)",
     ),
     provider: Optional[str] = typer.Option(
-        None,
-        "--provider", "-p",
-        help="AI provider (openai, anthropic, ollama)"
+        None, "--provider", "-p", help="AI provider (openai, anthropic, ollama)"
     ),
     model: Optional[str] = typer.Option(
         None,
-        "--model", "-m",
-        help="Model name (e.g., gpt-4o, claude-3-5-sonnet-20241022, llama2)"
+        "--model",
+        "-m",
+        help="Model name (e.g., gpt-4o, claude-3-5-sonnet-20241022, llama2)",
     ),
     output: Optional[str] = typer.Option(
-        None,
-        "--output", "-o",
-        help="Save threat model report to JSON file"
+        None, "--output", "-o", help="Save threat model report to JSON file"
     ),
     auto_save: bool = typer.Option(
-        False,
-        "--auto-save", "--as",
-        help="Auto-save report to storage/ai_analysis/"
+        False, "--auto-save", "--as", help="Auto-save report to storage/ai_analysis/"
     ),
     temperature: float = typer.Option(
         0.4,
         "--temperature",
-        help="LLM temperature for scenario generation (0.0-1.0, lower = more focused)"
-    )
+        help="LLM temperature for scenario generation (0.0-1.0, lower = more focused)",
+    ),
 ):
     """
     Generate AI-powered threat model with realistic attack scenarios.
@@ -970,18 +1118,22 @@ def threat_model(
             console.print(f"[red]Error: Graph file not found: {graph_file}[/red]")
             raise typer.Exit(1)
 
-        if not str(graph_file).endswith('.graphml'):
-            console.print("[yellow]Warning: Graph file should have .graphml extension[/yellow]")
+        if not str(graph_file).endswith(".graphml"):
+            console.print(
+                "[yellow]Warning: Graph file should have .graphml extension[/yellow]"
+            )
 
         # Load environment config if provided
         environment_config = None
         if environment:
             env_path = Path(environment)
             if not env_path.exists():
-                console.print(f"[red]Error: Environment file not found: {environment}[/red]")
+                console.print(
+                    f"[red]Error: Environment file not found: {environment}[/red]"
+                )
                 raise typer.Exit(1)
 
-            with open(env_path, 'r') as f:
+            with open(env_path, "r") as f:
                 environment_config = json.load(f)
 
             console.print(f"[green]✓[/green] Loaded environment configuration")
@@ -989,7 +1141,9 @@ def threat_model(
         # Display configuration
         console.print("\n[bold cyan]Threat Modeling Configuration:[/bold cyan]")
         console.print(f"  Graph File: {graph_file}")
-        console.print(f"  Threat Actor: {threat_actor or 'Auto-detect (top 3 relevant)'}")
+        console.print(
+            f"  Threat Actor: {threat_actor or 'Auto-detect (top 3 relevant)'}"
+        )
         console.print(f"  Max Scenarios: {max_scenarios}")
         console.print(f"  AI Provider: {provider or 'Default from environment'}")
         if model:
@@ -1013,34 +1167,42 @@ def threat_model(
             progress.update(task, description="✓ Threat analyzer initialized")
 
             # Phase 2: Load graph and discover attack paths
-            task = progress.add_task("Loading graph and discovering attack paths...", total=None)
+            task = progress.add_task(
+                "Loading graph and discovering attack paths...", total=None
+            )
             progress.update(task, description="✓ Attack paths discovered")
 
             # Phase 3: Generate threat model
-            task = progress.add_task(f"Generating threat model (0/{max_scenarios} scenarios)...", total=None)
+            task = progress.add_task(
+                f"Generating threat model (0/{max_scenarios} scenarios)...", total=None
+            )
 
             report = analyzer.analyze_threat_model(
                 graph_file=str(graph_file),
                 threat_actor_type=threat_actor,
                 max_scenarios=max_scenarios,
                 environment_config=environment_config,
-                temperature=temperature
+                temperature=temperature,
             )
 
-            progress.update(task, description=f"✓ Generated {len(report.all_scenarios)} scenarios")
+            progress.update(
+                task, description=f"✓ Generated {len(report.all_scenarios)} scenarios"
+            )
 
         # Display results
         console.print("\n")
-        console.print(Panel(
-            f"[bold]Threat Model Report[/bold]\n\n"
-            f"Environment: {report.target_environment}\n"
-            f"Threat Actors: {', '.join(report.threat_actors_analyzed)}\n"
-            f"Attack Paths: {report.total_attack_paths}\n"
-            f"Scenarios Generated: {report.scenarios_generated}\n"
-            f"Critical Scenarios: {len(report.critical_scenarios)}\n"
-            f"High Priority Scenarios: {len(report.high_priority_scenarios)}",
-            border_style="blue"
-        ))
+        console.print(
+            Panel(
+                f"[bold]Threat Model Report[/bold]\n\n"
+                f"Environment: {report.target_environment}\n"
+                f"Threat Actors: {', '.join(report.threat_actors_analyzed)}\n"
+                f"Attack Paths: {report.total_attack_paths}\n"
+                f"Scenarios Generated: {report.scenarios_generated}\n"
+                f"Critical Scenarios: {len(report.critical_scenarios)}\n"
+                f"High Priority Scenarios: {len(report.high_priority_scenarios)}",
+                border_style="blue",
+            )
+        )
 
         # Executive Summary
         console.print(f"\n[bold cyan]Executive Summary:[/bold cyan]")
@@ -1048,7 +1210,9 @@ def threat_model(
 
         # Show critical scenarios
         if report.critical_scenarios:
-            console.print(f"\n[bold red]Critical Scenarios ({len(report.critical_scenarios)}):[/bold red]\n")
+            console.print(
+                f"\n[bold red]Critical Scenarios ({len(report.critical_scenarios)}):[/bold red]\n"
+            )
 
             for i, scenario in enumerate(report.critical_scenarios[:3], 1):
                 console.print(f"[bold]{i}. {scenario.threat_actor}[/bold]")
@@ -1058,15 +1222,21 @@ def threat_model(
 
                 # Show business impact
                 impact = scenario.business_impact
-                console.print(f"   [red]Impact:[/red] {impact.estimated_cost}, {impact.reputation_damage} reputation damage")
+                console.print(
+                    f"   [red]Impact:[/red] {impact.estimated_cost}, {impact.reputation_damage} reputation damage"
+                )
 
                 if impact.compliance_violations:
-                    console.print(f"   [yellow]Compliance:[/yellow] {', '.join(impact.compliance_violations[:2])}")
+                    console.print(
+                        f"   [yellow]Compliance:[/yellow] {', '.join(impact.compliance_violations[:2])}"
+                    )
 
                 console.print()
 
             if len(report.critical_scenarios) > 3:
-                console.print(f"[dim]... and {len(report.critical_scenarios) - 3} more critical scenarios[/dim]\n")
+                console.print(
+                    f"[dim]... and {len(report.critical_scenarios) - 3} more critical scenarios[/dim]\n"
+                )
 
         # Show recommendations
         if report.recommendations:
@@ -1075,7 +1245,9 @@ def threat_model(
                 console.print(f"  {i}. {rec}")
 
             if len(report.recommendations) > 5:
-                console.print(f"  [dim]... and {len(report.recommendations) - 5} more recommendations[/dim]")
+                console.print(
+                    f"  [dim]... and {len(report.recommendations) - 5} more recommendations[/dim]"
+                )
 
         # Save results
         output_data = report.to_dict()
@@ -1087,9 +1259,7 @@ def threat_model(
         if auto_save:
             storage = get_ai_storage()
             saved_path = storage.save_analysis(
-                report.target_environment,
-                output_data,
-                "threat_model"
+                report.target_environment, output_data, "threat_model"
             )
             console.print(f"[green]✓ Threat model auto-saved to {saved_path}[/green]")
 

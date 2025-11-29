@@ -45,7 +45,9 @@ class EnvironmentGraphBuilder:
         self.client = client
         self._asset_to_node_map: Dict[str, str] = {}
 
-    def _find_asset_zone(self, asset_id: str, environment: Environment) -> Optional[str]:
+    def _find_asset_zone(
+        self, asset_id: str, environment: Environment
+    ) -> Optional[str]:
         """
         Find the network zone for an asset.
 
@@ -128,51 +130,69 @@ class EnvironmentGraphBuilder:
             "name": asset.name,
             "asset_type": asset.type.value,
             "host": asset.host,
-
             # Business context
             "criticality": asset.business_context.criticality.value,
             "criticality_score": asset.business_context.criticality_score,
             "function": asset.business_context.function,
-            "data_classification": asset.business_context.data_classification.value if asset.business_context.data_classification else None,
-            "revenue_impact": asset.business_context.revenue_impact.value if asset.business_context.revenue_impact else None,
+            "data_classification": (
+                asset.business_context.data_classification.value
+                if asset.business_context.data_classification
+                else None
+            ),
+            "revenue_impact": (
+                asset.business_context.revenue_impact.value
+                if asset.business_context.revenue_impact
+                else None
+            ),
             "customer_facing": asset.business_context.customer_facing,
             "sla_tier": asset.business_context.sla_tier,
             "mttr_target": asset.business_context.mttr_target,
             "owner_team": asset.business_context.owner_team,
-
             # Environment context
             "environment": environment.environment.name,
             "environment_type": environment.environment.type.value,
-            "cloud_provider": environment.environment.cloud_provider.value if environment.environment.cloud_provider else None,
+            "cloud_provider": (
+                environment.environment.cloud_provider.value
+                if environment.environment.cloud_provider
+                else None
+            ),
             "region": environment.environment.region,
         }
 
         # Add software information if available
         if asset.software:
-            properties.update({
-                "software_image": asset.software.image,
-                "os": asset.software.os,
-                "runtime": asset.software.runtime,
-            })
+            properties.update(
+                {
+                    "software_image": asset.software.image,
+                    "os": asset.software.os,
+                    "runtime": asset.software.runtime,
+                }
+            )
 
         # Add network information if available
         if asset.network:
             # Check if asset has public-facing ports
-            has_public_port = any(
-                port.public for port in asset.network.exposed_ports
-            ) if asset.network.exposed_ports else False
+            has_public_port = (
+                any(port.public for port in asset.network.exposed_ports)
+                if asset.network.exposed_ports
+                else False
+            )
 
             # Get asset's network zone (prefer direct zone assignment from asset.network.zone)
-            asset_zone = asset.network.zone or self._find_asset_zone(asset.id, environment)
+            asset_zone = asset.network.zone or self._find_asset_zone(
+                asset.id, environment
+            )
 
-            properties.update({
-                "internal_ip": asset.network.internal_ip,
-                "public_ip": asset.network.public_ip,
-                "zone": asset_zone,
-                "internet_accessible": bool(asset.network.public_ip),
-                "internet_facing": bool(asset.network.public_ip) or has_public_port,
-                "has_public_port": has_public_port,
-            })
+            properties.update(
+                {
+                    "internal_ip": asset.network.internal_ip,
+                    "public_ip": asset.network.public_ip,
+                    "zone": asset_zone,
+                    "internet_accessible": bool(asset.network.public_ip),
+                    "internet_facing": bool(asset.network.public_ip) or has_public_port,
+                    "has_public_port": has_public_port,
+                }
+            )
 
         # Add compliance scope
         if asset.business_context.compliance_scope:
@@ -180,13 +200,23 @@ class EnvironmentGraphBuilder:
             properties["compliance_scope"] = compliance_list
 
             # Add specific compliance flags for attack path discovery
-            properties["pci_scope"] = any(c in ["pci", "pci-dss", "pci_dss"] for c in compliance_list)
-            properties["hipaa_scope"] = any(c in ["hipaa", "hipaa-hitech"] for c in compliance_list)
+            properties["pci_scope"] = any(
+                c in ["pci", "pci-dss", "pci_dss"] for c in compliance_list
+            )
+            properties["hipaa_scope"] = any(
+                c in ["hipaa", "hipaa-hitech"] for c in compliance_list
+            )
 
         # Also check business_context for direct PCI/HIPAA scope flags
-        if hasattr(asset.business_context, "pci_scope") and asset.business_context.pci_scope:
+        if (
+            hasattr(asset.business_context, "pci_scope")
+            and asset.business_context.pci_scope
+        ):
             properties["pci_scope"] = True
-        if hasattr(asset.business_context, "hipaa_scope") and asset.business_context.hipaa_scope:
+        if (
+            hasattr(asset.business_context, "hipaa_scope")
+            and asset.business_context.hipaa_scope
+        ):
             properties["hipaa_scope"] = True
 
         # Add metadata if available
@@ -199,20 +229,20 @@ class EnvironmentGraphBuilder:
                 properties["tags"] = asset.metadata.tags
 
         # Create node
-        node = GraphNode(
-            node_id=node_id,
-            node_type=node_type,
-            properties=properties
-        )
+        node = GraphNode(node_id=node_id, node_type=node_type, properties=properties)
         self.client.add_node(node)
 
         # Store mapping for dependency resolution
         self._asset_to_node_map[asset.id] = node_id
 
-        logger.debug(f"Added asset node: {node_id} (criticality: {asset.business_context.criticality.value})")
+        logger.debug(
+            f"Added asset node: {node_id} (criticality: {asset.business_context.criticality.value})"
+        )
         return node_id
 
-    def _add_dependency_edge(self, dependency: Dependency, environment: Environment) -> None:
+    def _add_dependency_edge(
+        self, dependency: Dependency, environment: Environment
+    ) -> None:
         """
         Add dependency relationship as graph edge.
 
@@ -262,7 +292,7 @@ class EnvironmentGraphBuilder:
             source_id=source_node,
             target_id=target_node,
             edge_type=edge_type,
-            properties=properties
+            properties=properties,
         )
         self.client.add_edge(edge)
 
@@ -294,17 +324,21 @@ class EnvironmentGraphBuilder:
                         # Add zone properties
                         node.properties["network_zone"] = zone.name
                         node.properties["zone_trust_level"] = zone.trust_level.value
-                        node.properties["zone_internet_accessible"] = zone.internet_accessible
+                        node.properties["zone_internet_accessible"] = (
+                            zone.internet_accessible
+                        )
 
                         # Re-add node with updated properties
                         self.client.add_node(node)
 
-        logger.info(f"Added network topology: {len(environment.network_topology.zones)} zones")
+        logger.info(
+            f"Added network topology: {len(environment.network_topology.zones)} zones"
+        )
 
     def merge_vulnerability_data(
         self,
         scan_results: Dict[str, any],
-        asset_image_mapping: Optional[Dict[str, str]] = None
+        asset_image_mapping: Optional[Dict[str, str]] = None,
     ) -> None:
         """
         Merge vulnerability scan results with environment graph.
@@ -380,9 +414,7 @@ class EnvironmentGraphBuilder:
         return risk_scores
 
     def find_critical_paths(
-        self,
-        environment: Environment,
-        entry_points: Optional[List[str]] = None
+        self, environment: Environment, entry_points: Optional[List[str]] = None
     ) -> List[List[str]]:
         """
         Find critical attack paths through the infrastructure.
@@ -407,12 +439,10 @@ class EnvironmentGraphBuilder:
             ]
 
         # Find critical assets as targets
-        critical_targets = [
-            asset.id for asset in environment.get_critical_assets()
-        ]
+        critical_targets = [asset.id for asset in environment.get_critical_assets()]
 
         paths = []
-        G = self.client.graph if hasattr(self.client, 'graph') else None
+        G = self.client.graph if hasattr(self.client, "graph") else None
 
         if G:
             for entry in entry_points:
@@ -426,12 +456,11 @@ class EnvironmentGraphBuilder:
                                 G,
                                 source=entry_node,
                                 target=target_node,
-                                cutoff=10  # Max path length
+                                cutoff=10,  # Max path length
                             ):
                                 # Convert back to asset IDs
                                 asset_path = [
-                                    node_id.replace("asset:", "")
-                                    for node_id in path
+                                    node_id.replace("asset:", "") for node_id in path
                                 ]
                                 paths.append(asset_path)
                         except nx.NetworkXNoPath:

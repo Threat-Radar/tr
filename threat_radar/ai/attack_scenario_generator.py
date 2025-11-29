@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 class MitreTTP:
     """MITRE ATT&CK Tactic, Technique, and Procedure mapping."""
 
-    ttp_id: str                    # e.g., "T1190"
-    ttp_name: str                  # e.g., "Exploit Public-Facing Application"
-    tactic: str                    # e.g., "Initial Access"
-    technique_description: str     # How it's used in this scenario
+    ttp_id: str  # e.g., "T1190"
+    ttp_name: str  # e.g., "Exploit Public-Facing Application"
+    tactic: str  # e.g., "Initial Access"
+    technique_description: str  # How it's used in this scenario
     subtechnique: Optional[str] = None  # e.g., "T1190.001"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -37,8 +37,8 @@ class AttackPhase:
 
     phase_number: int
     ttp: MitreTTP
-    description: str               # AI-generated detailed description
-    duration_estimate: str         # e.g., "1-2 hours", "2-3 days"
+    description: str  # AI-generated detailed description
+    duration_estimate: str  # e.g., "1-2 hours", "2-3 days"
     cves_exploited: List[str] = field(default_factory=list)
     prerequisites: List[str] = field(default_factory=list)
     indicators_of_compromise: List[str] = field(default_factory=list)
@@ -47,7 +47,7 @@ class AttackPhase:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         data = asdict(self)
-        data['ttp'] = self.ttp.to_dict()
+        data["ttp"] = self.ttp.to_dict()
         return data
 
 
@@ -55,7 +55,7 @@ class AttackPhase:
 class BusinessImpact:
     """Business impact assessment for the attack scenario."""
 
-    estimated_cost: str            # e.g., "$2.5M - $5M"
+    estimated_cost: str  # e.g., "$2.5M - $5M"
     compliance_violations: List[str] = field(default_factory=list)
     reputation_damage: str = "unknown"  # "severe", "moderate", "low"
     customer_impact: str = "unknown"
@@ -72,9 +72,9 @@ class AttackScenario:
     """Complete attack scenario with narrative and business context."""
 
     scenario_id: str
-    threat_actor: str              # Persona name
-    attack_path_id: str            # Reference to source AttackPath
-    narrative: str                 # AI-generated attack story
+    threat_actor: str  # Persona name
+    attack_path_id: str  # Reference to source AttackPath
+    narrative: str  # AI-generated attack story
     timeline: List[AttackPhase]
     business_impact: BusinessImpact
     detection_opportunities: List[str] = field(default_factory=list)
@@ -92,7 +92,7 @@ class AttackScenario:
             "business_impact": self.business_impact.to_dict(),
             "detection_opportunities": self.detection_opportunities,
             "mitigation_priorities": self.mitigation_priorities,
-            "confidence_score": self.confidence_score
+            "confidence_score": self.confidence_score,
         }
 
 
@@ -108,7 +108,7 @@ class AttackScenarioGenerator:
         self,
         llm_client: Optional[LLMClient] = None,
         provider: Optional[str] = None,
-        model: Optional[str] = None
+        model: Optional[str] = None,
     ):
         """
         Initialize scenario generator.
@@ -126,7 +126,7 @@ class AttackScenarioGenerator:
         attack_path: AttackPath,
         threat_actor: ThreatActorPersona,
         business_context: Optional[Dict[str, Any]] = None,
-        temperature: float = 0.4
+        temperature: float = 0.4,
     ) -> AttackScenario:
         """
         Generate comprehensive attack scenario from attack path.
@@ -150,47 +150,31 @@ class AttackScenarioGenerator:
 
         # Generate narrative
         narrative = self._generate_narrative(
-            attack_path,
-            threat_actor,
-            mitre_mapping,
-            business_context,
-            temperature
+            attack_path, threat_actor, mitre_mapping, business_context, temperature
         )
 
         # Create timeline
         timeline = self._create_timeline(
-            attack_path,
-            threat_actor,
-            mitre_mapping,
-            temperature
+            attack_path, threat_actor, mitre_mapping, temperature
         )
 
         # Calculate business impact
         business_impact = self._calculate_business_impact(
-            attack_path,
-            threat_actor,
-            business_context,
-            temperature
+            attack_path, threat_actor, business_context, temperature
         )
 
         # Generate detection opportunities
         detection_opportunities = self._generate_detection_opportunities(
-            attack_path,
-            mitre_mapping
+            attack_path, mitre_mapping
         )
 
         # Generate mitigation priorities
         mitigation_priorities = self._generate_mitigation_priorities(
-            attack_path,
-            threat_actor,
-            business_context
+            attack_path, threat_actor, business_context
         )
 
         # Calculate confidence score
-        confidence_score = self._calculate_confidence_score(
-            attack_path,
-            threat_actor
-        )
+        confidence_score = self._calculate_confidence_score(attack_path, threat_actor)
 
         scenario = AttackScenario(
             scenario_id=f"scenario_{attack_path.path_id}",
@@ -201,7 +185,7 @@ class AttackScenarioGenerator:
             business_impact=business_impact,
             detection_opportunities=detection_opportunities,
             mitigation_priorities=mitigation_priorities,
-            confidence_score=confidence_score
+            confidence_score=confidence_score,
         )
 
         logger.info(
@@ -212,9 +196,7 @@ class AttackScenarioGenerator:
         return scenario
 
     def _map_to_mitre_attack(
-        self,
-        attack_path: AttackPath,
-        threat_actor: ThreatActorPersona
+        self, attack_path: AttackPath, threat_actor: ThreatActorPersona
     ) -> List[MitreTTP]:
         """
         Map attack steps to MITRE ATT&CK techniques.
@@ -241,26 +223,21 @@ class AttackScenarioGenerator:
                     ttp_name = self._get_ttp_name(ttp_id)
 
             technique_desc = self._generate_technique_description(
-                step,
-                ttp_id,
-                ttp_name
+                step, ttp_id, ttp_name
             )
 
             mitre_ttp = MitreTTP(
                 ttp_id=ttp_id,
                 ttp_name=ttp_name,
                 tactic=tactic,
-                technique_description=technique_desc
+                technique_description=technique_desc,
             )
 
             mitre_ttps.append(mitre_ttp)
 
         return mitre_ttps
 
-    def _step_type_to_mitre(
-        self,
-        step_type: AttackStepType
-    ) -> tuple[str, str, str]:
+    def _step_type_to_mitre(self, step_type: AttackStepType) -> tuple[str, str, str]:
         """
         Map attack step type to MITRE ATT&CK technique.
 
@@ -271,38 +248,37 @@ class AttackScenarioGenerator:
             AttackStepType.ENTRY_POINT: (
                 "T1190",
                 "Exploit Public-Facing Application",
-                "Initial Access"
+                "Initial Access",
             ),
             AttackStepType.EXPLOIT_VULNERABILITY: (
                 "T1210",
                 "Exploitation of Remote Services",
-                "Lateral Movement"
+                "Lateral Movement",
             ),
             AttackStepType.PRIVILEGE_ESCALATION: (
                 "T1068",
                 "Exploitation for Privilege Escalation",
-                "Privilege Escalation"
+                "Privilege Escalation",
             ),
             AttackStepType.LATERAL_MOVEMENT: (
                 "T1021",
                 "Remote Services",
-                "Lateral Movement"
+                "Lateral Movement",
             ),
             AttackStepType.TARGET_ACCESS: (
                 "T1005",
                 "Data from Local System",
-                "Collection"
+                "Collection",
             ),
             AttackStepType.DATA_EXFILTRATION: (
                 "T1041",
                 "Exfiltration Over C2 Channel",
-                "Exfiltration"
-            )
+                "Exfiltration",
+            ),
         }
 
         return mapping.get(
-            step_type,
-            ("T1059", "Command and Scripting Interpreter", "Execution")
+            step_type, ("T1059", "Command and Scripting Interpreter", "Execution")
         )
 
     def _ttp_matches_tactic(self, ttp_id: str, tactic: str) -> bool:
@@ -345,13 +321,14 @@ class AttackScenarioGenerator:
         return ttp_names.get(ttp_id, "Unknown Technique")
 
     def _generate_technique_description(
-        self,
-        step: AttackStep,
-        ttp_id: str,
-        ttp_name: str
+        self, step: AttackStep, ttp_id: str, ttp_name: str
     ) -> str:
         """Generate description of how technique is used in this step."""
-        cves = ", ".join(step.vulnerabilities) if step.vulnerabilities else "known vulnerabilities"
+        cves = (
+            ", ".join(step.vulnerabilities)
+            if step.vulnerabilities
+            else "known vulnerabilities"
+        )
 
         descriptions = {
             "T1190": f"Exploit {cves} in public-facing {step.node_id} to gain initial access",
@@ -362,10 +339,7 @@ class AttackScenarioGenerator:
             "T1005": f"Access and collect data from {step.node_id}",
         }
 
-        return descriptions.get(
-            ttp_id,
-            f"Use {ttp_name} technique on {step.node_id}"
-        )
+        return descriptions.get(ttp_id, f"Use {ttp_name} technique on {step.node_id}")
 
     def _generate_narrative(
         self,
@@ -373,7 +347,7 @@ class AttackScenarioGenerator:
         threat_actor: ThreatActorPersona,
         mitre_mapping: List[MitreTTP],
         business_context: Optional[Dict],
-        temperature: float
+        temperature: float,
     ) -> str:
         """Generate AI-powered attack narrative (story format)."""
         # Import prompt function from prompt_templates (will be added in Phase 4)
@@ -385,7 +359,7 @@ class AttackScenarioGenerator:
                 "name": threat_actor.name,
                 "description": threat_actor.description,
                 "motivations": threat_actor.motivations,
-                "skill_level": threat_actor.skill_level.value
+                "skill_level": threat_actor.skill_level.value,
             },
             "attack_path": {
                 "entry_point": attack_path.entry_point,
@@ -397,20 +371,16 @@ class AttackScenarioGenerator:
                     {
                         "description": step.description,
                         "vulnerabilities": step.vulnerabilities,
-                        "cvss_score": step.cvss_score
+                        "cvss_score": step.cvss_score,
                     }
                     for step in attack_path.steps
-                ]
+                ],
             },
             "mitre_mapping": [
-                {
-                    "ttp_id": ttp.ttp_id,
-                    "ttp_name": ttp.ttp_name,
-                    "tactic": ttp.tactic
-                }
+                {"ttp_id": ttp.ttp_id, "ttp_name": ttp.ttp_name, "tactic": ttp.tactic}
                 for ttp in mitre_mapping
             ],
-            "business_context": business_context or {}
+            "business_context": business_context or {},
         }
 
         # Generate prompt
@@ -424,23 +394,21 @@ class AttackScenarioGenerator:
             logger.warning(f"Failed to generate AI narrative: {e}")
             # Fallback to template-based narrative
             return self._generate_fallback_narrative(
-                attack_path,
-                threat_actor,
-                mitre_mapping
+                attack_path, threat_actor, mitre_mapping
             )
 
     def _generate_fallback_narrative(
         self,
         attack_path: AttackPath,
         threat_actor: ThreatActorPersona,
-        mitre_mapping: List[MitreTTP]
+        mitre_mapping: List[MitreTTP],
     ) -> str:
         """Generate template-based narrative as fallback."""
         narrative_parts = [
             f"Attack Scenario: {threat_actor.name} Targeting {attack_path.target}\n",
             f"\n{threat_actor.name}, motivated by {', '.join(threat_actor.motivations)}, ",
             f"initiates a {attack_path.path_length}-stage attack against {attack_path.target}. ",
-            f"The attack begins with {attack_path.steps[0].description}. "
+            f"The attack begins with {attack_path.steps[0].description}. ",
         ]
 
         # Add middle steps
@@ -463,18 +431,14 @@ class AttackScenarioGenerator:
         attack_path: AttackPath,
         threat_actor: ThreatActorPersona,
         mitre_mapping: List[MitreTTP],
-        temperature: float
+        temperature: float,
     ) -> List[AttackPhase]:
         """Create attack timeline with phases."""
         timeline = []
 
         for i, (step, ttp) in enumerate(zip(attack_path.steps, mitre_mapping)):
             # Estimate duration based on actor speed and step complexity
-            duration = self._estimate_phase_duration(
-                step,
-                threat_actor,
-                i
-            )
+            duration = self._estimate_phase_duration(step, threat_actor, i)
 
             # Generate detection methods
             detection_methods = self._generate_detection_methods_for_step(step, ttp)
@@ -497,7 +461,7 @@ class AttackScenarioGenerator:
                 cves_exploited=step.vulnerabilities,
                 prerequisites=prerequisites,
                 indicators_of_compromise=iocs,
-                detection_methods=detection_methods
+                detection_methods=detection_methods,
             )
 
             timeline.append(phase)
@@ -505,10 +469,7 @@ class AttackScenarioGenerator:
         return timeline
 
     def _estimate_phase_duration(
-        self,
-        step: AttackStep,
-        threat_actor: ThreatActorPersona,
-        phase_index: int
+        self, step: AttackStep, threat_actor: ThreatActorPersona, phase_index: int
     ) -> str:
         """Estimate phase duration based on complexity and actor speed."""
         # Fast actors (speed > 0.7) complete phases quickly
@@ -533,9 +494,7 @@ class AttackScenarioGenerator:
         return durations[complexity_index]
 
     def _generate_detection_methods_for_step(
-        self,
-        step: AttackStep,
-        ttp: MitreTTP
+        self, step: AttackStep, ttp: MitreTTP
     ) -> List[str]:
         """Generate detection methods for attack step."""
         detection_methods = []
@@ -546,26 +505,26 @@ class AttackScenarioGenerator:
                 "Web Application Firewall (WAF) logs",
                 "IDS/IPS signatures",
                 "Network traffic analysis",
-                "Endpoint detection and response (EDR)"
+                "Endpoint detection and response (EDR)",
             ],
             "Lateral Movement": [
                 "Network segmentation monitoring",
                 "Abnormal authentication patterns",
                 "East-west traffic analysis",
-                "Privileged access monitoring"
+                "Privileged access monitoring",
             ],
             "Privilege Escalation": [
                 "Privilege escalation detection rules",
                 "System call monitoring",
                 "Security event logs (4672, 4673)",
-                "Process behavior analysis"
+                "Process behavior analysis",
             ],
             "Collection": [
                 "Data loss prevention (DLP)",
                 "File access monitoring",
                 "Database activity monitoring",
-                "Abnormal data access patterns"
-            ]
+                "Abnormal data access patterns",
+            ],
         }
 
         detection_methods.extend(
@@ -580,11 +539,7 @@ class AttackScenarioGenerator:
 
         return detection_methods[:3]  # Return top 3
 
-    def _generate_iocs_for_step(
-        self,
-        step: AttackStep,
-        ttp: MitreTTP
-    ) -> List[str]:
+    def _generate_iocs_for_step(self, step: AttackStep, ttp: MitreTTP) -> List[str]:
         """Generate indicators of compromise for step."""
         iocs = []
 
@@ -592,28 +547,26 @@ class AttackScenarioGenerator:
             AttackStepType.ENTRY_POINT: [
                 "Unusual HTTP requests with exploit payloads",
                 "Unexpected process spawning",
-                "New network connections from web server"
+                "New network connections from web server",
             ],
             AttackStepType.EXPLOIT_VULNERABILITY: [
                 "Abnormal process execution",
                 "Suspicious command-line arguments",
-                "Unexpected file modifications"
+                "Unexpected file modifications",
             ],
             AttackStepType.PRIVILEGE_ESCALATION: [
                 "Privilege token manipulation",
                 "Unexpected elevation of user rights",
-                "Suspicious system service creation"
+                "Suspicious system service creation",
             ],
             AttackStepType.LATERAL_MOVEMENT: [
                 "Unusual remote access sessions",
                 "Abnormal authentication from compromised host",
-                "New network connections between internal systems"
-            ]
+                "New network connections between internal systems",
+            ],
         }
 
-        iocs.extend(
-            step_type_iocs.get(step.step_type, ["Anomalous system behavior"])
-        )
+        iocs.extend(step_type_iocs.get(step.step_type, ["Anomalous system behavior"]))
 
         return iocs[:3]  # Return top 3
 
@@ -622,7 +575,7 @@ class AttackScenarioGenerator:
         attack_path: AttackPath,
         threat_actor: ThreatActorPersona,
         business_context: Optional[Dict],
-        temperature: float
+        temperature: float,
     ) -> BusinessImpact:
         """Calculate business impact with AI reasoning."""
         # Simplified calculation - in production would use AI for detailed assessment
@@ -639,7 +592,9 @@ class AttackScenarioGenerator:
         compliance_violations = []
         if business_context:
             if business_context.get("pci_scope"):
-                compliance_violations.append("PCI-DSS 6.5.1 (Application Vulnerabilities)")
+                compliance_violations.append(
+                    "PCI-DSS 6.5.1 (Application Vulnerabilities)"
+                )
             if business_context.get("hipaa_scope"):
                 compliance_violations.append("HIPAA Security Rule 164.308")
             if business_context.get("gdpr_scope"):
@@ -650,21 +605,27 @@ class AttackScenarioGenerator:
             "critical": "severe",
             "high": "moderate",
             "medium": "low",
-            "low": "minimal"
+            "low": "minimal",
         }.get(attack_path.threat_level.value, "unknown")
 
         return BusinessImpact(
             estimated_cost=estimated_cost,
             compliance_violations=compliance_violations,
             reputation_damage=reputation_damage,
-            customer_impact=business_context.get("customer_impact", "Unknown") if business_context else "Unknown",
-            recovery_time="2-4 weeks" if attack_path.threat_level.value in ["critical", "high"] else "1-2 weeks"
+            customer_impact=(
+                business_context.get("customer_impact", "Unknown")
+                if business_context
+                else "Unknown"
+            ),
+            recovery_time=(
+                "2-4 weeks"
+                if attack_path.threat_level.value in ["critical", "high"]
+                else "1-2 weeks"
+            ),
         )
 
     def _generate_detection_opportunities(
-        self,
-        attack_path: AttackPath,
-        mitre_mapping: List[MitreTTP]
+        self, attack_path: AttackPath, mitre_mapping: List[MitreTTP]
     ) -> List[str]:
         """Generate high-level detection opportunities."""
         opportunities = set()
@@ -678,7 +639,7 @@ class AttackScenarioGenerator:
         self,
         attack_path: AttackPath,
         threat_actor: ThreatActorPersona,
-        business_context: Optional[Dict]
+        business_context: Optional[Dict],
     ) -> List[str]:
         """Generate prioritized mitigation recommendations."""
         priorities = []
@@ -696,7 +657,10 @@ class AttackScenarioGenerator:
             )
 
         # Network segmentation
-        if any(step.step_type == AttackStepType.LATERAL_MOVEMENT for step in attack_path.steps):
+        if any(
+            step.step_type == AttackStepType.LATERAL_MOVEMENT
+            for step in attack_path.steps
+        ):
             priorities.append(
                 "HIGH: Implement network segmentation to prevent lateral movement"
             )
@@ -709,9 +673,7 @@ class AttackScenarioGenerator:
         return priorities
 
     def _calculate_confidence_score(
-        self,
-        attack_path: AttackPath,
-        threat_actor: ThreatActorPersona
+        self, attack_path: AttackPath, threat_actor: ThreatActorPersona
     ) -> float:
         """Calculate confidence score for scenario realism."""
         score = 0.8  # Base confidence

@@ -1,4 +1,5 @@
 """Health check commands for Docker deployment and monitoring."""
+
 import typer
 import json
 import subprocess
@@ -13,21 +14,21 @@ app = typer.Typer(help="Health check and system status commands")
 def check_docker_daemon() -> Dict[str, Any]:
     """Check if Docker daemon is accessible."""
     try:
-        result = subprocess.run(
-            ["docker", "info"],
-            capture_output=True,
-            timeout=5
-        )
+        result = subprocess.run(["docker", "info"], capture_output=True, timeout=5)
         return {
             "status": "healthy" if result.returncode == 0 else "unhealthy",
             "accessible": result.returncode == 0,
-            "message": "Docker daemon is accessible" if result.returncode == 0 else "Docker daemon not accessible"
+            "message": (
+                "Docker daemon is accessible"
+                if result.returncode == 0
+                else "Docker daemon not accessible"
+            ),
         }
     except (subprocess.TimeoutExpired, FileNotFoundError) as e:
         return {
             "status": "unhealthy",
             "accessible": False,
-            "message": f"Docker daemon check failed: {str(e)}"
+            "message": f"Docker daemon check failed: {str(e)}",
         }
 
 
@@ -35,26 +36,20 @@ def check_grype() -> Dict[str, Any]:
     """Check if Grype is installed and database is available."""
     try:
         # Check if grype is installed
-        result = subprocess.run(
-            ["grype", "version"],
-            capture_output=True,
-            timeout=5
-        )
+        result = subprocess.run(["grype", "version"], capture_output=True, timeout=5)
 
         if result.returncode != 0:
             return {
                 "status": "unhealthy",
                 "installed": False,
-                "message": "Grype not installed"
+                "message": "Grype not installed",
             }
 
-        version = result.stdout.decode().strip().split('\n')[0]
+        version = result.stdout.decode().strip().split("\n")[0]
 
         # Check database status
         db_result = subprocess.run(
-            ["grype", "db", "status"],
-            capture_output=True,
-            timeout=10
+            ["grype", "db", "status"], capture_output=True, timeout=10
         )
 
         db_healthy = db_result.returncode == 0
@@ -64,45 +59,42 @@ def check_grype() -> Dict[str, Any]:
             "installed": True,
             "version": version,
             "database_status": "available" if db_healthy else "unavailable",
-            "message": f"Grype {version} installed" + (", database available" if db_healthy else ", database needs update")
+            "message": f"Grype {version} installed"
+            + (", database available" if db_healthy else ", database needs update"),
         }
     except (subprocess.TimeoutExpired, FileNotFoundError) as e:
         return {
             "status": "unhealthy",
             "installed": False,
-            "message": f"Grype check failed: {str(e)}"
+            "message": f"Grype check failed: {str(e)}",
         }
 
 
 def check_syft() -> Dict[str, Any]:
     """Check if Syft is installed."""
     try:
-        result = subprocess.run(
-            ["syft", "version"],
-            capture_output=True,
-            timeout=5
-        )
+        result = subprocess.run(["syft", "version"], capture_output=True, timeout=5)
 
         if result.returncode != 0:
             return {
                 "status": "unhealthy",
                 "installed": False,
-                "message": "Syft not installed"
+                "message": "Syft not installed",
             }
 
-        version = result.stdout.decode().strip().split('\n')[0]
+        version = result.stdout.decode().strip().split("\n")[0]
 
         return {
             "status": "healthy",
             "installed": True,
             "version": version,
-            "message": f"Syft {version} installed"
+            "message": f"Syft {version} installed",
         }
     except (subprocess.TimeoutExpired, FileNotFoundError) as e:
         return {
             "status": "unhealthy",
             "installed": False,
-            "message": f"Syft check failed: {str(e)}"
+            "message": f"Syft check failed: {str(e)}",
         }
 
 
@@ -133,13 +125,13 @@ def check_storage() -> Dict[str, Any]:
             "status": "degraded",
             "writable": False,
             "issues": issues,
-            "message": f"Storage issues found: {', '.join(issues)}"
+            "message": f"Storage issues found: {', '.join(issues)}",
         }
 
     return {
         "status": "healthy",
         "writable": True,
-        "message": "All storage paths are accessible and writable"
+        "message": "All storage paths are accessible and writable",
     }
 
 
@@ -157,17 +149,10 @@ def get_system_info() -> Dict[str, Any]:
 
 @app.command()
 def check(
-    json_output: bool = typer.Option(
-        False,
-        "--json",
-        help="Output in JSON format"
-    ),
+    json_output: bool = typer.Option(False, "--json", help="Output in JSON format"),
     verbose: bool = typer.Option(
-        False,
-        "--verbose",
-        "-v",
-        help="Show detailed information"
-    )
+        False, "--verbose", "-v", help="Show detailed information"
+    ),
 ):
     """
     Perform comprehensive health check of Threat Radar components.
@@ -224,14 +209,10 @@ def check(
         status_colors = {
             "healthy": typer.colors.GREEN,
             "degraded": typer.colors.YELLOW,
-            "unhealthy": typer.colors.RED
+            "unhealthy": typer.colors.RED,
         }
 
-        status_symbols = {
-            "healthy": "✓",
-            "degraded": "⚠",
-            "unhealthy": "✗"
-        }
+        status_symbols = {"healthy": "✓", "degraded": "⚠", "unhealthy": "✗"}
 
         typer.echo("\n" + "=" * 60)
         typer.echo(f"  Threat Radar Health Check (v{__version__})")
@@ -241,7 +222,7 @@ def check(
         typer.secho(
             f"Overall Status: {status_symbols[overall_status]} {overall_status.upper()}",
             fg=status_colors[overall_status],
-            bold=True
+            bold=True,
         )
         typer.echo("")
 
@@ -256,7 +237,7 @@ def check(
 
             typer.secho(
                 f"  {symbol} {component.upper():12} - {check_result['message']}",
-                fg=color
+                fg=color,
             )
 
         typer.echo("\n" + "=" * 60)
@@ -281,6 +262,7 @@ def ping():
     """
     try:
         from ..utils.version import __version__
+
         typer.echo(f"pong - Threat Radar v{__version__}")
         sys.exit(0)
     except Exception as e:

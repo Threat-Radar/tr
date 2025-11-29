@@ -1,4 +1,5 @@
 """CLI context management for global options."""
+
 import logging
 from typing import Optional
 from pathlib import Path
@@ -11,6 +12,7 @@ from .config_manager import get_config_manager, ConfigManager
 @dataclass
 class CLIContext:
     """Global CLI context holding configuration and state."""
+
     config_manager: ConfigManager
     verbosity: int
     output_format: str
@@ -26,7 +28,7 @@ class CLIContext:
         output_format: str = "table",
         no_color: bool = False,
         no_progress: bool = False,
-    ) -> 'CLIContext':
+    ) -> "CLIContext":
         """
         Create CLI context with specified options.
 
@@ -44,19 +46,19 @@ class CLIContext:
         config_manager = get_config_manager(config_file)
 
         # Apply verbosity from config if not explicitly set
-        if verbosity == 1 and config_manager.get('output.verbosity'):
-            verbosity = config_manager.get('output.verbosity')
+        if verbosity == 1 and config_manager.get("output.verbosity"):
+            verbosity = config_manager.get("output.verbosity")
 
         # Apply output format from config if not explicitly set
-        if output_format == "table" and config_manager.get('output.format'):
-            output_format = config_manager.get('output.format')
+        if output_format == "table" and config_manager.get("output.format"):
+            output_format = config_manager.get("output.format")
 
         # Apply color setting from config
-        if not no_color and config_manager.get('output.color') is False:
+        if not no_color and config_manager.get("output.color") is False:
             no_color = True
 
         # Apply progress setting from config
-        if not no_progress and config_manager.get('output.progress') is False:
+        if not no_progress and config_manager.get("output.progress") is False:
             no_progress = True
 
         # Setup logging based on verbosity
@@ -84,10 +86,10 @@ def _setup_logging(verbosity: int):
     """
     # Map verbosity to log level
     level_map = {
-        0: logging.ERROR,      # Quiet - only errors
-        1: logging.WARNING,    # Normal - warnings and errors
-        2: logging.INFO,       # Verbose - info, warnings, and errors
-        3: logging.DEBUG,      # Debug - everything
+        0: logging.ERROR,  # Quiet - only errors
+        1: logging.WARNING,  # Normal - warnings and errors
+        2: logging.INFO,  # Verbose - info, warnings, and errors
+        3: logging.DEBUG,  # Debug - everything
     }
 
     log_level = level_map.get(verbosity, logging.WARNING)
@@ -95,15 +97,19 @@ def _setup_logging(verbosity: int):
     # Configure root logger
     logging.basicConfig(
         level=log_level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s' if verbosity >= 2 else '%(levelname)s: %(message)s',
+        format=(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            if verbosity >= 2
+            else "%(levelname)s: %(message)s"
+        ),
         force=True,
     )
 
     # Reduce noise from external libraries in non-debug mode
     if verbosity < 3:
-        logging.getLogger('urllib3').setLevel(logging.WARNING)
-        logging.getLogger('docker').setLevel(logging.WARNING)
-        logging.getLogger('openai').setLevel(logging.WARNING)
+        logging.getLogger("urllib3").setLevel(logging.WARNING)
+        logging.getLogger("docker").setLevel(logging.WARNING)
+        logging.getLogger("openai").setLevel(logging.WARNING)
 
 
 # Global CLI context
