@@ -329,27 +329,6 @@ Add `PYPI_API_TOKEN` to GitHub repository secrets.
 
 ---
 
-## Version Numbering
-
-Follow Semantic Versioning (SemVer): `MAJOR.MINOR.PATCH`
-
-- **MAJOR**: Breaking changes
-- **MINOR**: New features (backward compatible)
-- **PATCH**: Bug fixes
-
-Examples:
-- `0.1.0` - Initial beta release
-- `0.1.1` - Bug fix
-- `0.3.0` - New features
-- `1.0.0` - Stable release
-
-Pre-release versions:
-- `0.1.0a1` - Alpha
-- `0.1.0b1` - Beta
-- `0.1.0rc1` - Release candidate
-
----
-
 ## Troubleshooting
 
 ### Issue: "File already exists"
