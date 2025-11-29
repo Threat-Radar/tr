@@ -340,7 +340,7 @@ Follow Semantic Versioning (SemVer): `MAJOR.MINOR.PATCH`
 Examples:
 - `0.1.0` - Initial beta release
 - `0.1.1` - Bug fix
-- `0.2.0` - New features
+- `0.3.0` - New features
 - `1.0.0` - Stable release
 
 Pre-release versions:

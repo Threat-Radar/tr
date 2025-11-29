@@ -42,7 +42,7 @@ Once inside the container, you have full access to all threat-radar commands:
 ==========================================
   Threat Radar - Starting Container
 ==========================================
-Threat Radar Version: 0.2.0
+Threat Radar Version: 0.3.0
 Python Version: Python 3.11.14
 Grype Version: Application:         grype
 Syft Version: Application:   syft
@@ -214,7 +214,7 @@ Inside Python:
 >>> import json
 
 >>> print(f"Threat Radar v{__version__}")
-Threat Radar v0.2.0
+Threat Radar v0.3.0
 
 >>> # List scan results
 >>> scans = list(Path('/app/storage/cve_storage').glob('*.json'))
