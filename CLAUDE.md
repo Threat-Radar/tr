@@ -4276,13 +4276,13 @@ pip install kaleido --force-reinstall
 ## Documentation Resources
 
 ### User Documentation
-- **[INSTALLATION.md](INSTALLATION.md)** - Complete installation guide for all platforms (macOS, Linux, Windows)
+- **[INSTALLATION.md](docs/INSTALLATION.md)** - Complete installation guide for all platforms (macOS, Linux, Windows)
 - **[docs/CLI_FEATURES.md](docs/CLI_FEATURES.md)** - Comprehensive CLI features guide (global options, configuration, filtering, output formats)
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
 
 ### Developer Documentation
 - **[docs/API.md](docs/API.md)** - Complete Python API reference for programmatic usage
-- **[PUBLISHING.md](PUBLISHING.md)** - PyPI publishing and release workflow guide
+- **[PUBLISHING.md](docs/PUBLISHING.md)** - PyPI publishing and release workflow guide
 - **[threat-radar.config.example.json](threat-radar.config.example.json)** - Example configuration file template
 
 ### Additional Resources
