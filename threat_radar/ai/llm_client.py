@@ -552,6 +552,176 @@ class OpenRouterClient(LLMClient):
             raise RuntimeError(f"OpenRouter error: {str(e)}")
 
 
+class GrokClient(LLMClient):
+    """xAI Grok client implementation"""
+
+    def __init__(self, api_key: Optional[str] = None, model: str = "grok-beta"):
+        """
+        Initialize Grok client.
+
+        Args:
+            api_key: xAI API key (defaults to XAI_API_KEY env var)
+            model: Model name (grok-beta, grok-2-1212, etc.)
+
+        Note:
+            Get your API key at: https://console.x.ai/
+        """
+        self.api_key = api_key or os.getenv("XAI_API_KEY")
+        if not self.api_key:
+            raise ValueError(
+                "xAI API key not provided. Set XAI_API_KEY environment variable "
+                "or pass api_key parameter. Get your key at: https://console.x.ai/"
+            )
+
+        self.model = model
+        self.base_url = "https://api.x.ai/v1"
+
+    @retry(
+        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10)
+    )
+    def generate(
+        self, prompt: str, temperature: float = 0.7, max_tokens: int = 2000
+    ) -> str:
+        """Generate response using xAI Grok API"""
+        try:
+            response = requests.post(
+                f"{self.base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": self.model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": temperature,
+                    "max_tokens": max_tokens,
+                    "stream": False,
+                },
+                timeout=120,
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            if "error" in data:
+                raise RuntimeError(
+                    f"Grok API error: {data['error'].get('message', data['error'])}"
+                )
+
+            return data["choices"][0]["message"]["content"].strip()
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(f"Grok API error: {str(e)}")
+        except Exception as e:
+            raise RuntimeError(f"Grok error: {str(e)}")
+
+    @retry(
+        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10)
+    )
+    def generate_json(self, prompt: str, temperature: float = 0.7) -> Dict[str, Any]:
+        """Generate JSON response using xAI Grok API"""
+        json_prompt = f"{prompt}\n\nRespond with valid JSON only, no other text."
+        original_content = ""
+
+        try:
+            response = requests.post(
+                f"{self.base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": self.model,
+                    "messages": [{"role": "user", "content": json_prompt}],
+                    "temperature": temperature,
+                    "stream": False,
+                },
+                timeout=120,
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            if "error" in data:
+                raise RuntimeError(
+                    f"Grok API error: {data['error'].get('message', data['error'])}"
+                )
+
+            content = data["choices"][0]["message"]["content"]
+
+            # Handle None response
+            if content is None:
+                raise RuntimeError("Grok returned None content")
+
+            content = content.strip()
+            original_content = content
+
+            # Handle empty responses
+            if not content:
+                raise RuntimeError("Empty response from Grok")
+
+            # Try multiple extraction strategies
+
+            # Strategy 1: Extract from markdown code blocks
+            if "```" in content:
+                code_blocks = re.findall(
+                    r"```(?:json)?\s*\n?(.*?)\n?```", content, re.DOTALL
+                )
+                if code_blocks:
+                    content = code_blocks[0].strip()
+
+            # Strategy 2: Find JSON object in the text
+            json_match = re.search(r"\{.*\}", content, re.DOTALL)
+            if json_match:
+                content = json_match.group(0)
+
+            # Strategy 3: If content doesn't start with {, find first {
+            if not content.startswith("{"):
+                start_idx = content.find("{")
+                if start_idx != -1:
+                    content = content[start_idx:]
+
+            # Strategy 4: Balance braces if extra data after }
+            if content.count("}") > content.count("{"):
+                brace_count = 0
+                for i, char in enumerate(content):
+                    if char == "{":
+                        brace_count += 1
+                    elif char == "}":
+                        brace_count -= 1
+                        if brace_count == 0:
+                            content = content[: i + 1]
+                            break
+
+            # Strategy 5: Repair common JSON syntax errors
+            content = repair_json(content)
+
+            # Final validation before parsing
+            if not content or not content.strip():
+                raise RuntimeError(
+                    f"No valid JSON found in response. Original: {original_content[:200]}"
+                )
+
+            if not content.startswith("{"):
+                raise RuntimeError(
+                    f"Response doesn't contain JSON object. Content: {content[:200]}"
+                )
+
+            return json.loads(content)
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(f"Grok API error: {str(e)}")
+        except json.JSONDecodeError as e:
+            preview = (
+                original_content[:300]
+                if len(original_content) > 300
+                else original_content
+            )
+            raise RuntimeError(
+                f"Invalid JSON from Grok: {str(e)}\nOriginal response: {preview}"
+            )
+        except Exception as e:
+            if "Grok" in str(e) or "response" in str(e).lower():
+                raise
+            raise RuntimeError(f"Grok error: {str(e)}")
+
+
 class OllamaClient(LLMClient):
     """Ollama local model client implementation"""
 
@@ -701,7 +871,7 @@ def get_llm_client(
     Factory function to get an LLM client based on configuration.
 
     Args:
-        provider: AI provider ('openai', 'anthropic', 'openrouter', or 'ollama'). Defaults to AI_PROVIDER env var.
+        provider: AI provider ('openai', 'anthropic', 'grok', 'openrouter', or 'ollama'). Defaults to AI_PROVIDER env var.
         model: Model name. Defaults to AI_MODEL env var.
         api_key: API key for cloud providers. Defaults to provider-specific env var.
         endpoint: Endpoint URL for local models. Defaults to LOCAL_MODEL_ENDPOINT env var.
@@ -718,6 +888,9 @@ def get_llm_client(
 
         # Anthropic
         client = get_llm_client(provider="anthropic", model="claude-3-5-sonnet-20241022")
+
+        # xAI Grok
+        client = get_llm_client(provider="grok", model="grok-beta")
 
         # OpenRouter (access to multiple providers)
         client = get_llm_client(provider="openrouter", model="anthropic/claude-3.5-sonnet")
@@ -736,6 +909,9 @@ def get_llm_client(
     elif provider == "anthropic":
         default_model = model or "claude-3-5-sonnet-20241022"
         return AnthropicClient(api_key=api_key, model=default_model)
+    elif provider == "grok":
+        default_model = model or "grok-beta"
+        return GrokClient(api_key=api_key, model=default_model)
     elif provider == "openrouter":
         default_model = model or "anthropic/claude-3.5-sonnet"
         return OpenRouterClient(api_key=api_key, model=default_model)
@@ -747,5 +923,5 @@ def get_llm_client(
         return OllamaClient(base_url=default_endpoint, model=default_model)
     else:
         raise ValueError(
-            f"Invalid AI provider: {provider}. Supported providers: 'openai', 'anthropic', 'openrouter', 'ollama'"
+            f"Invalid AI provider: {provider}. Supported providers: 'openai', 'anthropic', 'grok', 'openrouter', 'ollama'"
         )

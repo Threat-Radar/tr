@@ -9,6 +9,7 @@ from threat_radar.ai.llm_client import (
     LLMClient,
     OpenAIClient,
     OllamaClient,
+    GrokClient,
     get_llm_client,
 )
 from threat_radar.ai.vulnerability_analyzer import (
@@ -93,6 +94,24 @@ class TestLLMClient:
         assert result == "Test response from Ollama"
         mock_post.assert_called_once()
 
+    @patch("threat_radar.ai.llm_client.requests.post")
+    def test_grok_client_generate(self, mock_post):
+        """Test Grok client text generation."""
+        # Mock the requests.post response
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "choices": [{"message": {"content": "Test response from Grok"}}]
+        }
+        mock_response.raise_for_status = MagicMock()
+        mock_post.return_value = mock_response
+
+        # Create client and test
+        client = GrokClient(api_key="test-xai-key", model="grok-beta")
+        result = client.generate("Test prompt")
+
+        assert result == "Test response from Grok"
+        mock_post.assert_called_once()
+
     @patch.dict("os.environ", {"AI_PROVIDER": "openai", "OPENAI_API_KEY": "test-key"})
     @patch("openai.OpenAI")
     def test_get_llm_client_openai(self, mock_openai_class):
@@ -105,6 +124,12 @@ class TestLLMClient:
         """Test factory function returns Ollama client."""
         client = get_llm_client()
         assert isinstance(client, OllamaClient)
+
+    @patch.dict("os.environ", {"AI_PROVIDER": "grok", "XAI_API_KEY": "test-xai-key"})
+    def test_get_llm_client_grok(self):
+        """Test factory function returns Grok client."""
+        client = get_llm_client()
+        assert isinstance(client, GrokClient)
 
 
 class TestPromptTemplates:

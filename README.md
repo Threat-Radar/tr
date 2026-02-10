@@ -219,7 +219,7 @@ threat-radar cve scan-image myapp:latest \
 
 ### 🤖 AI-Powered Intelligence
 
-- **Multiple AI providers** - OpenAI GPT-4o, Anthropic Claude, or Ollama
+- **Multiple AI providers** - OpenAI GPT-4o, Anthropic Claude, xAI Grok, or Ollama
 - **Cloud or local** - Choose based on privacy needs
 - **Vulnerability analysis** - Exploitability and impact assessment
 - **Smart prioritization** - Risk-based ranking
@@ -289,7 +289,12 @@ ANTHROPIC_API_KEY=sk-ant-your-key-here
 AI_PROVIDER=anthropic
 AI_MODEL=claude-3-5-sonnet-20241022
 
-# Option 3: Ollama (local)
+# Option 3: xAI Grok (cloud)
+XAI_API_KEY=xai-your-key-here
+AI_PROVIDER=grok
+AI_MODEL=grok-beta  # Options: grok-beta, grok-2-1212
+
+# Option 4: Ollama (local)
 AI_PROVIDER=ollama
 AI_MODEL=llama2
 LOCAL_MODEL_ENDPOINT=http://localhost:11434
@@ -321,6 +326,25 @@ LOCAL_MODEL_ENDPOINT=http://localhost:11434
 - `claude-3-5-sonnet-20241022` (recommended, best balance)
 - `claude-3-opus-20240229` (highest capability)
 - `claude-3-sonnet-20240229` (faster, cost-effective)
+
+#### xAI Grok (Cloud)
+
+1. Get API key from https://console.x.ai/
+2. Add to `.env`:
+   ```bash
+   XAI_API_KEY=xai-your-key-here
+   AI_PROVIDER=grok
+   AI_MODEL=grok-beta
+   ```
+
+**Available Models:**
+- `grok-beta` (latest, recommended)
+- `grok-2-1212` (stable release)
+
+**Benefits:**
+- Competitive pricing with GPT-4
+- Fast response times
+- Strong reasoning capabilities
 
 #### Ollama (Local - Free)
 
