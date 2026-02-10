@@ -34,5 +34,5 @@ jobs:
     
     - name: Test CLI
       run: |
-        tr --help
+        tradar --help
         threat-radar --help  # Test backward compatibility

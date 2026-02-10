@@ -120,8 +120,8 @@ python -m build
 pip install dist/threat_radar-0.1.0-py3-none-any.whl
 
 # Test CLI
-tr --version
-tr --help
+tradar --version
+tradar --help
 
 # Test imports
 python -c "from threat_radar import GrypeClient; print('Import successful')"
@@ -195,8 +195,8 @@ pip install --index-url https://test.pypi.org/simple/ --no-deps threat-radar
 pip install PyGithub python-dotenv typer docker openai tenacity
 
 # Test
-tr --version
-tr --help
+tradar --version
+tradar --help
 ```
 
 ---
@@ -251,7 +251,7 @@ source verify_env/bin/activate
 pip install threat-radar
 
 # Verify
-tr --version
+tradar --version
 python -c "from threat_radar import GrypeClient; print('Success!')"
 ```
 

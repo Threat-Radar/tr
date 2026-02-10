@@ -50,22 +50,22 @@ echo "=== 1. Basic Health Checks ==="
 echo ""
 
 run_test "Show help" \
-    "tr --help"
+    "tradar --help"
 
 run_test "Show version" \
-    "tr --version"
+    "tradar --version"
 
 run_test "Health ping" \
-    "tr health ping"
+    "tradar health ping"
 
 run_test "Health check" \
-    "tr health check"
+    "tradar health check"
 
 run_test "Health check verbose" \
-    "tr health check --verbose"
+    "tradar health check --verbose"
 
 run_test "Health version" \
-    "tr health version"
+    "tradar health version"
 
 # ============================================================================
 # 2. DOCKER ACCESS
@@ -92,22 +92,22 @@ echo "=== 3. SBOM Generation Tests ==="
 echo ""
 
 run_test "Generate SBOM from alpine:3.18" \
-    "tr sbom docker alpine:3.18 -o /app/sbom_storage/test_alpine.json"
+    "tradar sbom docker alpine:3.18 -o /app/sbom_storage/test_alpine.json"
 
 run_test "Read SBOM file" \
-    "tr sbom read /app/sbom_storage/test_alpine.json"
+    "tradar sbom read /app/sbom_storage/test_alpine.json"
 
 run_test "SBOM stats" \
-    "tr sbom stats /app/sbom_storage/test_alpine.json"
+    "tradar sbom stats /app/sbom_storage/test_alpine.json"
 
 run_test "List SBOM components" \
-    "tr sbom components /app/sbom_storage/test_alpine.json"
+    "tradar sbom components /app/sbom_storage/test_alpine.json"
 
 run_test "Search in SBOM" \
-    "tr sbom search /app/sbom_storage/test_alpine.json openssl"
+    "tradar sbom search /app/sbom_storage/test_alpine.json openssl"
 
 run_test "List stored SBOMs" \
-    "tr sbom list"
+    "tradar sbom list"
 
 # ============================================================================
 # 4. CVE SCANNING
@@ -116,19 +116,19 @@ echo "=== 4. CVE Scanning Tests ==="
 echo ""
 
 run_test "Scan Docker image (alpine:3.18)" \
-    "tr cve scan-image alpine:3.18 -o /tmp/test_scan_alpine.json"
+    "tradar cve scan-image alpine:3.18 -o /tmp/test_scan_alpine.json"
 
 run_test "Scan SBOM file" \
-    "tr cve scan-sbom /app/sbom_storage/test_alpine.json -o /tmp/test_scan_sbom.json"
+    "tradar cve scan-sbom /app/sbom_storage/test_alpine.json -o /tmp/test_scan_sbom.json"
 
 run_test "Scan with severity filter (HIGH)" \
-    "tr cve scan-image alpine:3.18 --severity HIGH -o /tmp/test_scan_high.json"
+    "tradar cve scan-image alpine:3.18 --severity HIGH -o /tmp/test_scan_high.json"
 
 run_test "Scan with auto-save" \
-    "tr cve scan-image busybox:latest --auto-save"
+    "tradar cve scan-image busybox:latest --auto-save"
 
 run_test "Grype database status" \
-    "tr cve db-status"
+    "tradar cve db-status"
 
 # ============================================================================
 # 5. GRAPH OPERATIONS
@@ -137,16 +137,16 @@ echo "=== 5. Graph Operations Tests ==="
 echo ""
 
 run_test "Build graph from scan" \
-    "tr graph build /tmp/test_scan_alpine.json -o /tmp/test_graph.graphml"
+    "tradar graph build /tmp/test_scan_alpine.json -o /tmp/test_graph.graphml"
 
 run_test "Query graph stats" \
-    "tr graph query /tmp/test_graph.graphml --stats"
+    "tradar graph query /tmp/test_graph.graphml --stats"
 
 run_test "List stored graphs" \
-    "tr graph list"
+    "tradar graph list"
 
 run_test "Show graph info" \
-    "tr graph info /tmp/test_graph.graphml"
+    "tradar graph info /tmp/test_graph.graphml"
 
 # ============================================================================
 # 6. REPORT GENERATION
@@ -155,16 +155,16 @@ echo "=== 6. Report Generation Tests ==="
 echo ""
 
 run_test "Generate JSON report" \
-    "tr report generate /tmp/test_scan_alpine.json -o /tmp/test_report.json -f json"
+    "tradar report generate /tmp/test_scan_alpine.json -o /tmp/test_report.json -f json"
 
 run_test "Generate Markdown report" \
-    "tr report generate /tmp/test_scan_alpine.json -o /tmp/test_report.md -f markdown"
+    "tradar report generate /tmp/test_scan_alpine.json -o /tmp/test_report.md -f markdown"
 
 run_test "Generate HTML report" \
-    "tr report generate /tmp/test_scan_alpine.json -o /tmp/test_report.html -f html"
+    "tradar report generate /tmp/test_scan_alpine.json -o /tmp/test_report.html -f html"
 
 run_test "Dashboard export" \
-    "tr report dashboard-export /tmp/test_scan_alpine.json -o /tmp/test_dashboard.json"
+    "tradar report dashboard-export /tmp/test_scan_alpine.json -o /tmp/test_dashboard.json"
 
 # ============================================================================
 # 7. FILE SYSTEM ACCESS
@@ -209,13 +209,13 @@ echo "=== 9. Multiple Image Format Tests ==="
 echo ""
 
 run_test "Scan lightweight image (busybox)" \
-    "tr cve scan-image busybox:latest -o /tmp/test_busybox.json"
+    "tradar cve scan-image busybox:latest -o /tmp/test_busybox.json"
 
 run_test "Generate SBOM for Python image" \
-    "tr sbom docker python:3.11-alpine -o /tmp/test_python_sbom.json"
+    "tradar sbom docker python:3.11-alpine -o /tmp/test_python_sbom.json"
 
 run_test "Scan nginx image" \
-    "tr cve scan-image nginx:alpine -o /tmp/test_nginx.json"
+    "tradar cve scan-image nginx:alpine -o /tmp/test_nginx.json"
 
 # ============================================================================
 # 10. ADVANCED OPERATIONS
@@ -224,16 +224,16 @@ echo "=== 10. Advanced Operations Tests ==="
 echo ""
 
 run_test "Generate SBOM with different format" \
-    "tr sbom docker redis:alpine -o /tmp/test_redis.json"
+    "tradar sbom docker redis:alpine -o /tmp/test_redis.json"
 
 run_test "Compare two SBOMs" \
-    "tr sbom compare /app/sbom_storage/test_alpine.json /tmp/test_python_sbom.json"
+    "tradar sbom compare /app/sbom_storage/test_alpine.json /tmp/test_python_sbom.json"
 
 run_test "Export SBOM to CSV" \
-    "tr sbom export /app/sbom_storage/test_alpine.json -o /tmp/packages.csv -f csv"
+    "tradar sbom export /app/sbom_storage/test_alpine.json -o /tmp/packages.csv -f csv"
 
 run_test "Build graph with auto-save" \
-    "tr graph build /tmp/test_scan_alpine.json --auto-save"
+    "tradar graph build /tmp/test_scan_alpine.json --auto-save"
 
 # ============================================================================
 # SUMMARY
