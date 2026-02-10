@@ -536,9 +536,9 @@ def template(
     console.print(f"[green]✓[/green] Template created: {output}")
     console.print("\n[bold]Next steps:[/bold]")
     console.print("  1. Edit the template with your infrastructure details")
-    console.print(f"  2. Validate: threat-radar env validate {output}")
+    console.print(f"  2. Validate: tr env validate {output}")
     console.print(
-        f"  3. Build graph: threat-radar env build-graph {output} --auto-save"
+        f"  3. Build graph: tr env build-graph {output} --auto-save"
     )
 
 

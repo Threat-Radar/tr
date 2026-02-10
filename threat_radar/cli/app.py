@@ -94,9 +94,9 @@ def main_callback(
       3 (-vv):         Debug - everything
 
     Examples:
-      threat-radar -v cve scan-image alpine:3.18
-      threat-radar --config myconfig.json ai analyze scan.json
-      threat-radar -vv --output-format json sbom docker python:3.11
+      tr -v cve scan-image alpine:3.18
+      tr --config myconfig.json ai analyze scan.json
+      tr -vv --output-format json sbom docker python:3.11
     """
     # Apply quiet flag (overrides verbosity)
     if quiet:

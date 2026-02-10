@@ -13,44 +13,44 @@ Common development tasks:
 ```bash
 # Setup and verify installation
 pip install -e .
-threat-radar --help
+tr --help
 
 # Run vulnerability scan
-threat-radar cve scan-image alpine:3.18 --auto-save
+tr cve scan-image alpine:3.18 --auto-save
 
 # Use global options for verbose output and JSON format
-threat-radar -vv -f json cve scan-image python:3.11 --auto-save
+tr -vv -f json cve scan-image python:3.11 --auto-save
 
 # Load configuration from custom file
-threat-radar --config ./myconfig.json cve scan-image ubuntu:22.04
+tr --config ./myconfig.json cve scan-image ubuntu:22.04
 
 # Quiet mode for CI/CD (errors only)
-threat-radar -q --no-color cve scan-image myapp:latest --fail-on HIGH
+tr -q --no-color cve scan-image myapp:latest --fail-on HIGH
 
 # Generate SBOM
-threat-radar sbom docker python:3.11 -o sbom.json
+tr sbom docker python:3.11 -o sbom.json
 
 # Run AI analysis (requires API key in .env)
-threat-radar ai analyze scan-results.json --auto-save
+tr ai analyze scan-results.json --auto-save
 
 # Generate comprehensive report
-threat-radar report generate scan-results.json -o report.html -f html
+tr report generate scan-results.json -o report.html -f html
 
 # Build vulnerability graph for relationship analysis
-threat-radar graph build scan-results.json --auto-save
-threat-radar graph query graph.graphml --cve CVE-2023-1234
-threat-radar graph query graph.graphml --top-packages 10 --stats
+tr graph build scan-results.json --auto-save
+tr graph query graph.graphml --cve CVE-2023-1234
+tr graph query graph.graphml --top-packages 10 --stats
 
 # Attack path discovery and security analysis
-threat-radar graph attack-paths graph.graphml --max-paths 20 -o paths.json
-threat-radar graph privilege-escalation graph.graphml -o privesc.json
-threat-radar graph lateral-movement graph.graphml -o lateral.json
-threat-radar graph attack-surface graph.graphml -o attack-surface.json
+tr graph attack-paths graph.graphml --max-paths 20 -o paths.json
+tr graph privilege-escalation graph.graphml -o privesc.json
+tr graph lateral-movement graph.graphml -o lateral.json
+tr graph attack-surface graph.graphml -o attack-surface.json
 
 # Environment configuration and business context
-threat-radar env validate my-environment.json
-threat-radar env build-graph production.json --auto-save
-threat-radar env analyze-risk production.json scan-results.json --auto-save
+tr env validate my-environment.json
+tr env build-graph production.json --auto-save
+tr env analyze-risk production.json scan-results.json --auto-save
 
 # Run tests
 pytest                                    # All tests
@@ -85,10 +85,10 @@ The package provides two CLI entry points:
 
 ```bash
 # Available commands
-threat-radar --help
-threat-radar cve --help
-threat-radar docker --help
-threat-radar sbom --help
+tr --help
+tr cve --help
+tr docker --help
+tr sbom --help
 ```
 
 ### Testing
@@ -131,7 +131,7 @@ flake8 threat_radar/
 All Threat Radar commands support global options that control behavior across the entire CLI:
 
 ```bash
-threat-radar [OPTIONS] COMMAND [ARGS]
+tr [OPTIONS] COMMAND [ARGS]
 
 Global Options:
   -c, --config PATH        Path to configuration file (JSON format)
@@ -157,13 +157,13 @@ Control the amount of output and logging:
 **Examples:**
 ```bash
 # Quiet mode for automation
-threat-radar -q cve scan-image alpine:3.18
+tr -q cve scan-image alpine:3.18
 
 # Verbose debugging
-threat-radar -vv cve scan-image python:3.11
+tr -vv cve scan-image python:3.11
 
 # Very verbose with all internal logging
-threat-radar -vvv ai analyze scan.json
+tr -vvv ai analyze scan.json
 ```
 
 ### Configuration File Support
@@ -225,26 +225,26 @@ Threat Radar supports persistent configuration through JSON files. Configuration
 
 ```bash
 # Initialize new configuration file
-threat-radar config init
-threat-radar config init --path ./my-config.json
-threat-radar config init --force  # Overwrite existing
+tr config init
+tr config init --path ./my-config.json
+tr config init --force  # Overwrite existing
 
 # Show current configuration
-threat-radar config show
-threat-radar config show scan.severity
-threat-radar config show ai.provider
+tr config show
+tr config show scan.severity
+tr config show ai.provider
 
 # Modify configuration
-threat-radar config set scan.severity HIGH
-threat-radar config set ai.provider ollama
-threat-radar config set output.verbosity 2
+tr config set scan.severity HIGH
+tr config set ai.provider ollama
+tr config set output.verbosity 2
 
 # Validate configuration file
-threat-radar config validate
-threat-radar config validate ./my-config.json
+tr config validate
+tr config validate ./my-config.json
 
 # Show configuration file locations
-threat-radar config path
+tr config path
 ```
 
 ### Output Formats
@@ -259,13 +259,13 @@ Threat Radar supports multiple output formats for different use cases:
 **Examples:**
 ```bash
 # JSON output for automation
-threat-radar -f json cve scan-image alpine:3.18
+tr -f json cve scan-image alpine:3.18
 
 # CSV output for spreadsheets
-threat-radar -f csv sbom components sbom.json -o packages.csv
+tr -f csv sbom components sbom.json -o packages.csv
 
 # Combine with other global options
-threat-radar -q -f json --no-color cve scan-image myapp:latest > results.json
+tr -q -f json --no-color cve scan-image myapp:latest > results.json
 ```
 
 **For complete CLI features documentation, see [docs/CLI_FEATURES.md](docs/CLI_FEATURES.md)**
@@ -374,37 +374,37 @@ grype version
 
 ```bash
 # Scan Docker image for CVEs
-threat-radar cve scan-image alpine:3.18
-threat-radar cve scan-image python:3.11 --severity HIGH
-threat-radar cve scan-image ubuntu:22.04 --only-fixed -o results.json
+tr cve scan-image alpine:3.18
+tr cve scan-image python:3.11 --severity HIGH
+tr cve scan-image ubuntu:22.04 --only-fixed -o results.json
 
 # Scan with automatic cleanup (removes image after scan if newly pulled)
-threat-radar cve scan-image nginx:latest --cleanup
-threat-radar cve scan-image test-app:v1.0 --cleanup --severity HIGH
+tr cve scan-image nginx:latest --cleanup
+tr cve scan-image test-app:v1.0 --cleanup --severity HIGH
 
 # Auto-save results to storage/cve_storage/ directory
-threat-radar cve scan-image alpine:3.18 --auto-save
-threat-radar cve scan-image myapp:latest --as  # Short form
-threat-radar cve scan-image python:3.11 --auto-save --cleanup  # Combined
+tr cve scan-image alpine:3.18 --auto-save
+tr cve scan-image myapp:latest --as  # Short form
+tr cve scan-image python:3.11 --auto-save --cleanup  # Combined
 
 # Scan pre-generated SBOM file (CI/CD friendly)
-threat-radar cve scan-sbom my-app-sbom.json
-threat-radar cve scan-sbom docker-sbom.json --severity CRITICAL
-threat-radar cve scan-sbom sbom.json --only-fixed -o cve-results.json
+tr cve scan-sbom my-app-sbom.json
+tr cve scan-sbom docker-sbom.json --severity CRITICAL
+tr cve scan-sbom sbom.json --only-fixed -o cve-results.json
 
 # SBOM scanning with cleanup and auto-save
-threat-radar cve scan-sbom alpine-sbom.json --cleanup --image alpine:3.18
-threat-radar cve scan-sbom app-sbom.json --auto-save  # Auto-save results
+tr cve scan-sbom alpine-sbom.json --cleanup --image alpine:3.18
+tr cve scan-sbom app-sbom.json --auto-save  # Auto-save results
 
 # Scan local directory for vulnerabilities
-threat-radar cve scan-directory ./my-app
-threat-radar cve scan-directory /path/to/project --severity MEDIUM
-threat-radar cve scan-directory . --only-fixed -o results.json
-threat-radar cve scan-directory ./src --auto-save  # Auto-save
+tr cve scan-directory ./my-app
+tr cve scan-directory /path/to/project --severity MEDIUM
+tr cve scan-directory . --only-fixed -o results.json
+tr cve scan-directory ./src --auto-save  # Auto-save
 
 # Vulnerability database management
-threat-radar cve db-update                     # Update Grype database
-threat-radar cve db-status                     # Show database status
+tr cve db-update                     # Update Grype database
+tr cve db-status                     # Show database status
 ```
 
 ### CVE Scanning Workflow
@@ -441,14 +441,14 @@ The `--cleanup` flag automatically removes Docker images after scanning to save 
 **Use cases:**
 ```bash
 # CI/CD pipelines - scan and cleanup
-threat-radar cve scan-image myapp:latest --cleanup --severity HIGH
+tr cve scan-image myapp:latest --cleanup --severity HIGH
 
 # Testing multiple images without storage buildup
-threat-radar cve scan-image nginx:alpine --cleanup
-threat-radar cve scan-image redis:alpine --cleanup
+tr cve scan-image nginx:alpine --cleanup
+tr cve scan-image redis:alpine --cleanup
 
 # SBOM scanning with source image cleanup
-threat-radar cve scan-sbom app-sbom.json --cleanup --image myapp:v1.0
+tr cve scan-sbom app-sbom.json --cleanup --image myapp:v1.0
 ```
 
 **Storage management:**
@@ -470,15 +470,15 @@ The `--auto-save` (or `--as`) flag automatically saves CVE scan results to the `
 **Use cases:**
 ```bash
 # Keep history of all scans in one place
-threat-radar cve scan-image myapp:v1.0 --auto-save
-threat-radar cve scan-image myapp:v1.1 --auto-save
-threat-radar cve scan-image myapp:v1.2 --auto-save
+tr cve scan-image myapp:v1.0 --auto-save
+tr cve scan-image myapp:v1.1 --auto-save
+tr cve scan-image myapp:v1.2 --auto-save
 
 # CI/CD: Auto-save + cleanup for ephemeral environments
-threat-radar cve scan-image $IMAGE --auto-save --cleanup --fail-on HIGH
+tr cve scan-image $IMAGE --auto-save --cleanup --fail-on HIGH
 
 # Save to both custom location and auto-save
-threat-radar cve scan-image alpine:3.18 -o report.json --auto-save
+tr cve scan-image alpine:3.18 -o report.json --auto-save
 ```
 
 **File naming examples:**
@@ -505,13 +505,13 @@ find storage/cve_storage/ -name "*.json" -mtime +30 -delete  # Remove >30 days o
 
 ```bash
 # Generate SBOM with Syft
-threat-radar sbom generate docker:alpine:3.18 -o sbom.json
+tr sbom generate docker:alpine:3.18 -o sbom.json
 
 # Scan SBOM with Grype for vulnerabilities
-threat-radar cve scan-sbom sbom.json --severity HIGH -o vulns.json
+tr cve scan-sbom sbom.json --severity HIGH -o vulns.json
 
 # Or scan Docker image directly (Grype handles SBOM internally)
-threat-radar cve scan-image alpine:3.18 --severity HIGH -o vulns.json
+tr cve scan-image alpine:3.18 --severity HIGH -o vulns.json
 ```
 
 ## AI Commands Reference
@@ -554,20 +554,20 @@ Analyze CVE scan results to understand exploitability and business impact:
 
 ```bash
 # Basic analysis (auto-batches for large scans)
-threat-radar ai analyze cve-results.json
+tr ai analyze cve-results.json
 
 # Specify AI provider and model
-threat-radar ai analyze results.json --provider openai --model gpt-4o
-threat-radar ai analyze results.json --provider anthropic --model claude-3-5-sonnet-20241022
+tr ai analyze results.json --provider openai --model gpt-4o
+tr ai analyze results.json --provider anthropic --model claude-3-5-sonnet-20241022
 
 # Save analysis to file
-threat-radar ai analyze scan.json -o analysis.json
+tr ai analyze scan.json -o analysis.json
 
 # Auto-save to storage/ai_analysis/
-threat-radar ai analyze results.json --auto-save
+tr ai analyze results.json --auto-save
 
 # Use local model (Ollama)
-threat-radar ai analyze scan.json --provider ollama --model llama2
+tr ai analyze scan.json --provider ollama --model llama2
 ```
 
 **BATCH PROCESSING FOR LARGE SCANS:**
@@ -576,16 +576,16 @@ Automatically handles 100+ CVE scans via intelligent batch processing:
 
 ```bash
 # Auto-batch mode (default) - automatically batches when >30 CVEs
-threat-radar ai analyze large-scan.json
+tr ai analyze large-scan.json
 
 # Force batch processing with custom size
-threat-radar ai analyze scan.json --batch-mode enabled --batch-size 30
+tr ai analyze scan.json --batch-mode enabled --batch-size 30
 
 # Disable batching (use single-pass, may fail for large scans)
-threat-radar ai analyze scan.json --batch-mode disabled
+tr ai analyze scan.json --batch-mode disabled
 
 # Hide progress bar (useful for CI/CD)
-threat-radar ai analyze scan.json --no-progress
+tr ai analyze scan.json --no-progress
 ```
 
 **How batch processing works:**
@@ -607,16 +607,16 @@ Reduce analysis time and cost by filtering to specific severity levels:
 
 ```bash
 # Analyze only CRITICAL vulnerabilities
-threat-radar ai analyze scan.json --severity critical
+tr ai analyze scan.json --severity critical
 
 # Analyze HIGH and above (critical + high)
-threat-radar ai analyze scan.json --severity high
+tr ai analyze scan.json --severity high
 
 # Analyze MEDIUM and above (critical + high + medium)
-threat-radar ai analyze scan.json --severity medium
+tr ai analyze scan.json --severity medium
 
 # Combine with batch processing
-threat-radar ai analyze large-scan.json --severity high --batch-size 20
+tr ai analyze large-scan.json --severity high --batch-size 20
 ```
 
 **Severity levels** (from highest to lowest):
@@ -644,16 +644,16 @@ Generate AI-powered prioritized vulnerability lists:
 
 ```bash
 # Generate priority list
-threat-radar ai prioritize cve-results.json
+tr ai prioritize cve-results.json
 
 # Show top 20 priorities
-threat-radar ai prioritize results.json --top 20
+tr ai prioritize results.json --top 20
 
 # Save prioritization
-threat-radar ai prioritize scan.json -o priorities.json
+tr ai prioritize scan.json -o priorities.json
 
 # Auto-save results
-threat-radar ai prioritize results.json --auto-save
+tr ai prioritize results.json --auto-save
 ```
 
 **Output includes:**
@@ -669,16 +669,16 @@ Create detailed, actionable remediation guidance:
 
 ```bash
 # Generate remediation plan
-threat-radar ai remediate cve-results.json
+tr ai remediate cve-results.json
 
 # Save plan to file
-threat-radar ai remediate scan.json -o remediation.json
+tr ai remediate scan.json -o remediation.json
 
 # Hide upgrade commands
-threat-radar ai remediate results.json --no-commands
+tr ai remediate results.json --no-commands
 
 # Use local model
-threat-radar ai remediate scan.json --provider ollama
+tr ai remediate scan.json --provider ollama
 ```
 
 **Output includes:**
@@ -697,25 +697,25 @@ threat-radar ai remediate scan.json --provider ollama
 
 ```bash
 # 1. Scan Docker image for vulnerabilities
-threat-radar cve scan-image alpine:3.18 --auto-save -o cve-scan.json
+tr cve scan-image alpine:3.18 --auto-save -o cve-scan.json
 
 # 2. Analyze with AI
-threat-radar ai analyze cve-scan.json --auto-save -o ai-analysis.json
+tr ai analyze cve-scan.json --auto-save -o ai-analysis.json
 
 # 3. Generate priorities
-threat-radar ai prioritize cve-scan.json --auto-save -o priorities.json
+tr ai prioritize cve-scan.json --auto-save -o priorities.json
 
 # 4. Create remediation plan
-threat-radar ai remediate cve-scan.json --auto-save -o remediation.json
+tr ai remediate cve-scan.json --auto-save -o remediation.json
 ```
 
 #### CI/CD Integration
 
 ```bash
 # Scan, analyze, and prioritize in one pipeline
-threat-radar cve scan-image $IMAGE --auto-save --cleanup > scan.json
-threat-radar ai analyze scan.json --auto-save
-threat-radar ai prioritize scan.json --top 10 --auto-save
+tr cve scan-image $IMAGE --auto-save --cleanup > scan.json
+tr ai analyze scan.json --auto-save
+tr ai prioritize scan.json --top 10 --auto-save
 ```
 
 #### Using Local Models (Privacy-Focused)
@@ -729,9 +729,9 @@ threat-radar ai prioritize scan.json --top 10 --auto-save
 export AI_PROVIDER=ollama
 export AI_MODEL=llama2
 
-threat-radar ai analyze cve-scan.json
-threat-radar ai prioritize cve-scan.json
-threat-radar ai remediate cve-scan.json
+tr ai analyze cve-scan.json
+tr ai prioritize cve-scan.json
+tr ai remediate cve-scan.json
 ```
 
 ### AI Storage Management
@@ -826,9 +826,9 @@ export AI_PROVIDER=anthropic
 export AI_MODEL=claude-3-5-sonnet-20241022
 
 # Use with any AI command
-threat-radar ai analyze scan.json --provider anthropic
-threat-radar ai prioritize scan.json --provider anthropic
-threat-radar ai remediate scan.json --provider anthropic
+tr ai analyze scan.json --provider anthropic
+tr ai prioritize scan.json --provider anthropic
+tr ai remediate scan.json --provider anthropic
 ```
 
 **Available Claude Models:**
@@ -850,9 +850,9 @@ export AI_PROVIDER=openrouter
 export AI_MODEL=anthropic/claude-3.5-sonnet
 
 # Use with any AI command
-threat-radar ai analyze scan.json --provider openrouter
-threat-radar ai prioritize scan.json --provider openrouter --model openai/gpt-4o
-threat-radar ai remediate scan.json --provider openrouter --model google/gemini-pro
+tr ai analyze scan.json --provider openrouter
+tr ai prioritize scan.json --provider openrouter --model openai/gpt-4o
+tr ai remediate scan.json --provider openrouter --model google/gemini-pro
 ```
 
 **Popular OpenRouter Models:**
@@ -874,19 +874,19 @@ threat-radar ai remediate scan.json --provider openrouter --model google/gemini-
 **Example Multi-Model Workflow:**
 ```bash
 # Use Claude for detailed analysis (best reasoning)
-threat-radar ai analyze scan.json \
+tr ai analyze scan.json \
   --provider openrouter \
   --model anthropic/claude-3.5-sonnet \
   --auto-save
 
 # Use GPT-4o for prioritization (fast structured output)
-threat-radar ai prioritize scan.json \
+tr ai prioritize scan.json \
   --provider openrouter \
   --model openai/gpt-4o \
   --auto-save
 
 # Use Gemini for cost-effective remediation
-threat-radar ai remediate scan.json \
+tr ai remediate scan.json \
   --provider openrouter \
   --model google/gemini-pro \
   --auto-save
@@ -916,62 +916,62 @@ export AI_MODEL=llama2
 ### Generation
 ```bash
 # Generate SBOM from local directory
-threat-radar sbom generate ./path/to/project -f cyclonedx-json
+tr sbom generate ./path/to/project -f cyclonedx-json
 
 # Generate SBOM from Docker image
-threat-radar sbom docker alpine:3.18 -o sbom.json
+tr sbom docker alpine:3.18 -o sbom.json
 
 # Auto-save to sbom_storage/
-threat-radar sbom generate . --auto-save
-threat-radar sbom docker python:3.11 --auto-save
+tr sbom generate . --auto-save
+tr sbom docker python:3.11 --auto-save
 ```
 
 ### Analysis
 ```bash
 # Read and display SBOM
-threat-radar sbom read sbom.json
-threat-radar sbom read sbom.json --format json
+tr sbom read sbom.json
+tr sbom read sbom.json --format json
 
 # Get statistics
-threat-radar sbom stats sbom.json
+tr sbom stats sbom.json
 
 # Search for packages
-threat-radar sbom search sbom.json openssl
+tr sbom search sbom.json openssl
 
 # List components with filtering
-threat-radar sbom components sbom.json --type library
-threat-radar sbom components sbom.json --language python
-threat-radar sbom components sbom.json --group-by type
+tr sbom components sbom.json --type library
+tr sbom components sbom.json --language python
+tr sbom components sbom.json --group-by type
 ```
 
 ### Comparison
 ```bash
 # Compare two SBOMs (useful for tracking changes)
-threat-radar sbom compare alpine-3.17-sbom.json alpine-3.18-sbom.json
-threat-radar sbom compare old.json new.json --versions
+tr sbom compare alpine-3.17-sbom.json alpine-3.18-sbom.json
+tr sbom compare old.json new.json --versions
 ```
 
 ### Export
 ```bash
 # Export to CSV
-threat-radar sbom export sbom.json -o packages.csv -f csv
+tr sbom export sbom.json -o packages.csv -f csv
 
 # Export as requirements.txt (Python packages)
-threat-radar sbom export sbom.json -o requirements.txt -f requirements
+tr sbom export sbom.json -o requirements.txt -f requirements
 ```
 
 ### Storage Management
 ```bash
 # List all stored SBOMs
-threat-radar sbom list
+tr sbom list
 
 # List by category
-threat-radar sbom list --category docker
-threat-radar sbom list --category local
-threat-radar sbom list --category comparisons
+tr sbom list --category docker
+tr sbom list --category local
+tr sbom list --category comparisons
 
 # Limit results
-threat-radar sbom list --limit 10
+tr sbom list --limit 10
 ```
 
 ## Comprehensive Reporting Commands
@@ -1001,16 +1001,16 @@ The reporting system provides AI-powered vulnerability reports with multiple out
 IMAGE="myapp:latest"
 
 # 1. Scan image
-threat-radar cve scan-image $IMAGE --auto-save -o scan.json
+tr cve scan-image $IMAGE --auto-save -o scan.json
 
 # 2. Build graph and find attack paths
-threat-radar graph build scan.json -o graph.graphml
-threat-radar graph attack-paths graph.graphml -o attack-paths.json
+tr graph build scan.json -o graph.graphml
+tr graph attack-paths graph.graphml -o attack-paths.json
 
 # 3. Generate reports in all formats with attack paths
-threat-radar report generate scan.json -o report.html --attack-paths attack-paths.json
-threat-radar report generate scan.json -o report.pdf --attack-paths attack-paths.json
-threat-radar report generate scan.json -o report.md --attack-paths attack-paths.json
+tr report generate scan.json -o report.html --attack-paths attack-paths.json
+tr report generate scan.json -o report.pdf --attack-paths attack-paths.json
+tr report generate scan.json -o report.md --attack-paths attack-paths.json
 
 # Result: 3 comprehensive reports (HTML, PDF, Markdown) with:
 # - Vulnerability analysis
@@ -1023,42 +1023,42 @@ threat-radar report generate scan.json -o report.md --attack-paths attack-paths.
 
 ```bash
 # Generate comprehensive HTML report with AI executive summary
-threat-radar report generate scan-results.json -o report.html -f html
+tr report generate scan-results.json -o report.html -f html
 
 # Executive summary in Markdown (for documentation)
-threat-radar report generate scan-results.json -o summary.md -f markdown --level executive
+tr report generate scan-results.json -o summary.md -f markdown --level executive
 
 # Executive PDF report (NEW!)
-threat-radar report generate scan-results.json -o executive.pdf -f pdf --level executive
+tr report generate scan-results.json -o executive.pdf -f pdf --level executive
 
 # Detailed JSON report with dashboard data
-threat-radar report generate scan-results.json -o detailed.json --level detailed
+tr report generate scan-results.json -o detailed.json --level detailed
 
 # Critical-only issues (for immediate action)
-threat-radar report generate scan-results.json -o critical.json --level critical-only
+tr report generate scan-results.json -o critical.json --level critical-only
 
 # Use custom AI model
-threat-radar report generate scan-results.json --ai-provider ollama --ai-model llama2
+tr report generate scan-results.json --ai-provider ollama --ai-model llama2
 
 # Without AI executive summary (faster)
-threat-radar report generate scan-results.json -o report.json --no-executive
+tr report generate scan-results.json -o report.json --no-executive
 ```
 
 #### Reports with Attack Path Analysis (NEW!)
 
 ```bash
 # Generate attack paths first
-threat-radar graph build scan.json -o graph.graphml
-threat-radar graph attack-paths graph.graphml -o attack-paths.json
+tr graph build scan.json -o graph.graphml
+tr graph attack-paths graph.graphml -o attack-paths.json
 
 # HTML report with integrated attack paths
-threat-radar report generate scan.json \
+tr report generate scan.json \
   -o comprehensive-report.html \
   -f html \
   --attack-paths attack-paths.json
 
 # PDF executive report with attack path analysis
-threat-radar report generate scan.json \
+tr report generate scan.json \
   -o executive-with-paths.pdf \
   -f pdf \
   --level executive \
@@ -1066,7 +1066,7 @@ threat-radar report generate scan.json \
   --ai-provider openai
 
 # Markdown documentation with attack paths
-threat-radar report generate scan.json \
+tr report generate scan.json \
   -o security-analysis.md \
   -f markdown \
   --level detailed \
@@ -1104,7 +1104,7 @@ threat-radar report generate scan.json \
 
 #### JSON Format
 ```bash
-threat-radar report generate scan.json -o report.json -f json
+tr report generate scan.json -o report.json -f json
 ```
 - Machine-readable structured data
 - Suitable for API integrations
@@ -1113,7 +1113,7 @@ threat-radar report generate scan.json -o report.json -f json
 
 #### Markdown Format
 ```bash
-threat-radar report generate scan.json -o report.md -f markdown
+tr report generate scan.json -o report.md -f markdown
 ```
 - Human-readable documentation
 - Great for GitHub/GitLab issues
@@ -1122,7 +1122,7 @@ threat-radar report generate scan.json -o report.md -f markdown
 
 #### HTML Format
 ```bash
-threat-radar report generate scan.json -o report.html -f html
+tr report generate scan.json -o report.html -f html
 ```
 - Beautiful web-based reports
 - Styled with modern CSS
@@ -1136,7 +1136,7 @@ Export visualization-ready data for custom dashboards (Grafana, custom web apps,
 
 ```bash
 # Export dashboard data structure
-threat-radar report dashboard-export scan-results.json -o dashboard.json
+tr report dashboard-export scan-results.json -o dashboard.json
 ```
 
 **Dashboard data includes:**
@@ -1172,18 +1172,18 @@ Example dashboard.json structure:
 
 ```bash
 # Generate report with integrated attack path analysis
-threat-radar cve scan-image myapp:production --auto-save -o scan.json
-threat-radar graph build scan.json --auto-save -o vuln-graph.graphml
-threat-radar graph attack-paths vuln-graph.graphml --max-paths 20 -o attack-paths.json
+tr cve scan-image myapp:production --auto-save -o scan.json
+tr graph build scan.json --auto-save -o vuln-graph.graphml
+tr graph attack-paths vuln-graph.graphml --max-paths 20 -o attack-paths.json
 
 # Single command to generate comprehensive report with attack paths
-threat-radar report generate scan.json \
+tr report generate scan.json \
   -o comprehensive-report.html \
   -f html \
   --attack-paths attack-paths.json
 
 # Or with PDF export
-threat-radar report generate scan.json \
+tr report generate scan.json \
   -o executive-report.pdf \
   -f pdf \
   --level executive \
@@ -1221,32 +1221,32 @@ echo "Generating attack path-aware security report for $TARGET..."
 
 # Step 1: Scan for vulnerabilities
 echo "1. Scanning for vulnerabilities..."
-threat-radar cve scan-image $TARGET --auto-save -o scan.json
+tr cve scan-image $TARGET --auto-save -o scan.json
 
 # Step 2: Build environment graph with vulnerabilities
 echo "2. Building infrastructure graph..."
-threat-radar env build-graph production-env.json \
+tr env build-graph production-env.json \
   --merge-scan scan.json \
   --auto-save -o env-graph.graphml
 
 # Step 3: Analyze attack surface
 echo "3. Analyzing attack surface..."
-threat-radar graph attack-surface env-graph.graphml \
+tr graph attack-surface env-graph.graphml \
   -o attack-surface.json
 
 # Step 4: Find specific attack paths
 echo "4. Discovering attack paths..."
-threat-radar graph attack-paths env-graph.graphml \
+tr graph attack-paths env-graph.graphml \
   --max-paths 50 -o attack-paths.json
 
 # Step 5: Identify privilege escalation opportunities
 echo "5. Detecting privilege escalation vectors..."
-threat-radar graph privilege-escalation env-graph.graphml \
+tr graph privilege-escalation env-graph.graphml \
   -o privesc.json
 
 # Step 6: Generate integrated technical report with attack paths (HTML)
 echo "6. Generating technical security report with attack paths..."
-threat-radar report generate scan.json \
+tr report generate scan.json \
   -o reports/technical-report.html \
   -f html \
   --level detailed \
@@ -1254,7 +1254,7 @@ threat-radar report generate scan.json \
 
 # Step 7: Generate executive PDF report with risk context and attack paths
 echo "7. Generating executive PDF summary..."
-threat-radar report generate scan.json \
+tr report generate scan.json \
   -o reports/executive-summary.pdf \
   -f pdf \
   --level executive \
@@ -1263,7 +1263,7 @@ threat-radar report generate scan.json \
 
 # Step 8: Generate Markdown report for documentation
 echo "8. Generating Markdown report..."
-threat-radar report generate scan.json \
+tr report generate scan.json \
   -o reports/security-analysis.md \
   -f markdown \
   --level detailed \
@@ -1271,18 +1271,18 @@ threat-radar report generate scan.json \
 
 # Step 9: Create attack path visualizations
 echo "9. Creating visualizations..."
-threat-radar visualize attack-paths env-graph.graphml \
+tr visualize attack-paths env-graph.graphml \
   -o reports/attack-paths-viz.html \
   --paths attack-paths.json \
   --max-paths 10
 
-threat-radar visualize topology env-graph.graphml \
+tr visualize topology env-graph.graphml \
   -o reports/topology-security.html \
   --view zones
 
 # Step 10: Export dashboard data
 echo "10. Exporting dashboard metrics..."
-threat-radar report dashboard-export scan.json \
+tr report dashboard-export scan.json \
   -o reports/dashboard-data.json
 
 echo "✅ Complete attack-path-aware report generated!"
@@ -1311,25 +1311,25 @@ Threat Radar provides flexible report customization through report levels and AI
 
 ```bash
 # Executive level - For C-suite and business stakeholders
-threat-radar report generate scan.json \
+tr report generate scan.json \
   -o exec-report.md \
   -f markdown \
   --level executive \
   --ai-provider openai
 
 # Summary level - For security team quick reviews
-threat-radar report generate scan.json \
+tr report generate scan.json \
   -o summary-report.json \
   --level summary
 
 # Detailed level - For technical analysis and remediation planning
-threat-radar report generate scan.json \
+tr report generate scan.json \
   -o detailed-report.html \
   -f html \
   --level detailed
 
 # Critical-only - For incident response and urgent action
-threat-radar report generate scan.json \
+tr report generate scan.json \
   -o critical-report.json \
   --level critical-only
 ```
@@ -1338,22 +1338,22 @@ threat-radar report generate scan.json \
 
 ```bash
 # Use OpenAI for executive summaries
-threat-radar report generate scan.json \
+tr report generate scan.json \
   --ai-provider openai \
   --ai-model gpt-4o
 
 # Use Anthropic Claude for deeper analysis
-threat-radar report generate scan.json \
+tr report generate scan.json \
   --ai-provider anthropic \
   --ai-model claude-3-5-sonnet-20241022
 
 # Use local Ollama for privacy
-threat-radar report generate scan.json \
+tr report generate scan.json \
   --ai-provider ollama \
   --ai-model llama2
 
 # Disable AI for faster generation
-threat-radar report generate scan.json \
+tr report generate scan.json \
   --no-executive
 ```
 
@@ -1361,11 +1361,11 @@ threat-radar report generate scan.json \
 
 ```bash
 # Include/exclude dashboard data
-threat-radar report generate scan.json --dashboard  # Include (default)
-threat-radar report generate scan.json --no-dashboard  # Exclude
+tr report generate scan.json --dashboard  # Include (default)
+tr report generate scan.json --no-dashboard  # Exclude
 
 # Export custom dashboard metrics only
-threat-radar report dashboard-export scan.json -o custom-dashboard.json
+tr report dashboard-export scan.json -o custom-dashboard.json
 ```
 
 **Format-Specific Customization:**
@@ -1387,9 +1387,9 @@ Automate security reporting with cron jobs, CI/CD pipelines, and custom workflow
 # Add to crontab: crontab -e
 
 # Daily vulnerability scan and report (2 AM)
-0 2 * * * /usr/local/bin/threat-radar cve scan-image myapp:latest \
+0 2 * * * /usr/local/bin/tr cve scan-image myapp:latest \
   --auto-save && \
-  /usr/local/bin/threat-radar report generate \
+  /usr/local/bin/tr report generate \
   storage/cve_storage/myapp_latest_image_*.json \
   -o /var/reports/daily-$(date +\%Y\%m\%d).html \
   -f html --level summary
@@ -1401,9 +1401,9 @@ Automate security reporting with cron jobs, CI/CD pipelines, and custom workflow
 0 8 1 * * /home/user/scripts/monthly-compliance.sh
 
 # Hourly critical-only scan for production (business hours)
-0 9-17 * * 1-5 /usr/local/bin/threat-radar cve scan-image prod:latest \
+0 9-17 * * 1-5 /usr/local/bin/tr cve scan-image prod:latest \
   --auto-save && \
-  /usr/local/bin/threat-radar report generate \
+  /usr/local/bin/tr report generate \
   storage/cve_storage/prod_latest_*.json \
   --level critical-only \
   -o /var/reports/critical-$(date +\%Y\%m\%d-\%H\%M).json
@@ -1431,7 +1431,7 @@ jobs:
       - name: Scan all production images
         run: |
           for image in frontend:prod backend:prod api:prod; do
-            threat-radar cve scan-image $image \
+            tr cve scan-image $image \
               --auto-save -o scan-${image/:/-}.json
           done
 
@@ -1439,7 +1439,7 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          threat-radar report generate scan-*.json \
+          tr report generate scan-*.json \
             -o weekly-report.html \
             -f html \
             --level detailed \
@@ -1449,7 +1449,7 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          threat-radar report generate scan-*.json \
+          tr report generate scan-*.json \
             -o executive-summary.md \
             -f markdown \
             --level executive \
@@ -1457,7 +1457,7 @@ jobs:
 
       - name: Export dashboard data
         run: |
-          threat-radar report dashboard-export scan-*.json \
+          tr report dashboard-export scan-*.json \
             -o dashboard-metrics.json
 
       - name: Upload reports to S3
@@ -1517,7 +1517,7 @@ pipeline {
 
                     images.each { image ->
                         sh """
-                            threat-radar cve scan-image ${image} \
+                            tr cve scan-image ${image} \
                                 --auto-save \
                                 -o scan-${image.replaceAll(':', '-')}.json
                         """
@@ -1531,7 +1531,7 @@ pipeline {
                 stage('Technical Report') {
                     steps {
                         sh '''
-                            threat-radar report generate scan-*.json \
+                            tr report generate scan-*.json \
                                 -o technical-report.html \
                                 -f html \
                                 --level detailed
@@ -1542,7 +1542,7 @@ pipeline {
                 stage('Executive Report') {
                     steps {
                         sh '''
-                            threat-radar report generate scan-*.json \
+                            tr report generate scan-*.json \
                                 -o executive-report.md \
                                 -f markdown \
                                 --level executive \
@@ -1554,7 +1554,7 @@ pipeline {
                 stage('Dashboard Export') {
                     steps {
                         sh '''
-                            threat-radar report dashboard-export scan-*.json \
+                            tr report dashboard-export scan-*.json \
                                 -o dashboard-data.json
                         '''
                     }
@@ -1745,10 +1745,10 @@ Track vulnerability changes over time:
 
 ```bash
 # Compare two scan results
-threat-radar report compare old-scan.json new-scan.json
+tr report compare old-scan.json new-scan.json
 
 # Save comparison report
-threat-radar report compare baseline.json current.json -o comparison.json
+tr report compare baseline.json current.json -o comparison.json
 ```
 
 **Comparison shows:**
@@ -1770,17 +1770,17 @@ WEEK=$(date +%Y-W%U)
 IMAGE="myapp:production"
 
 # 1. Scan production Docker image
-threat-radar cve scan-image $IMAGE --auto-save -o scan-${WEEK}.json
+tr cve scan-image $IMAGE --auto-save -o scan-${WEEK}.json
 
 # 2. Build vulnerability graph
-threat-radar graph build scan-${WEEK}.json --auto-save -o graph-${WEEK}.graphml
+tr graph build scan-${WEEK}.json --auto-save -o graph-${WEEK}.graphml
 
 # 3. Discover attack paths
-threat-radar graph attack-paths graph-${WEEK}.graphml \
+tr graph attack-paths graph-${WEEK}.graphml \
   --max-paths 30 -o attack-paths-${WEEK}.json
 
 # 4. Generate comprehensive HTML report for security team with attack paths
-threat-radar report generate scan-${WEEK}.json \
+tr report generate scan-${WEEK}.json \
   -o reports/detailed-${WEEK}.html \
   -f html \
   --level detailed \
@@ -1788,7 +1788,7 @@ threat-radar report generate scan-${WEEK}.json \
   --ai-provider openai
 
 # 5. Generate executive PDF summary for leadership meeting
-threat-radar report generate scan-${WEEK}.json \
+tr report generate scan-${WEEK}.json \
   -o reports/exec-${WEEK}.pdf \
   -f pdf \
   --level executive \
@@ -1796,12 +1796,12 @@ threat-radar report generate scan-${WEEK}.json \
   --ai-provider openai
 
 # 6. Export dashboard data for Grafana monitoring
-threat-radar report dashboard-export scan-${WEEK}.json \
+tr report dashboard-export scan-${WEEK}.json \
   -o dashboards/metrics-${WEEK}.json
 
 # 7. Compare with last week's scan
 if [ -f "scan-${LAST_WEEK}.json" ]; then
-  threat-radar report compare \
+  tr report compare \
     scan-${LAST_WEEK}.json \
     scan-${WEEK}.json \
     -o reports/trend-${WEEK}.json
@@ -1847,14 +1847,14 @@ jobs:
 
       - name: Scan for vulnerabilities
         run: |
-          threat-radar cve scan-image app:${{ github.sha }} \
+          tr cve scan-image app:${{ github.sha }} \
             -o scan-results.json \
             --auto-save \
             --cleanup
 
       - name: Generate critical-only report
         run: |
-          threat-radar report generate scan-results.json \
+          tr report generate scan-results.json \
             -o critical-report.json \
             --level critical-only
 
@@ -1874,18 +1874,18 @@ jobs:
 
       - name: Build vulnerability graph
         run: |
-          threat-radar graph build scan-results.json \
+          tr graph build scan-results.json \
             --auto-save -o vuln-graph.graphml
 
       - name: Discover attack paths
         run: |
-          threat-radar graph attack-paths vuln-graph.graphml \
+          tr graph attack-paths vuln-graph.graphml \
             --max-paths 20 -o attack-paths.json
 
       - name: Generate PR comment report with attack paths
         if: github.event_name == 'pull_request'
         run: |
-          threat-radar report generate scan-results.json \
+          tr report generate scan-results.json \
             -o pr-report.md \
             -f markdown \
             --level summary \
@@ -1899,7 +1899,7 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          threat-radar report generate scan-results.json \
+          tr report generate scan-results.json \
             -o executive-report.pdf \
             -f pdf \
             --level executive \
@@ -1941,19 +1941,19 @@ for IMAGE in "${IMAGES[@]}"; do
   SAFE_NAME="${IMAGE//:/─}"
 
   # Scan for vulnerabilities
-  threat-radar cve scan-image $IMAGE \
+  tr cve scan-image $IMAGE \
     -o "compliance/${SAFE_NAME}-${QUARTER}.json" \
     --auto-save
 
   # Build graph and find attack paths
-  threat-radar graph build "compliance/${SAFE_NAME}-${QUARTER}.json" \
+  tr graph build "compliance/${SAFE_NAME}-${QUARTER}.json" \
     -o "compliance/${SAFE_NAME}-graph.graphml"
 
-  threat-radar graph attack-paths "compliance/${SAFE_NAME}-graph.graphml" \
+  tr graph attack-paths "compliance/${SAFE_NAME}-graph.graphml" \
     --max-paths 30 -o "compliance/${SAFE_NAME}-paths.json"
 
   # Generate detailed HTML report with attack paths
-  threat-radar report generate \
+  tr report generate \
     "compliance/${SAFE_NAME}-${QUARTER}.json" \
     -o "compliance/${SAFE_NAME}-${QUARTER}.html" \
     -f html \
@@ -1962,7 +1962,7 @@ for IMAGE in "${IMAGES[@]}"; do
     --ai-provider openai
 
   # Generate executive PDF for auditors
-  threat-radar report generate \
+  tr report generate \
     "compliance/${SAFE_NAME}-${QUARTER}.json" \
     -o "compliance/${SAFE_NAME}-${QUARTER}.pdf" \
     -f pdf \
@@ -2121,21 +2121,21 @@ Threat Radar supports multiple export formats for reports and visualizations:
 
 ```bash
 # Export as JSON (default) - Best for automation
-threat-radar report generate scan.json -o report.json -f json
+tr report generate scan.json -o report.json -f json
 
 # Export as Markdown - Best for documentation
-threat-radar report generate scan.json -o report.md -f markdown
+tr report generate scan.json -o report.md -f markdown
 
 # Export as HTML - Best for presentations
-threat-radar report generate scan.json -o report.html -f html
+tr report generate scan.json -o report.html -f html
 
 # Export as PDF - Best for executives and printing
-threat-radar report generate scan.json -o report.pdf -f pdf
+tr report generate scan.json -o report.pdf -f pdf
 
 # Auto-detect format from file extension
-threat-radar report generate scan.json -o report.html  # Automatically uses HTML
-threat-radar report generate scan.json -o report.md    # Automatically uses Markdown
-threat-radar report generate scan.json -o report.pdf   # Automatically uses PDF
+tr report generate scan.json -o report.html  # Automatically uses HTML
+tr report generate scan.json -o report.md    # Automatically uses Markdown
+tr report generate scan.json -o report.pdf   # Automatically uses PDF
 ```
 
 **Note:** PDF export requires weasyprint:
@@ -2143,7 +2143,7 @@ threat-radar report generate scan.json -o report.pdf   # Automatically uses PDF
 # Install weasyprint for PDF export
 pip install weasyprint
 
-# Or install threat-radar with PDF support
+# Or install tr with PDF support
 pip install threat-radar[pdf]
 ```
 
@@ -2153,7 +2153,7 @@ Dashboard data is exported in JSON format optimized for visualization tools:
 
 ```bash
 # Export dashboard data for Grafana
-threat-radar report dashboard-export scan.json -o dashboard.json
+tr report dashboard-export scan.json -o dashboard.json
 
 # Dashboard data structure includes:
 # - Summary cards (total vulnerabilities, critical count, CVSS scores)
@@ -2168,14 +2168,14 @@ threat-radar report dashboard-export scan.json -o dashboard.json
 
 ```bash
 # Export for Grafana dashboard
-threat-radar report dashboard-export scan.json -o /var/grafana/data/security-metrics.json
+tr report dashboard-export scan.json -o /var/grafana/data/security-metrics.json
 
 # Export for custom web dashboard
-threat-radar report dashboard-export scan.json | \
+tr report dashboard-export scan.json | \
   curl -X POST https://dashboard.company.com/api/metrics -d @-
 
 # Export for Splunk/ELK
-threat-radar report generate scan.json -f json | \
+tr report generate scan.json -f json | \
   curl -X POST https://splunk.company.com:8088/services/collector -d @-
 ```
 
@@ -2196,16 +2196,16 @@ Graph visualizations support multiple export formats via the `visualize export` 
 
 ```bash
 # Export graph visualization as HTML
-threat-radar visualize export graph.graphml -o viz.html --format html
+tr visualize export graph.graphml -o viz.html --format html
 
 # Export as high-resolution PNG
-threat-radar visualize export graph.graphml -o viz.png --format png
+tr visualize export graph.graphml -o viz.png --format png
 
 # Export as PDF for reports
-threat-radar visualize export graph.graphml -o viz.pdf --format pdf
+tr visualize export graph.graphml -o viz.pdf --format pdf
 
 # Export multiple formats at once
-threat-radar visualize export graph.graphml -o viz \
+tr visualize export graph.graphml -o viz \
   --format html --format png --format pdf
 ```
 
@@ -2225,28 +2225,28 @@ echo "Generating complete security report suite for $TARGET..."
 
 # 1. Scan for vulnerabilities
 echo "Step 1: Scanning for vulnerabilities..."
-threat-radar cve scan-image $TARGET --auto-save -o scan.json
+tr cve scan-image $TARGET --auto-save -o scan.json
 
 # 2. Build graph and analyze attack paths
 echo "Step 2: Building vulnerability graph..."
-threat-radar graph build scan.json --auto-save -o graph.graphml
+tr graph build scan.json --auto-save -o graph.graphml
 
 echo "Step 3: Discovering attack paths..."
-threat-radar graph attack-paths graph.graphml \
+tr graph attack-paths graph.graphml \
   --max-paths 30 -o attack-paths.json
 
 # 3. Export reports in all formats with attack paths
 echo "Step 4: Generating reports in all formats..."
 
 # JSON - For automation
-threat-radar report generate scan.json \
+tr report generate scan.json \
   -o $REPORT_DIR/detailed-report.json \
   -f json \
   --level detailed \
   --attack-paths attack-paths.json
 
 # Markdown - For documentation
-threat-radar report generate scan.json \
+tr report generate scan.json \
   -o $REPORT_DIR/executive-summary.md \
   -f markdown \
   --level executive \
@@ -2254,14 +2254,14 @@ threat-radar report generate scan.json \
   --ai-provider openai
 
 # HTML - For presentations
-threat-radar report generate scan.json \
+tr report generate scan.json \
   -o $REPORT_DIR/technical-report.html \
   -f html \
   --level detailed \
   --attack-paths attack-paths.json
 
 # PDF - For executives and printing
-threat-radar report generate scan.json \
+tr report generate scan.json \
   -o $REPORT_DIR/executive-report.pdf \
   -f pdf \
   --level executive \
@@ -2270,16 +2270,16 @@ threat-radar report generate scan.json \
 
 # 4. Export dashboard data
 echo "Step 5: Exporting dashboard data..."
-threat-radar report dashboard-export scan.json \
+tr report dashboard-export scan.json \
   -o $REPORT_DIR/dashboard-data.json
 
 # 5. Export visualizations
 echo "Step 6: Creating visualizations..."
-threat-radar visualize export graph.graphml \
+tr visualize export graph.graphml \
   -o $REPORT_DIR/graph-viz \
   --format html --format png --format pdf
 
-threat-radar visualize attack-paths graph.graphml \
+tr visualize attack-paths graph.graphml \
   -o $REPORT_DIR/attack-paths-viz.html \
   --paths attack-paths.json
 
@@ -2306,15 +2306,15 @@ echo "Archive: security-report-${DATE}.tar.gz"
 
 ```bash
 # Upload to AWS S3
-threat-radar report generate scan.json -o report.html -f html
+tr report generate scan.json -o report.html -f html
 aws s3 cp report.html s3://security-reports/$(date +%Y/%m/%d)/
 
 # Upload to Google Cloud Storage
-threat-radar report generate scan.json -o report.json -f json
+tr report generate scan.json -o report.json -f json
 gsutil cp report.json gs://security-reports/$(date +%Y/%m/%d)/
 
 # Upload to Azure Blob Storage
-threat-radar report generate scan.json -o report.md -f markdown
+tr report generate scan.json -o report.md -f markdown
 az storage blob upload \
   --container-name security-reports \
   --name $(date +%Y/%m/%d)/report.md \
@@ -2447,19 +2447,19 @@ if __name__ == "__main__":
 
 ```bash
 # Import and analyze an image
-threat-radar docker import-image alpine:3.18 -o analysis.json
+tr docker import-image alpine:3.18 -o analysis.json
 
 # Scan existing local image
-threat-radar docker scan ubuntu:22.04
+tr docker scan ubuntu:22.04
 
 # List all local Docker images
-threat-radar docker list-images
+tr docker list-images
 
 # List packages in an image
-threat-radar docker packages alpine:3.18 --limit 20 --filter openssl
+tr docker packages alpine:3.18 --limit 20 --filter openssl
 
 # Generate Python SBOM
-threat-radar docker python-sbom python:3.11 -o sbom.json --format cyclonedx
+tr docker python-sbom python:3.11 -o sbom.json --format cyclonedx
 ```
 
 ## Graph Commands Reference
@@ -2479,49 +2479,49 @@ The graph database integration provides relationship-based vulnerability analysi
 
 ```bash
 # Build graph from CVE scan results
-threat-radar graph build scan-results.json -o vulnerability-graph.graphml
+tr graph build scan-results.json -o vulnerability-graph.graphml
 
 # Auto-save to storage/graph_storage/
-threat-radar graph build scan-results.json --auto-save
+tr graph build scan-results.json --auto-save
 
 # Example workflow: Scan and build graph
-threat-radar cve scan-image alpine:3.18 --auto-save -o scan.json
-threat-radar graph build scan.json --auto-save
+tr cve scan-image alpine:3.18 --auto-save -o scan.json
+tr graph build scan.json --auto-save
 ```
 
 ### Graph Querying
 
 ```bash
 # Find containers affected by a CVE (blast radius)
-threat-radar graph query graph.graphml --cve CVE-2023-1234
+tr graph query graph.graphml --cve CVE-2023-1234
 
 # Show top 10 most vulnerable packages
-threat-radar graph query graph.graphml --top-packages 10
+tr graph query graph.graphml --top-packages 10
 
 # Display vulnerability statistics
-threat-radar graph query graph.graphml --stats
+tr graph query graph.graphml --stats
 
 # Combined query
-threat-radar graph query graph.graphml --cve CVE-2023-1234 --stats
+tr graph query graph.graphml --cve CVE-2023-1234 --stats
 ```
 
 ### Graph Management
 
 ```bash
 # List all stored graphs
-threat-radar graph list
-threat-radar graph list --limit 10
+tr graph list
+tr graph list --limit 10
 
 # Show detailed graph information
-threat-radar graph info graph.graphml
+tr graph info graph.graphml
 
 # Find vulnerabilities with available fixes
-threat-radar graph fixes graph.graphml
-threat-radar graph fixes graph.graphml --severity critical
+tr graph fixes graph.graphml
+tr graph fixes graph.graphml --severity critical
 
 # Clean up old graphs
-threat-radar graph cleanup --days 30
-threat-radar graph cleanup --days 30 --force
+tr graph cleanup --days 30
+tr graph cleanup --days 30 --force
 ```
 
 ### Graph Architecture
@@ -2563,24 +2563,24 @@ du -sh storage/graph_storage/
 
 ```bash
 # 1. Scan multiple images
-threat-radar cve scan-image alpine:3.18 --auto-save -o alpine-scan.json
-threat-radar cve scan-image python:3.11 --auto-save -o python-scan.json
-threat-radar cve scan-image nginx:alpine --auto-save -o nginx-scan.json
+tr cve scan-image alpine:3.18 --auto-save -o alpine-scan.json
+tr cve scan-image python:3.11 --auto-save -o python-scan.json
+tr cve scan-image nginx:alpine --auto-save -o nginx-scan.json
 
 # 2. Build graphs
-threat-radar graph build alpine-scan.json --auto-save
-threat-radar graph build python-scan.json --auto-save
-threat-radar graph build nginx-scan.json --auto-save
+tr graph build alpine-scan.json --auto-save
+tr graph build python-scan.json --auto-save
+tr graph build nginx-scan.json --auto-save
 
 # 3. Analyze vulnerability landscape
-threat-radar graph list
-threat-radar graph query latest-graph.graphml --stats
+tr graph list
+tr graph query latest-graph.graphml --stats
 
 # 4. Find critical CVE impact
-threat-radar graph query latest-graph.graphml --cve CVE-2023-XXXX
+tr graph query latest-graph.graphml --cve CVE-2023-XXXX
 
 # 5. Identify fix candidates
-threat-radar graph fixes latest-graph.graphml --severity critical
+tr graph fixes latest-graph.graphml --severity critical
 
 # 6. Export for custom dashboards
 # Graphs are in GraphML format, compatible with:
@@ -2623,9 +2623,9 @@ storage.save_graph(client, "my-analysis")
 **1. Vulnerability Trend Analysis**
 ```bash
 # Build graphs over time
-threat-radar graph build scan-week1.json -o week1.graphml
-threat-radar graph build scan-week2.json -o week2.graphml
-threat-radar graph build scan-week3.json -o week3.graphml
+tr graph build scan-week1.json -o week1.graphml
+tr graph build scan-week2.json -o week2.graphml
+tr graph build scan-week3.json -o week3.graphml
 
 # Compare graphs programmatically to track improvements
 ```
@@ -2634,8 +2634,8 @@ threat-radar graph build scan-week3.json -o week3.graphml
 ```bash
 # Scan entire stack
 for image in frontend:latest backend:latest api:latest; do
-  threat-radar cve scan-image $image --auto-save -o ${image//:/─}-scan.json
-  threat-radar graph build ${image//:/─}-scan.json --auto-save
+  tr cve scan-image $image --auto-save -o ${image//:/─}-scan.json
+  tr graph build ${image//:/─}-scan.json --auto-save
 done
 
 # Analyze shared vulnerabilities across containers
@@ -2644,9 +2644,9 @@ done
 **3. CI/CD Integration**
 ```bash
 # Pipeline: Fail if critical vulnerabilities found
-threat-radar cve scan-image $IMAGE --auto-save -o scan.json
-threat-radar graph build scan.json -o graph.graphml
-threat-radar graph fixes graph.graphml --severity critical > critical-fixes.txt
+tr cve scan-image $IMAGE --auto-save -o scan.json
+tr graph build scan.json -o graph.graphml
+tr graph fixes graph.graphml --severity critical > critical-fixes.txt
 
 if [ -s critical-fixes.txt ]; then
   echo "CRITICAL vulnerabilities found!"
@@ -2664,10 +2664,10 @@ Discover shortest attack paths from entry points to high-value targets:
 
 ```bash
 # Find attack paths in a graph
-threat-radar graph attack-paths graph.graphml
+tr graph attack-paths graph.graphml
 
 # Limit number of paths and save to JSON
-threat-radar graph attack-paths graph.graphml \
+tr graph attack-paths graph.graphml \
   --max-paths 20 \
   --max-length 10 \
   -o attack-paths.json
@@ -2692,10 +2692,10 @@ Identify opportunities for attackers to escalate privileges:
 
 ```bash
 # Find privilege escalation paths
-threat-radar graph privilege-escalation graph.graphml
+tr graph privilege-escalation graph.graphml
 
 # Limit results and save output
-threat-radar graph privilege-escalation graph.graphml \
+tr graph privilege-escalation graph.graphml \
   --max-paths 20 \
   -o privilege-escalation.json
 
@@ -2718,10 +2718,10 @@ Find lateral movement opportunities within the infrastructure:
 
 ```bash
 # Identify lateral movement opportunities
-threat-radar graph lateral-movement graph.graphml
+tr graph lateral-movement graph.graphml
 
 # Customize search parameters
-threat-radar graph lateral-movement graph.graphml \
+tr graph lateral-movement graph.graphml \
   --max-opportunities 30 \
   -o lateral-movement.json
 
@@ -2744,10 +2744,10 @@ Combine all attack path analysis into a complete security assessment:
 
 ```bash
 # Full attack surface analysis
-threat-radar graph attack-surface graph.graphml
+tr graph attack-surface graph.graphml
 
 # Comprehensive analysis with custom limits
-threat-radar graph attack-surface graph.graphml \
+tr graph attack-surface graph.graphml \
   --max-paths 50 \
   -o attack-surface.json
 
@@ -2775,27 +2775,27 @@ threat-radar graph attack-surface graph.graphml \
 # complete-attack-analysis.sh
 
 # 1. Build environment graph with vulnerability data
-threat-radar env build-graph production-env.json \
+tr env build-graph production-env.json \
   --merge-scan scan-results-1.json \
   --merge-scan scan-results-2.json \
   -o complete-graph.graphml
 
 # 2. Analyze all attack vectors
-threat-radar graph attack-surface complete-graph.graphml \
+tr graph attack-surface complete-graph.graphml \
   -o attack-surface.json
 
 # 3. Find critical attack paths
-threat-radar graph attack-paths complete-graph.graphml \
+tr graph attack-paths complete-graph.graphml \
   --max-paths 50 \
   -o critical-paths.json
 
 # 4. Detect privilege escalation opportunities
-threat-radar graph privilege-escalation complete-graph.graphml \
+tr graph privilege-escalation complete-graph.graphml \
   --max-paths 20 \
   -o privesc.json
 
 # 5. Identify lateral movement risks
-threat-radar graph lateral-movement complete-graph.graphml \
+tr graph lateral-movement complete-graph.graphml \
   --max-opportunities 30 \
   -o lateral.json
 
@@ -2814,7 +2814,7 @@ jq -r '.recommendations[]' attack-surface.json
 GRAPH="production-graph.graphml"
 
 # Find all critical-severity attack paths
-threat-radar graph attack-paths $GRAPH -o paths.json
+tr graph attack-paths $GRAPH -o paths.json
 
 # Extract critical paths
 CRITICAL=$(jq -r '.attack_paths[] | select(.threat_level=="critical") | .path_id' paths.json)
@@ -2849,9 +2849,9 @@ BASELINE="baseline-attack-surface.json"
 CURRENT="current-attack-surface.json"
 
 # Scan current state
-threat-radar cve scan-image production:latest --auto-save -o scan.json
-threat-radar graph build scan.json -o graph.graphml
-threat-radar graph attack-surface graph.graphml -o $CURRENT
+tr cve scan-image production:latest --auto-save -o scan.json
+tr graph build scan.json -o graph.graphml
+tr graph attack-surface graph.graphml -o $CURRENT
 
 # Compare with baseline
 BASELINE_RISK=$(jq -r '.total_risk_score' $BASELINE)
@@ -2894,13 +2894,13 @@ Attack path analysis integrates with environment configuration for business-awar
 ENV_FILE="production-environment.json"
 
 # 1. Build graph with environment context
-threat-radar env build-graph $ENV_FILE \
+tr env build-graph $ENV_FILE \
   --merge-scan scan1.json \
   --merge-scan scan2.json \
   -o context-graph.graphml
 
 # 2. Find attack paths to critical business assets
-threat-radar graph attack-paths context-graph.graphml -o paths.json
+tr graph attack-paths context-graph.graphml -o paths.json
 
 # 3. Filter paths targeting PCI-scoped assets
 jq '.attack_paths[] | select(.target | contains("asset-payment"))' paths.json \
@@ -3106,13 +3106,13 @@ Validate environment configuration file syntax and schema:
 
 ```bash
 # Validate configuration file
-threat-radar env validate my-environment.json
+tr env validate my-environment.json
 
 # Show detailed validation errors
-threat-radar env validate my-environment.json --errors
+tr env validate my-environment.json --errors
 
 # Validate and show risk summary
-threat-radar env validate production-env.json
+tr env validate production-env.json
 ```
 
 **Validation checks:**
@@ -3145,13 +3145,13 @@ Build graph database from environment configuration:
 
 ```bash
 # Build graph from environment config
-threat-radar env build-graph my-environment.json -o infrastructure.graphml
+tr env build-graph my-environment.json -o infrastructure.graphml
 
 # Auto-save to storage/graph_storage/
-threat-radar env build-graph production-env.json --auto-save
+tr env build-graph production-env.json --auto-save
 
 # Merge with vulnerability scan results
-threat-radar env build-graph my-environment.json \
+tr env build-graph my-environment.json \
   --merge-scan scan-results-1.json \
   --merge-scan scan-results-2.json \
   --auto-save
@@ -3174,18 +3174,18 @@ threat-radar env build-graph my-environment.json \
 **Use cases:**
 ```bash
 # Build infrastructure topology graph
-threat-radar env build-graph production.json --auto-save
+tr env build-graph production.json --auto-save
 
 # Merge infrastructure with vulnerability scans
-threat-radar cve scan-image payment-api:v2.1.0 -o scan1.json
-threat-radar cve scan-image frontend:latest -o scan2.json
-threat-radar env build-graph production.json \
+tr cve scan-image payment-api:v2.1.0 -o scan1.json
+tr cve scan-image frontend:latest -o scan2.json
+tr env build-graph production.json \
   --merge-scan scan1.json \
   --merge-scan scan2.json \
   -o complete-risk-graph.graphml
 
 # Query merged graph for business-context-aware analysis
-threat-radar graph query complete-risk-graph.graphml --stats
+tr graph query complete-risk-graph.graphml --stats
 ```
 
 #### Analyze Risk with Business Context
@@ -3194,18 +3194,18 @@ Perform AI-powered risk analysis incorporating business context:
 
 ```bash
 # Analyze vulnerabilities with business context
-threat-radar env analyze-risk my-environment.json scan-results.json
+tr env analyze-risk my-environment.json scan-results.json
 
 # Use specific AI provider
-threat-radar env analyze-risk production.json scan.json \
+tr env analyze-risk production.json scan.json \
   --ai-provider anthropic \
   --ai-model claude-3-5-sonnet-20241022
 
 # Save analysis results
-threat-radar env analyze-risk env.json scan.json -o risk-analysis.json
+tr env analyze-risk env.json scan.json -o risk-analysis.json
 
 # Auto-save to storage/ai_analysis/
-threat-radar env analyze-risk production.json scan.json --auto-save
+tr env analyze-risk production.json scan.json --auto-save
 ```
 
 **Business context-aware analysis includes:**
@@ -3274,7 +3274,7 @@ ENV_FILE="production-environment.json"
 
 # 1. Validate environment configuration
 echo "Validating environment configuration..."
-threat-radar env validate $ENV_FILE
+tr env validate $ENV_FILE
 
 # 2. Scan all assets for vulnerabilities
 echo "Scanning assets..."
@@ -3282,23 +3282,23 @@ SCANS=()
 for asset in $(jq -r '.assets[].software.image' $ENV_FILE | grep -v null); do
   echo "  Scanning $asset..."
   scan_file="scan-${asset//[:\/]/_}.json"
-  threat-radar cve scan-image $asset --auto-save -o $scan_file
+  tr cve scan-image $asset --auto-save -o $scan_file
   SCANS+=("--merge-scan $scan_file")
 done
 
 # 3. Build infrastructure graph with vulnerabilities
 echo "Building infrastructure graph..."
-threat-radar env build-graph $ENV_FILE ${SCANS[@]} --auto-save
+tr env build-graph $ENV_FILE ${SCANS[@]} --auto-save
 
 # 4. Perform business context-aware risk analysis
 echo "Analyzing risk with business context..."
 for scan in scan-*.json; do
-  threat-radar env analyze-risk $ENV_FILE $scan --auto-save
+  tr env analyze-risk $ENV_FILE $scan --auto-save
 done
 
 # 5. Generate executive report
 echo "Generating executive report..."
-threat-radar report generate scan-*.json \
+tr report generate scan-*.json \
   -o executive-risk-report.html \
   -f html \
   --level executive \
@@ -3330,17 +3330,17 @@ jobs:
 
       - name: Scan for Vulnerabilities
         run: |
-          threat-radar cve scan-image app:${{ github.sha }} \
+          tr cve scan-image app:${{ github.sha }} \
             --auto-save -o scan.json
 
       - name: Validate Environment Config
-        run: threat-radar env validate .threat-radar/production-env.json
+        run: tr env validate .threat-radar/production-env.json
 
       - name: Analyze with Business Context
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          threat-radar env analyze-risk \
+          tr env analyze-risk \
             .threat-radar/production-env.json \
             scan.json \
             -o risk-analysis.json
@@ -3371,19 +3371,19 @@ jq -r '.assets[] | select(.business_context.pci_scope == true) | .software.image
 while read -r image; do
   if [ -n "$image" ]; then
     echo "  Scanning $image..."
-    threat-radar cve scan-image $image --auto-save
+    tr cve scan-image $image --auto-save
   fi
 done
 
 # Build infrastructure graph with scans
 echo "Building compliance risk graph..."
-threat-radar env build-graph $ENV_FILE \
+tr env build-graph $ENV_FILE \
   --merge-scan storage/cve_storage/*.json \
   -o compliance-risk-${QUARTER}.graphml
 
 # Generate compliance report
 echo "Generating compliance report..."
-threat-radar env analyze-risk $ENV_FILE storage/cve_storage/*.json \
+tr env analyze-risk $ENV_FILE storage/cve_storage/*.json \
   -o compliance-report-${QUARTER}.json \
   --ai-provider openai
 
@@ -3749,28 +3749,28 @@ Create interactive vulnerability graph visualizations:
 
 ```bash
 # Create basic interactive graph
-threat-radar visualize graph graph.graphml -o visualization.html
+tr visualize graph graph.graphml -o visualization.html
 
 # Open visualization in browser automatically
-threat-radar visualize graph graph.graphml -o viz.html --open
+tr visualize graph graph.graphml -o viz.html --open
 
 # Use different layout algorithm
-threat-radar visualize graph graph.graphml -o viz.html \
+tr visualize graph graph.graphml -o viz.html \
   --layout hierarchical
 
 # Color by severity instead of node type
-threat-radar visualize graph graph.graphml -o viz.html \
+tr visualize graph graph.graphml -o viz.html \
   --color-by severity
 
 # Create 3D visualization
-threat-radar visualize graph graph.graphml -o viz.html --3d
+tr visualize graph graph.graphml -o viz.html --3d
 
 # Custom dimensions
-threat-radar visualize graph graph.graphml -o viz.html \
+tr visualize graph graph.graphml -o viz.html \
   --width 1600 --height 1000
 
 # Hide node labels for cleaner view
-threat-radar visualize graph graph.graphml -o viz.html --no-labels
+tr visualize graph graph.graphml -o viz.html --no-labels
 ```
 
 **Layout algorithms:**
@@ -3790,22 +3790,22 @@ Visualize attack paths with highlighted routes:
 
 ```bash
 # Visualize attack paths from graph analysis
-threat-radar visualize attack-paths graph.graphml -o attack-paths.html
+tr visualize attack-paths graph.graphml -o attack-paths.html
 
 # Use pre-calculated attack paths JSON
-threat-radar visualize attack-paths graph.graphml -o paths.html \
+tr visualize attack-paths graph.graphml -o paths.html \
   --paths attack-paths.json
 
 # Show only top 10 most critical paths
-threat-radar visualize attack-paths graph.graphml -o paths.html \
+tr visualize attack-paths graph.graphml -o paths.html \
   --max-paths 10
 
 # Hierarchical layout for clearer attack flows
-threat-radar visualize attack-paths graph.graphml -o paths.html \
+tr visualize attack-paths graph.graphml -o paths.html \
   --layout hierarchical
 
 # Custom dimensions for presentation
-threat-radar visualize attack-paths graph.graphml -o paths.html \
+tr visualize attack-paths graph.graphml -o paths.html \
   --width 1920 --height 1080 --open
 ```
 
@@ -3822,26 +3822,26 @@ Visualize network topology with security context:
 
 ```bash
 # Basic topology visualization
-threat-radar visualize topology graph.graphml -o topology.html
+tr visualize topology graph.graphml -o topology.html
 
 # Security zones view
-threat-radar visualize topology graph.graphml -o zones.html \
+tr visualize topology graph.graphml -o zones.html \
   --view zones
 
 # Compliance scope view
-threat-radar visualize topology graph.graphml -o compliance.html \
+tr visualize topology graph.graphml -o compliance.html \
   --view compliance
 
 # Specific compliance type (PCI-DSS)
-threat-radar visualize topology graph.graphml -o pci.html \
+tr visualize topology graph.graphml -o pci.html \
   --view compliance --compliance pci
 
 # Color by criticality
-threat-radar visualize topology graph.graphml -o topology.html \
+tr visualize topology graph.graphml -o topology.html \
   --color-by criticality
 
 # Color by compliance scope
-threat-radar visualize topology graph.graphml -o topology.html \
+tr visualize topology graph.graphml -o topology.html \
   --color-by compliance
 ```
 
@@ -3861,43 +3861,43 @@ Apply filters to focus on specific graph subsets:
 
 ```bash
 # Filter by severity (show only HIGH+ vulnerabilities)
-threat-radar visualize filter graph.graphml -o filtered.html \
+tr visualize filter graph.graphml -o filtered.html \
   --type severity --value high
 
 # Filter by node type (show only vulnerabilities and packages)
-threat-radar visualize filter graph.graphml -o filtered.html \
+tr visualize filter graph.graphml -o filtered.html \
   --type node_type --values vulnerability package
 
 # Filter by specific CVE
-threat-radar visualize filter graph.graphml -o filtered.html \
+tr visualize filter graph.graphml -o filtered.html \
   --type cve --values CVE-2023-1234 CVE-2023-5678
 
 # Filter by package name
-threat-radar visualize filter graph.graphml -o filtered.html \
+tr visualize filter graph.graphml -o filtered.html \
   --type package --values openssl curl
 
 # Filter by security zone
-threat-radar visualize filter graph.graphml -o filtered.html \
+tr visualize filter graph.graphml -o filtered.html \
   --type zone --values dmz internal
 
 # Filter by criticality
-threat-radar visualize filter graph.graphml -o filtered.html \
+tr visualize filter graph.graphml -o filtered.html \
   --type criticality --value critical
 
 # Filter by compliance scope
-threat-radar visualize filter graph.graphml -o filtered.html \
+tr visualize filter graph.graphml -o filtered.html \
   --type compliance --values pci hipaa
 
 # Filter internet-facing assets only
-threat-radar visualize filter graph.graphml -o filtered.html \
+tr visualize filter graph.graphml -o filtered.html \
   --type internet_facing
 
 # Search for specific terms
-threat-radar visualize filter graph.graphml -o filtered.html \
+tr visualize filter graph.graphml -o filtered.html \
   --type search --value "openssl"
 
 # Exclude related nodes (show only filtered nodes)
-threat-radar visualize filter graph.graphml -o filtered.html \
+tr visualize filter graph.graphml -o filtered.html \
   --type severity --value critical --no-related
 ```
 
@@ -3918,43 +3918,43 @@ Export visualizations to various formats:
 
 ```bash
 # Export as HTML only
-threat-radar visualize export graph.graphml -o viz \
+tr visualize export graph.graphml -o viz \
   --format html
 
 # Export as PNG image
-threat-radar visualize export graph.graphml -o viz \
+tr visualize export graph.graphml -o viz \
   --format png
 
 # Export as high-resolution SVG
-threat-radar visualize export graph.graphml -o viz \
+tr visualize export graph.graphml -o viz \
   --format svg
 
 # Export as PDF for reports
-threat-radar visualize export graph.graphml -o viz \
+tr visualize export graph.graphml -o viz \
   --format pdf
 
 # Export as JSON for web applications
-threat-radar visualize export graph.graphml -o viz \
+tr visualize export graph.graphml -o viz \
   --format json
 
 # Export as DOT for Graphviz
-threat-radar visualize export graph.graphml -o viz \
+tr visualize export graph.graphml -o viz \
   --format dot
 
 # Export as Cytoscape.js format
-threat-radar visualize export graph.graphml -o viz \
+tr visualize export graph.graphml -o viz \
   --format cytoscape
 
 # Export as GEXF for Gephi
-threat-radar visualize export graph.graphml -o viz \
+tr visualize export graph.graphml -o viz \
   --format gexf
 
 # Export multiple formats at once
-threat-radar visualize export graph.graphml -o viz \
+tr visualize export graph.graphml -o viz \
   --format html --format png --format json
 
 # Custom layout for exported visualizations
-threat-radar visualize export graph.graphml -o viz \
+tr visualize export graph.graphml -o viz \
   --format html --format png --layout hierarchical
 ```
 
@@ -3974,7 +3974,7 @@ See available filter values before filtering:
 
 ```bash
 # Show all available filter values
-threat-radar visualize stats graph.graphml
+tr visualize stats graph.graphml
 ```
 
 **Output includes:**
@@ -3997,29 +3997,29 @@ threat-radar visualize stats graph.graphml
 IMAGE="myapp:production"
 
 # 1. Scan image for vulnerabilities
-threat-radar cve scan-image $IMAGE --auto-save -o scan.json
+tr cve scan-image $IMAGE --auto-save -o scan.json
 
 # 2. Build vulnerability graph
-threat-radar graph build scan.json --auto-save -o vuln.graphml
+tr graph build scan.json --auto-save -o vuln.graphml
 
 # 3. Create basic interactive visualization
-threat-radar visualize graph vuln.graphml -o viz-overview.html \
+tr visualize graph vuln.graphml -o viz-overview.html \
   --layout hierarchical --open
 
 # 4. Analyze attack paths
-threat-radar graph attack-paths vuln.graphml \
+tr graph attack-paths vuln.graphml \
   --max-paths 20 -o attack-paths.json
 
 # 5. Visualize attack paths
-threat-radar visualize attack-paths vuln.graphml -o viz-attack-paths.html \
+tr visualize attack-paths vuln.graphml -o viz-attack-paths.html \
   --paths attack-paths.json --max-paths 10
 
 # 6. Create filtered view of critical issues
-threat-radar visualize filter vuln.graphml -o viz-critical.html \
+tr visualize filter vuln.graphml -o viz-critical.html \
   --type severity --value critical
 
 # 7. Export to multiple formats for reporting
-threat-radar visualize export vuln.graphml -o reports/vuln-graph \
+tr visualize export vuln.graphml -o reports/vuln-graph \
   --format html --format png --format pdf
 
 echo "✅ Visualization workflow complete!"
@@ -4038,32 +4038,32 @@ echo "   - Reports: reports/vuln-graph.*"
 ENV_FILE="production-environment.json"
 
 # 1. Build environment graph with vulnerability data
-threat-radar env build-graph $ENV_FILE \
+tr env build-graph $ENV_FILE \
   --merge-scan scan1.json \
   --merge-scan scan2.json \
   --auto-save -o env-graph.graphml
 
 # 2. Create full topology view
-threat-radar visualize topology env-graph.graphml -o topology-full.html \
+tr visualize topology env-graph.graphml -o topology-full.html \
   --view topology --color-by zone
 
 # 3. Create security zones view
-threat-radar visualize topology env-graph.graphml -o topology-zones.html \
+tr visualize topology env-graph.graphml -o topology-zones.html \
   --view zones
 
 # 4. Create compliance scope view (PCI-DSS)
-threat-radar visualize topology env-graph.graphml -o topology-pci.html \
+tr visualize topology env-graph.graphml -o topology-pci.html \
   --view compliance --compliance pci
 
 # 5. Filter to show only internet-facing assets
-threat-radar visualize filter env-graph.graphml -o topology-external.html \
+tr visualize filter env-graph.graphml -o topology-external.html \
   --type internet_facing
 
 # 6. Analyze attack paths in environment
-threat-radar graph attack-paths env-graph.graphml \
+tr graph attack-paths env-graph.graphml \
   --max-paths 50 -o env-attack-paths.json
 
-threat-radar visualize attack-paths env-graph.graphml \
+tr visualize attack-paths env-graph.graphml \
   -o topology-attacks.html --paths env-attack-paths.json
 
 echo "✅ Topology visualization complete!"
@@ -4078,24 +4078,24 @@ echo "✅ Topology visualization complete!"
 GRAPH_FILE="production-graph.graphml"
 
 # Show filter statistics
-threat-radar visualize stats $GRAPH_FILE
+tr visualize stats $GRAPH_FILE
 
 # Create PCI-DSS compliance view
-threat-radar visualize topology $GRAPH_FILE -o compliance-pci.html \
+tr visualize topology $GRAPH_FILE -o compliance-pci.html \
   --view compliance --compliance pci
 
-threat-radar visualize filter $GRAPH_FILE -o compliance-pci-critical.html \
+tr visualize filter $GRAPH_FILE -o compliance-pci-critical.html \
   --type compliance --values pci \
-  | threat-radar visualize filter - -o compliance-pci-critical.html \
+  | tr visualize filter - -o compliance-pci-critical.html \
     --type severity --value critical
 
 # Create HIPAA compliance view
-threat-radar visualize topology $GRAPH_FILE -o compliance-hipaa.html \
+tr visualize topology $GRAPH_FILE -o compliance-hipaa.html \
   --view compliance --compliance hipaa
 
 # Export compliance reports
 for compliance in pci hipaa sox gdpr; do
-  threat-radar visualize export $GRAPH_FILE \
+  tr visualize export $GRAPH_FILE \
     -o reports/compliance-${compliance} \
     --format html --format pdf
 done
@@ -4246,15 +4246,15 @@ For graphs with thousands of nodes:
 
 ```bash
 # Use filtering to reduce graph size
-threat-radar visualize filter graph.graphml -o filtered.html \
+tr visualize filter graph.graphml -o filtered.html \
   --type severity --value high --no-related
 
 # Or use simpler layout algorithms
-threat-radar visualize graph graph.graphml -o viz.html \
+tr visualize graph graph.graphml -o viz.html \
   --layout circular --no-labels
 
 # Export as JSON for custom web rendering
-threat-radar visualize export graph.graphml -o data.json \
+tr visualize export graph.graphml -o data.json \
   --format json
 ```
 

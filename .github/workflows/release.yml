@@ -51,8 +51,8 @@ jobs:
           
           ### Verify
           ```bash
-          threat-radar --version
-          threat-radar --help
+          tr --version
+          tr --help
           ```
         draft: false
         prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') || contains(github.ref, 'rc') }}

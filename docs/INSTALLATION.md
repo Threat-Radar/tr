@@ -298,8 +298,8 @@ open -a Docker
 pip3 install threat-radar
 
 # 5. Verify installation
-threat-radar --version
-threat-radar --help
+tr --version
+tr --help
 ```
 
 ### Complete Setup on Ubuntu 22.04
@@ -324,8 +324,8 @@ curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -
 pip3 install threat-radar
 
 # 7. Verify installation
-threat-radar --version
-threat-radar --help
+tr --version
+tr --help
 ```
 
 ### Complete Setup on Windows 10/11
@@ -348,8 +348,8 @@ scoop install grype syft
 pip install threat-radar
 
 # 6. Verify installation
-threat-radar --version
-threat-radar --help
+tr --version
+tr --help
 ```
 
 ---
@@ -391,8 +391,8 @@ LOCAL_MODEL_ENDPOINT=http://localhost:11434
 Update Grype's vulnerability database:
 
 ```bash
-threat-radar cve db-update
-threat-radar cve db-status
+tr cve db-update
+tr cve db-status
 ```
 
 ### 3. Ollama Setup (for local AI)
@@ -423,34 +423,34 @@ ollama list
 
 ```bash
 # Check CLI is accessible
-threat-radar --version
-tradar --version  # Shortened alias
+tr --version
+tr --version  # Shortened alias
 
 # View help
-threat-radar --help
-threat-radar cve --help
-threat-radar ai --help
+tr --help
+tr cve --help
+tr ai --help
 ```
 
 ### Test Basic Functionality
 
 ```bash
 # Test CVE scanning
-threat-radar cve scan-image alpine:3.18
+tr cve scan-image alpine:3.18
 
 # Test SBOM generation
-threat-radar sbom docker alpine:3.18 -o test-sbom.json
+tr sbom docker alpine:3.18 -o test-sbom.json
 
 # Test Docker integration
-threat-radar docker list-images
+tr docker list-images
 ```
 
 ### Test AI Features (if configured)
 
 ```bash
 # Scan and analyze
-threat-radar cve scan-image alpine:3.18 -o scan.json
-threat-radar ai analyze scan.json
+tr cve scan-image alpine:3.18 -o scan.json
+tr ai analyze scan.json
 ```
 
 ### Run Test Suite (for development installations)
@@ -475,7 +475,7 @@ pytest tests/test_ai_integration.py -v
 **Solution:**
 ```bash
 # Ensure pip installation directory is in PATH
-python3 -m pip show threat-radar  # Check install location
+python3 -m pip show tr  # Check install location
 
 # Add to PATH (Linux/macOS)
 export PATH="$HOME/.local/bin:$PATH"
@@ -579,7 +579,7 @@ brew upgrade syft  # macOS
 # Or reinstall: curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh
 
 # Update vulnerability database
-threat-radar cve db-update
+tr cve db-update
 ```
 
 ---
@@ -632,6 +632,6 @@ docker image prune -a
 
 Next steps:
 1. Configure your API keys in `.env` (if using AI features)
-2. Update Grype database: `threat-radar cve db-update`
-3. Run your first scan: `threat-radar cve scan-image alpine:3.18`
+2. Update Grype database: `tr cve db-update`
+3. Run your first scan: `tr cve scan-image alpine:3.18`
 4. Explore examples: `cd examples && ls`

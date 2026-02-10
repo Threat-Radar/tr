@@ -325,14 +325,14 @@ terraform show -json | jq '{
 
 ```bash
 # Extract from K8s cluster
-kubectl get all -o json | threat-radar env convert-k8s > environment.json
+kubectl get all -o json | tr env convert-k8s > environment.json
 ```
 
 ### From Docker Compose
 
 ```bash
 # Convert docker-compose.yml
-threat-radar env convert-compose docker-compose.yml > environment.json
+tr env convert-compose docker-compose.yml > environment.json
 ```
 
 ### From CMDB/Asset Inventory
@@ -420,8 +420,8 @@ Auto-generate environment files:
 # .github/workflows/update-environment.yml
 - name: Generate Environment Config
   run: |
-    threat-radar env generate-from-terraform > environment.json
-    threat-radar env validate environment.json
+    tr env generate-from-terraform > environment.json
+    tr env validate environment.json
 ```
 
 ## Roadmap

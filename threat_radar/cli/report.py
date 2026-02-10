@@ -113,19 +113,19 @@ def generate_report(
 
     Examples:
         # Generate detailed report with AI summary
-        threat-radar report generate scan-results.json -o report.html -f html
+        tr report generate scan-results.json -o report.html -f html
 
         # Executive summary in Markdown
-        threat-radar report generate scan-results.json -o summary.md -f markdown --level executive
+        tr report generate scan-results.json -o summary.md -f markdown --level executive
 
         # Critical-only issues in JSON
-        threat-radar report generate scan-results.json -o critical.json --level critical-only
+        tr report generate scan-results.json -o critical.json --level critical-only
 
         # Report with attack path analysis
-        threat-radar report generate scan.json -o report.html --attack-paths attack-paths.json
+        tr report generate scan.json -o report.html --attack-paths attack-paths.json
 
         # Full report with custom AI model and attack paths
-        threat-radar report generate scan-results.json --ai-provider ollama --ai-model llama2 --attack-paths paths.json
+        tr report generate scan-results.json --ai-provider ollama --ai-model llama2 --attack-paths paths.json
     """
     with handle_cli_error("generating report", console):
         # Validate report level
@@ -268,7 +268,7 @@ def export_dashboard_data(
     Generates JSON data optimized for dashboard integrations (Grafana, custom dashboards, etc.).
 
     Example:
-        threat-radar report dashboard-export scan-results.json -o dashboard.json
+        tr report dashboard-export scan-results.json -o dashboard.json
     """
     with handle_cli_error("exporting dashboard data", console):
         # Load scan results
@@ -324,7 +324,7 @@ def compare_reports(
     Shows new vulnerabilities, fixed vulnerabilities, and overall trends.
 
     Example:
-        threat-radar report compare old-scan.json new-scan.json -o comparison.md
+        tr report compare old-scan.json new-scan.json -o comparison.md
     """
     with handle_cli_error("comparing reports", console):
         # Load both scan results

@@ -20,9 +20,9 @@ Quick start:
     >>> analysis = analyzer.analyze_scan_result(result)
 
 For CLI usage:
-    $ threat-radar cve scan-image alpine:3.18 --auto-save
-    $ threat-radar ai analyze scan-results.json
-    $ threat-radar report generate scan-results.json -o report.html
+    $ tr cve scan-image alpine:3.18 --auto-save
+    $ tr ai analyze scan-results.json
+    $ tr report generate scan-results.json -o report.html
 """
 
 # Core scanning and analysis
