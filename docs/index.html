@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Threat-Radar - Download</title>
+  <meta charset="utf-8">
+  <style>
+    body { 
+      font-family: monospace; 
+      max-width: 800px; 
+      margin: 50px auto; 
+      padding: 20px;
+      background: #0d1117;
+      color: #c9d1d9;
+    }
+    h1 { color: #58a6ff; }
+    h2 { color: #58a6ff; margin-top: 30px; }
+    .status { 
+      font-size: 1.2em; 
+      margin: 20px 0; 
+      padding: 20px;
+      background: #161b22;
+      border-radius: 6px;
+    }
+    .download { margin: 30px 0; }
+    .download a { 
+      display: inline-block; 
+      padding: 10px 20px; 
+      background: #238636; 
+      color: white; 
+      text-decoration: none; 
+      border-radius: 6px; 
+      margin: 5px;
+      font-weight: bold;
+    }
+    .download a:hover { background: #2ea043; }
+    code { 
+      background: #161b22; 
+      padding: 2px 6px; 
+      border-radius: 3px;
+      color: #79c0ff;
+    }
+    pre { 
+      background: #161b22; 
+      padding: 16px; 
+      border-radius: 6px; 
+      overflow-x: auto;
+    }
+    pre code { background: transparent; }
+  </style>
+</head>
+<body>
+  <h1>Threat-Radar</h1>
+  <p>Vulnerability Analysis Platform</p>
+  
+  <div class="status">
+    Latest Release: <strong>v0.5.0</strong><br>
+    Status: ⏳ Pending first automated build<br>
+    Built: Manual
+  </div>
+  
+  <div class="download">
+    <a href="https://github.com/Threat-Radar/tr/releases/latest">View Releases</a>
+    <a href="https://github.com/Threat-Radar/tr">View on GitHub</a>
+  </div>
+  
+  <h2>Installation</h2>
+  <p>macOS CLI Tool:</p>
+  <pre><code>pip install threat-radar</code></pre>
+  
+  <h2>Quick Start</h2>
+  <pre><code>threat-radar --help
+threat-radar cve scan-image alpine:3.18
+threat-radar ai analyze scan.json</code></pre>
+  
+  <h2>Features</h2>
+  <ul>
+    <li>CVE scanning with Grype</li>
+    <li>SBOM generation with Syft</li>
+    <li>AI-powered analysis (OpenAI, Claude, Grok, Ollama)</li>
+    <li>Comprehensive reporting (JSON, Markdown, HTML)</li>
+    <li>Docker integration</li>
+  </ul>
+  
+  <p style="margin-top: 40px; color: #8b949e;">
+    This page auto-updates on every release.
+  </p>
+</body>
+</html>

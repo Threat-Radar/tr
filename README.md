@@ -570,7 +570,7 @@ MIT License - See LICENSE file for details
 
 ## 🤝 Support
 
-- **Issues:** [GitHub Issues](https://github.com/yourusername/tr-nvd/issues)
+- **Issues:** [GitHub Issues](https://github.com/Threat-Radar/tr/issues)
 - **Documentation:** [docs/](docs/)
 - **Examples:** [examples/](examples/)
 - **Troubleshooting:** [examples/TROUBLESHOOTING.md](examples/TROUBLESHOOTING.md)

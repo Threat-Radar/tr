@@ -261,7 +261,7 @@ python -c "from threat_radar import GrypeClient; print('Success!')"
 
 ### 1. Create GitHub Release
 
-1. Go to https://github.com/yourusername/threat-radar/releases
+1. Go to https://github.com/Threat-Radar/tr/releases
 2. Click "Create a new release"
 3. Select tag `v0.1.0`
 4. Title: "Threat Radar v0.1.0"

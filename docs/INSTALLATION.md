@@ -241,7 +241,7 @@ pip install threat-radar[dev]
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/threat-radar.git
+git clone https://github.com/Threat-Radar/tr.git
 cd threat-radar
 
 # Create virtual environment (recommended)
@@ -259,10 +259,10 @@ pip install -e ".[dev,ai]"
 
 ```bash
 # Install directly from GitHub main branch
-pip install git+https://github.com/yourusername/threat-radar.git
+pip install git+https://github.com/Threat-Radar/tr.git
 
 # Or specific branch/tag
-pip install git+https://github.com/yourusername/threat-radar.git@v0.1.0
+pip install git+https://github.com/Threat-Radar/tr.git@v0.1.0
 ```
 
 ### Method 4: Using requirements.txt
@@ -546,7 +546,7 @@ ollama list
 - **Documentation:** See `README.md` and `CLAUDE.md`
 - **Examples:** Check `examples/` directory
 - **Troubleshooting:** See `examples/TROUBLESHOOTING.md`
-- **Issues:** https://github.com/yourusername/threat-radar/issues
+- **Issues:** https://github.com/Threat-Radar/tr/issues
 
 ---
 

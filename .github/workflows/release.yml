@@ -1,0 +1,120 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install build tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install build wheel setuptools
+    
+    - name: Build distributions
+      run: |
+        python -m build
+    
+    - name: Get version from tag
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          dist/*.whl
+          dist/*.tar.gz
+        body: |
+          ## Threat-Radar ${{ steps.version.outputs.VERSION }}
+          
+          **macOS CLI Tool Release**
+          
+          ### Installation
+          ```bash
+          pip install threat-radar-${{ steps.version.outputs.VERSION }}-py3-none-any.whl
+          ```
+          
+          ### What's Changed
+          See [CHANGELOG.md](CHANGELOG.md)
+        draft: false
+        prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') || contains(github.ref, 'rc') }}
+  
+  update-status-page:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: gh-pages
+    
+    - name: Update status page
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
+        
+        cat > index.html << 'EOF'
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Threat-Radar - Download</title>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: monospace; max-width: 800px; margin: 50px auto; padding: 20px; }
+            h1 { color: #2ea44f; }
+            .status { font-size: 1.2em; margin: 20px 0; }
+            .download { margin: 30px 0; }
+            .download a { display: inline-block; padding: 10px 20px; background: #2ea44f; color: white; text-decoration: none; border-radius: 5px; margin: 5px; }
+            .download a:hover { background: #2c974b; }
+            code { background: #f6f8fa; padding: 2px 6px; border-radius: 3px; }
+          </style>
+        </head>
+        <body>
+          <h1>Threat-Radar</h1>
+          <p>Vulnerability Analysis Platform</p>
+          
+          <div class="status">
+            Latest Release: <strong>v$VERSION</strong><br>
+            Status: ✅ Passing<br>
+            Built: $DATE
+          </div>
+          
+          <div class="download">
+            <a href="https://github.com/Threat-Radar/tr/releases/latest/download/threat_radar-$VERSION-py3-none-any.whl">Download .whl</a>
+            <a href="https://github.com/Threat-Radar/tr/releases/latest/download/threat_radar-$VERSION.tar.gz">Download .tar.gz</a>
+            <a href="https://github.com/Threat-Radar/tr">View on GitHub</a>
+          </div>
+          
+          <h2>Installation</h2>
+          <p>macOS CLI Tool:</p>
+          <pre><code>pip install threat-radar-$VERSION-py3-none-any.whl</code></pre>
+          
+          <h2>Quick Start</h2>
+          <pre><code>threat-radar --help
+threat-radar cve scan-image alpine:3.18</code></pre>
+        </body>
+        </html>
+        EOF
+    
+    - name: Commit and push
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git add index.html
+        git commit -m "Update status page for ${GITHUB_REF#refs/tags/}"
+        git push
