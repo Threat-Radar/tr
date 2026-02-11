@@ -3,6 +3,7 @@
 import typer
 from typing import Optional
 from pathlib import Path
+from importlib.metadata import version, PackageNotFoundError
 
 from . import (
     cve as cve_cmd,
@@ -17,6 +18,21 @@ from . import (
     health,
 )
 from ..utils.cli_context import CLIContext, set_cli_context
+
+
+def get_version() -> str:
+    """Get the current version of threat-radar."""
+    try:
+        return version("threat-radar")
+    except PackageNotFoundError:
+        return "unknown"
+
+
+def version_callback(value: bool) -> None:
+    """Print version and exit."""
+    if value:
+        typer.echo(f"threat-radar {get_version()}")
+        raise typer.Exit()
 
 app = typer.Typer(
     help="Threat Radar - Enterprise-grade threat assessment and vulnerability analysis",
@@ -44,6 +60,13 @@ app.add_typer(health.app, name="health", help="Health check and system status")
 
 @app.callback()
 def main_callback(
+    version_flag: Optional[bool] = typer.Option(
+        None,
+        "--version",
+        callback=version_callback,
+        is_eager=True,
+        help="Show version and exit",
+    ),
     config_file: Optional[Path] = typer.Option(
         None,
         "--config",
