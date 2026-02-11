@@ -73,8 +73,8 @@ ai = [
 ]
 
 [project.scripts]
-threat-radar = "threat_radar.cli.__main__:main"
 tradar = "threat_radar.cli.__main__:main"
+threat-radar = "threat_radar.cli.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/Threat-Radar/tr"

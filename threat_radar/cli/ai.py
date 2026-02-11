@@ -130,22 +130,22 @@ def analyze_vulnerabilities(
 
     Examples:
         # Auto batch for large scans (recommended)
-        threat-radar ai analyze cve-results.json
+        tr ai analyze cve-results.json
 
         # Analyze only critical and high severity vulnerabilities
-        threat-radar ai analyze scan.json --severity high
+        tr ai analyze scan.json --severity high
 
         # Force batch mode with custom size
-        threat-radar ai analyze scan.json --batch-mode enabled --batch-size 30
+        tr ai analyze scan.json --batch-mode enabled --batch-size 30
 
         # Combine severity filter with batching
-        threat-radar ai analyze large-scan.json --severity critical --batch-size 20
+        tr ai analyze large-scan.json --severity critical --batch-size 20
 
         # Disable batching (may fail for large scans)
-        threat-radar ai analyze scan.json --batch-mode disabled
+        tr ai analyze scan.json --batch-mode disabled
 
         # With specific AI provider
-        threat-radar ai analyze results.json --provider openai --model gpt-4o
+        tr ai analyze results.json --provider openai --model gpt-4o
     """
     with handle_cli_error("analyzing vulnerabilities", console):
         # Load CVE scan results
@@ -362,10 +362,10 @@ def prioritize_vulnerabilities(
     - Adjust --batch-size for optimal performance (default: 25)
 
     Examples:
-        threat-radar ai prioritize cve-results.json
-        threat-radar ai prioritize results.json --top 20
-        threat-radar ai prioritize scan.json -o priorities.json
-        threat-radar ai prioritize scan.json --severity high --batch-size 20
+        tr ai prioritize cve-results.json
+        tr ai prioritize results.json --top 20
+        tr ai prioritize scan.json -o priorities.json
+        tr ai prioritize scan.json --severity high --batch-size 20
     """
     with handle_cli_error("prioritizing vulnerabilities", console):
         # Load and analyze
@@ -605,10 +605,10 @@ def generate_remediation(
     - Adjust --batch-size for optimal performance (default: 25)
 
     Examples:
-        threat-radar ai remediate cve-results.json
-        threat-radar ai remediate results.json -o remediation.json
-        threat-radar ai remediate scan.json --provider ollama
-        threat-radar ai remediate scan.json --severity critical --batch-size 20
+        tr ai remediate cve-results.json
+        tr ai remediate results.json -o remediation.json
+        tr ai remediate scan.json --provider ollama
+        tr ai remediate scan.json --severity critical --batch-size 20
     """
     with handle_cli_error("generating remediation plan", console):
         # Load scan results
@@ -834,16 +834,16 @@ def analyze_with_business_context(
 
     Examples:
         # Analyze with business context
-        threat-radar ai analyze-with-context cve-scan.json production-env.json
+        tr ai analyze-with-context cve-scan.json production-env.json
 
         # Specify which asset the scan corresponds to
-        threat-radar ai analyze-with-context scan.json env.json --asset-id api-gateway-001
+        tr ai analyze-with-context scan.json env.json --asset-id api-gateway-001
 
         # Save results and show top 20 business risks
-        threat-radar ai analyze-with-context scan.json env.json -o analysis.json --show-top 20
+        tr ai analyze-with-context scan.json env.json -o analysis.json --show-top 20
 
         # Use with specific AI provider
-        threat-radar ai analyze-with-context scan.json env.json --provider ollama --model llama2
+        tr ai analyze-with-context scan.json env.json --provider ollama --model llama2
     """
     with handle_cli_error("analyzing vulnerabilities with business context", console):
         # Load CVE scan results
@@ -1098,18 +1098,18 @@ def threat_model(
     Examples:
 
         # Basic threat modeling (auto-selects relevant threat actors)
-        threat-radar ai threat-model graph.graphml
+        tr ai threat-model graph.graphml
 
         # Analyze specific threat actor
-        threat-radar ai threat-model graph.graphml -t apt28 -s 15
+        tr ai threat-model graph.graphml -t apt28 -s 15
 
         # With business context for better impact assessment
-        threat-radar ai threat-model graph.graphml \\
+        tr ai threat-model graph.graphml \\
             -e production-env.json -t ransomware --auto-save
 
         # Compare multiple threat actors
-        threat-radar ai threat-model graph.graphml -t apt28 -o apt28-model.json
-        threat-radar ai threat-model graph.graphml -t script-kiddie -o scriptkiddie-model.json
+        tr ai threat-model graph.graphml -t apt28 -o apt28-model.json
+        tr ai threat-model graph.graphml -t script-kiddie -o scriptkiddie-model.json
     """
     try:
         # Validate graph file exists

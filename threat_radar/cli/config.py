@@ -23,9 +23,9 @@ def show_config(
     Show current configuration.
 
     Examples:
-      threat-radar config show
-      threat-radar config show scan.severity
-      threat-radar config show ai.provider
+      tr config show
+      tr config show scan.severity
+      tr config show ai.provider
     """
     config_manager = get_config_manager()
 
@@ -62,9 +62,9 @@ def set_config(
     Set configuration value.
 
     Examples:
-      threat-radar config set scan.severity HIGH
-      threat-radar config set ai.provider ollama
-      threat-radar config set output.verbosity 2
+      tr config set scan.severity HIGH
+      tr config set ai.provider ollama
+      tr config set output.verbosity 2
     """
     config_manager = get_config_manager()
 
@@ -114,9 +114,9 @@ def init_config(
     Creates ~/.threat-radar/config.json with default settings.
 
     Examples:
-      threat-radar config init
-      threat-radar config init --path ./my-config.json
-      threat-radar config init --force  # Overwrite existing
+      tr config init
+      tr config init --path ./my-config.json
+      tr config init --force  # Overwrite existing
     """
     # Check if file exists
     if path.exists() and not force:
@@ -130,7 +130,7 @@ def init_config(
 
     console.print(f"[green]✓[/green] Created configuration file: {saved_path}")
     console.print("\nYou can edit this file directly or use:")
-    console.print("  threat-radar config set <key> <value>")
+    console.print("  tr config set <key> <value>")
 
 
 @app.command("path")
@@ -181,8 +181,8 @@ def validate_config(
     Checks if a configuration file is valid and shows any errors.
 
     Examples:
-      threat-radar config validate
-      threat-radar config validate ./my-config.json
+      tr config validate
+      tr config validate ./my-config.json
     """
     if config_file is None:
         # Validate current config

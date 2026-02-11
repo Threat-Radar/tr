@@ -35,7 +35,7 @@ docker-compose run --rm --entrypoint /bin/bash threat-radar
 
 ## 📖 Inside the Interactive Shell
 
-Once inside the container, you have full access to all threat-radar commands:
+Once inside the container, you have full access to all tradar commands:
 
 ```bash
 # You'll see the startup banner:
@@ -48,9 +48,9 @@ Syft Version: Application:   syft
 ...
 
 # Now you can run any command:
-threatradar@container:/app$ threat-radar --help
-threatradar@container:/app$ threat-radar cve scan-image alpine:3.18 --auto-save
-threatradar@container:/app$ threat-radar health check
+threatradar@container:/app$ tradar --help
+threatradar@container:/app$ tradar cve scan-image alpine:3.18 --auto-save
+threatradar@container:/app$ tradar health check
 ```
 
 ---
@@ -64,9 +64,9 @@ threatradar@container:/app$ threat-radar health check
 make docker-shell
 
 # Inside container:
-$ threat-radar cve scan-image alpine:3.18 --auto-save
-$ threat-radar cve scan-image python:3.11 --auto-save
-$ threat-radar cve scan-image nginx:alpine --auto-save
+$ tradar cve scan-image alpine:3.18 --auto-save
+$ tradar cve scan-image python:3.11 --auto-save
+$ tradar cve scan-image nginx:alpine --auto-save
 
 # Check results
 $ ls -lh storage/cve_storage/
@@ -92,24 +92,24 @@ docker run --rm -it \
 
 # Inside container - full workflow:
 $ # Step 1: Scan
-$ threat-radar cve scan-image myapp:latest --auto-save
+$ tradar cve scan-image myapp:latest --auto-save
 
 $ # Step 2: Find the scan file
 $ SCAN_FILE=$(ls -t storage/cve_storage/myapp*.json | head -1)
 $ echo "Analyzing: $SCAN_FILE"
 
 $ # Step 3: AI analysis
-$ threat-radar ai analyze $SCAN_FILE --auto-save
+$ tradar ai analyze $SCAN_FILE --auto-save
 
 $ # Step 4: Build graph
-$ threat-radar graph build $SCAN_FILE --auto-save
+$ tradar graph build $SCAN_FILE --auto-save
 
 $ # Step 5: Query graph
 $ GRAPH_FILE=$(ls -t storage/graph_storage/*.graphml | head -1)
-$ threat-radar graph query $GRAPH_FILE --stats
+$ tradar graph query $GRAPH_FILE --stats
 
 $ # Step 6: Find attack paths
-$ threat-radar graph attack-paths $GRAPH_FILE -o storage/attack-paths.json
+$ tradar graph attack-paths $GRAPH_FILE -o storage/attack-paths.json
 
 $ # View results
 $ ls -lh storage/
@@ -123,9 +123,9 @@ $ exit
 make docker-shell
 
 # Test different severity filters
-$ threat-radar cve scan-image alpine:3.18 --severity CRITICAL -o /tmp/critical.json
-$ threat-radar cve scan-image alpine:3.18 --severity HIGH -o /tmp/high.json
-$ threat-radar cve scan-image alpine:3.18 --severity MEDIUM -o /tmp/medium.json
+$ tradar cve scan-image alpine:3.18 --severity CRITICAL -o /tmp/critical.json
+$ tradar cve scan-image alpine:3.18 --severity HIGH -o /tmp/high.json
+$ tradar cve scan-image alpine:3.18 --severity MEDIUM -o /tmp/medium.json
 
 # Compare results
 $ jq '.matches | length' /tmp/critical.json
@@ -133,12 +133,12 @@ $ jq '.matches | length' /tmp/high.json
 $ jq '.matches | length' /tmp/medium.json
 
 # Test SBOM generation
-$ threat-radar sbom docker python:3.11 -o /tmp/python-sbom.json
-$ threat-radar sbom read /tmp/python-sbom.json
+$ tradar sbom docker python:3.11 -o /tmp/python-sbom.json
+$ tradar sbom read /tmp/python-sbom.json
 
 # Test health checks
-$ threat-radar health check --verbose
-$ threat-radar health version
+$ tradar health check --verbose
+$ tradar health version
 
 $ exit
 ```
@@ -160,7 +160,7 @@ EOF
 # Scan all images
 $ while read image; do
     echo "Scanning $image..."
-    threat-radar cve scan-image $image --auto-save --cleanup
+    tradar cve scan-image $image --auto-save --cleanup
   done < /tmp/images.txt
 
 # View all results
@@ -186,13 +186,13 @@ $ exit
 docker-compose up -d
 
 # Terminal 2: Interactive shell
-docker-compose exec threat-radar /bin/bash
+docker-compose exec tr /bin/bash
 
 # Terminal 3: Watch logs
 docker-compose logs -f threat-radar
 
 # In Terminal 2, run commands and watch logs in Terminal 3
-$ threat-radar cve scan-image alpine:3.18 --auto-save
+$ tradar cve scan-image alpine:3.18 --auto-save
 ```
 
 ### 2. Python REPL Access
@@ -265,7 +265,7 @@ docker run -d -it \
 
 # Session 1: Connect and run scans
 docker exec -it tr-dev /bin/bash
-$ threat-radar cve scan-image alpine:3.18 --auto-save
+$ tradar cve scan-image alpine:3.18 --auto-save
 
 # Session 2 (different terminal): Monitor
 docker exec -it tr-dev tail -f /app/logs/app.log
@@ -288,7 +288,7 @@ docker rm tr-dev
 make docker-shell
 
 # Check system status
-$ threat-radar health check --verbose
+$ tradar health check --verbose
 
 # Test Docker connection
 $ docker ps
@@ -309,7 +309,7 @@ $ ls -la /app/cache/
 $ touch /app/storage/test.txt && rm /app/storage/test.txt && echo "Storage writable"
 
 # Run a test scan with verbose output
-$ threat-radar -vv cve scan-image alpine:3.18 -o /tmp/test-scan.json
+$ tradar -vv cve scan-image alpine:3.18 -o /tmp/test-scan.json
 
 # Check the output
 $ cat /tmp/test-scan.json | jq '.matches | length'
@@ -332,7 +332,7 @@ docker run --rm -it \
 $ export LOG_LEVEL=DEBUG
 
 # Run problematic command
-$ threat-radar cve scan-image problematic-image:tag 2>&1 | tee /tmp/debug.log
+$ tradar cve scan-image problematic-image:tag 2>&1 | tee /tmp/debug.log
 
 # Analyze the error
 $ cat /tmp/debug.log | grep -i error
@@ -418,8 +418,8 @@ $ exit
 
 1. **Use tab completion:**
    ```bash
-   $ threat-radar c<TAB>
-   $ threat-radar cve s<TAB>
+   $ tradar c<TAB>
+   $ tradar cve s<TAB>
    ```
 
 2. **History navigation:**
@@ -430,7 +430,7 @@ $ exit
 
 3. **Background jobs:**
    ```bash
-   $ threat-radar cve scan-image large-image:tag --auto-save &
+   $ tradar cve scan-image large-image:tag --auto-save &
    $ jobs
    $ fg  # Bring back to foreground
    ```
@@ -467,13 +467,13 @@ $ exit
 make docker-shell
 
 # Experiment safely - container is ephemeral
-$ threat-radar --help | less
-$ threat-radar cve --help
-$ threat-radar ai --help
+$ tradar --help | less
+$ tradar cve --help
+$ tradar ai --help
 
 # Try different options
-$ threat-radar cve scan-image alpine:3.18 --help
-$ threat-radar cve scan-image alpine:3.18 --severity HIGH -o /tmp/test.json
+$ tradar cve scan-image alpine:3.18 --help
+$ tradar cve scan-image alpine:3.18 --severity HIGH -o /tmp/test.json
 $ cat /tmp/test.json | jq '.matches | length'
 
 # Everything is cleaned up on exit
@@ -488,19 +488,19 @@ make docker-shell
 
 # Show capabilities step by step
 $ echo "Step 1: Health Check"
-$ threat-radar health check --verbose
+$ tradar health check --verbose
 
 $ echo -e "\nStep 2: Scan an image"
-$ threat-radar cve scan-image alpine:3.18 --auto-save
+$ tradar cve scan-image alpine:3.18 --auto-save
 
 $ echo -e "\nStep 3: View results"
 $ ls -lh storage/cve_storage/
 
 $ echo -e "\nStep 4: Generate SBOM"
-$ threat-radar sbom docker python:3.11 -o /tmp/python-sbom.json
+$ tradar sbom docker python:3.11 -o /tmp/python-sbom.json
 
 $ echo -e "\nStep 5: Analyze SBOM"
-$ threat-radar sbom stats /tmp/python-sbom.json
+$ tradar sbom stats /tmp/python-sbom.json
 
 $ exit
 ```
@@ -520,9 +520,9 @@ $ exit
 
 ```bash
 # Inside the container:
-$ threat-radar --help                    # Main help
-$ threat-radar <command> --help          # Command-specific help
-$ threat-radar health check --verbose    # System status
+$ tradar --help                    # Main help
+$ tradar <command> --help          # Command-specific help
+$ tradar health check --verbose    # System status
 $ grype --help                           # Grype help
 $ syft --help                            # Syft help
 ```

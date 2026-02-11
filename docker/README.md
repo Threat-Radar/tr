@@ -71,8 +71,8 @@ make docker-shell
 make docker-shell-project PROJECT=/path/to/project
 
 # Inside container:
-$ threat-radar sbom generate /workspace -o /app/sbom_storage/my-project.json
-$ threat-radar cve scan-sbom /app/sbom_storage/my-project.json --auto-save
+$ tradar sbom generate /workspace -o /app/sbom_storage/my-project.json
+$ tradar cve scan-sbom /app/sbom_storage/my-project.json --auto-save
 ```
 
 ## Storage

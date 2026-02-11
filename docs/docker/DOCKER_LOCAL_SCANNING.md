@@ -13,8 +13,8 @@ Guide for scanning local projects and directories using Threat Radar Docker cont
 make docker-shell-project PROJECT=/path/to/your/project
 
 # Inside container:
-$ threat-radar sbom generate /workspace -o /app/sbom_storage/my-project.json
-$ threat-radar cve scan-sbom /app/sbom_storage/my-project.json --auto-save
+$ tradar sbom generate /workspace -o /app/sbom_storage/my-project.json
+$ tradar cve scan-sbom /app/sbom_storage/my-project.json --auto-save
 $ exit
 ```
 
@@ -29,7 +29,7 @@ docker run --rm -it \
   threat-radar:latest
 
 # Inside container:
-$ threat-radar sbom generate /workspace -o /app/sbom_storage/project-sbom.json
+$ tradar sbom generate /workspace -o /app/sbom_storage/project-sbom.json
 ```
 
 ---
@@ -44,16 +44,16 @@ make docker-shell-project PROJECT=~/my-nodejs-app
 
 # Inside container:
 # 2. Generate SBOM
-$ threat-radar sbom generate /workspace -o /app/sbom_storage/nodejs-app.json
+$ tradar sbom generate /workspace -o /app/sbom_storage/nodejs-app.json
 
 # 3. View the SBOM
-$ threat-radar sbom read /app/sbom_storage/nodejs-app.json
+$ tradar sbom read /app/sbom_storage/nodejs-app.json
 
 # 4. Get package statistics
-$ threat-radar sbom stats /app/sbom_storage/nodejs-app.json
+$ tradar sbom stats /app/sbom_storage/nodejs-app.json
 
 # 5. Scan for vulnerabilities
-$ threat-radar cve scan-sbom /app/sbom_storage/nodejs-app.json --auto-save
+$ tradar cve scan-sbom /app/sbom_storage/nodejs-app.json --auto-save
 
 # 6. View results
 $ ls -lh /app/storage/cve_storage/
@@ -73,9 +73,9 @@ cat storage/cve_storage/nodejs-app_sbom_*.json | jq '.matches | length'
 make docker-shell-project PROJECT=~/my-python-app
 
 # Inside container:
-$ threat-radar sbom generate /workspace -o /app/sbom_storage/python-app.json
-$ threat-radar sbom search /app/sbom_storage/python-app.json django
-$ threat-radar cve scan-sbom /app/sbom_storage/python-app.json --severity HIGH --auto-save
+$ tradar sbom generate /workspace -o /app/sbom_storage/python-app.json
+$ tradar sbom search /app/sbom_storage/python-app.json django
+$ tradar cve scan-sbom /app/sbom_storage/python-app.json --severity HIGH --auto-save
 $ exit
 ```
 
@@ -86,9 +86,9 @@ $ exit
 make docker-shell-project PROJECT=~/my-go-app
 
 # Inside container:
-$ threat-radar sbom generate /workspace -o /app/sbom_storage/go-app.json
-$ threat-radar sbom components /app/sbom_storage/go-app.json --language go
-$ threat-radar cve scan-sbom /app/sbom_storage/go-app.json --auto-save
+$ tradar sbom generate /workspace -o /app/sbom_storage/go-app.json
+$ tradar sbom components /app/sbom_storage/go-app.json --language go
+$ tradar cve scan-sbom /app/sbom_storage/go-app.json --auto-save
 $ exit
 ```
 
@@ -119,8 +119,8 @@ for project in "${PROJECTS[@]}"; do
     -v "$project:/workspace:ro" \
     threat-radar:latest \
     sh -c "
-      threat-radar sbom generate /workspace -o /app/sbom_storage/${name}.json && \
-      threat-radar cve scan-sbom /app/sbom_storage/${name}.json --auto-save
+      tradar sbom generate /workspace -o /app/sbom_storage/${name}.json && \
+      tradar cve scan-sbom /app/sbom_storage/${name}.json --auto-save
     "
 done
 
@@ -146,12 +146,12 @@ docker run --rm -it \
 $ for project in /projects/*; do
     name=$(basename "$project")
     echo "Processing: $name"
-    threat-radar sbom generate "$project" -o "/app/sbom_storage/${name}.json"
-    threat-radar cve scan-sbom "/app/sbom_storage/${name}.json" --auto-save
+    tradar sbom generate "$project" -o "/app/sbom_storage/${name}.json"
+    tradar cve scan-sbom "/app/sbom_storage/${name}.json" --auto-save
   done
 
 # Compare SBOMs
-$ threat-radar sbom compare \
+$ tradar sbom compare \
     /app/sbom_storage/frontend.json \
     /app/sbom_storage/backend.json
 
@@ -168,7 +168,7 @@ $ exit
 make docker-shell-project PROJECT=~/my-app
 
 # Inside container - scan only src/
-$ threat-radar sbom generate /workspace/src -o /app/sbom_storage/src-only.json
+$ tradar sbom generate /workspace/src -o /app/sbom_storage/src-only.json
 ```
 
 ### Scan Multiple Subdirectories
@@ -177,9 +177,9 @@ $ threat-radar sbom generate /workspace/src -o /app/sbom_storage/src-only.json
 make docker-shell-project PROJECT=~/my-monorepo
 
 # Inside container:
-$ threat-radar sbom generate /workspace/packages/frontend -o /app/sbom_storage/frontend.json
-$ threat-radar sbom generate /workspace/packages/backend -o /app/sbom_storage/backend.json
-$ threat-radar sbom generate /workspace/packages/shared -o /app/sbom_storage/shared.json
+$ tradar sbom generate /workspace/packages/frontend -o /app/sbom_storage/frontend.json
+$ tradar sbom generate /workspace/packages/backend -o /app/sbom_storage/backend.json
+$ tradar sbom generate /workspace/packages/shared -o /app/sbom_storage/shared.json
 ```
 
 ---
@@ -207,30 +207,30 @@ docker run --rm -it \
   threat-radar:latest << COMMANDS
 
 echo "Step 1: Generating SBOM..."
-threat-radar sbom generate /workspace -o /app/sbom_storage/${PROJECT_NAME}.json
+tradar sbom generate /workspace -o /app/sbom_storage/${PROJECT_NAME}.json
 
 echo "Step 2: SBOM Statistics..."
-threat-radar sbom stats /app/sbom_storage/${PROJECT_NAME}.json
+tradar sbom stats /app/sbom_storage/${PROJECT_NAME}.json
 
 echo "Step 3: Scanning for vulnerabilities..."
-threat-radar cve scan-sbom /app/sbom_storage/${PROJECT_NAME}.json --auto-save
+tradar cve scan-sbom /app/sbom_storage/${PROJECT_NAME}.json --auto-save
 
 echo "Step 4: Building vulnerability graph..."
 SCAN_FILE=\$(ls -t /app/storage/cve_storage/${PROJECT_NAME}*.json | head -1)
-threat-radar graph build "\$SCAN_FILE" --auto-save
+tradar graph build "\$SCAN_FILE" --auto-save
 
 echo "Step 5: Querying graph..."
 GRAPH_FILE=\$(ls -t /app/storage/graph_storage/*.graphml | head -1)
-threat-radar graph query "\$GRAPH_FILE" --stats
+tradar graph query "\$GRAPH_FILE" --stats
 
 echo "Step 6: Finding attack paths..."
-threat-radar graph attack-paths "\$GRAPH_FILE" -o /app/storage/attack-paths.json
+tradar graph attack-paths "\$GRAPH_FILE" -o /app/storage/attack-paths.json
 
 # If AI is configured
 if [ -n "\$OPENAI_API_KEY" ]; then
   echo "Step 7: AI Analysis..."
-  threat-radar ai analyze "\$SCAN_FILE" --auto-save
-  threat-radar ai prioritize "\$SCAN_FILE" --auto-save
+  tradar ai analyze "\$SCAN_FILE" --auto-save
+  tradar ai prioritize "\$SCAN_FILE" --auto-save
 fi
 
 echo ""
@@ -279,7 +279,7 @@ docker run --rm -it \
   threat-radar:latest
 
 # Inside:
-$ threat-radar sbom generate /workspace -o /app/sbom_storage/current-dir.json
+$ tradar sbom generate /workspace -o /app/sbom_storage/current-dir.json
 ```
 
 ### 3. Use Absolute Paths
@@ -321,7 +321,7 @@ Mount cache directory to speed up repeated scans:
 
 **Problem:**
 ```bash
-$ threat-radar sbom generate /workspace
+$ tradar sbom generate /workspace
 Error: directory not found
 ```
 
@@ -340,7 +340,7 @@ make docker-shell-project PROJECT=/correct/path/to/project
 
 **Problem:**
 ```bash
-$ threat-radar sbom generate /workspace -o /workspace/sbom.json
+$ tradar sbom generate /workspace -o /workspace/sbom.json
 Error: Permission denied
 ```
 
@@ -348,17 +348,17 @@ Error: Permission denied
 Output to the container's storage (not the read-only mounted directory):
 ```bash
 # ✅ Correct - output to /app/sbom_storage
-$ threat-radar sbom generate /workspace -o /app/sbom_storage/project.json
+$ tradar sbom generate /workspace -o /app/sbom_storage/project.json
 
 # ❌ Wrong - trying to write to read-only mount
-$ threat-radar sbom generate /workspace -o /workspace/sbom.json
+$ tradar sbom generate /workspace -o /workspace/sbom.json
 ```
 
 ### Issue: No Packages Found
 
 **Problem:**
 ```bash
-$ threat-radar sbom generate /workspace
+$ tradar sbom generate /workspace
 Warning: No packages found
 ```
 
@@ -369,8 +369,8 @@ Make sure you're scanning the right directory:
 $ ls -la /workspace
 
 # Try scanning subdirectories
-$ threat-radar sbom generate /workspace/src
-$ threat-radar sbom generate /workspace/packages/myapp
+$ tradar sbom generate /workspace/src
+$ tradar sbom generate /workspace/packages/myapp
 ```
 
 ---
@@ -399,7 +399,7 @@ jobs:
             -v $(pwd):/workspace:ro \
             -v $(pwd)/results:/app/sbom_storage \
             threat-radar:latest \
-            threat-radar sbom generate /workspace -o /app/sbom_storage/sbom.json
+            tradar sbom generate /workspace -o /app/sbom_storage/sbom.json
 
       - name: Scan SBOM
         run: |
@@ -407,7 +407,7 @@ jobs:
             -v $(pwd)/results:/app/sbom_storage \
             -v $(pwd)/results:/app/storage \
             threat-radar:latest \
-            threat-radar cve scan-sbom /app/sbom_storage/sbom.json \
+            tradar cve scan-sbom /app/sbom_storage/sbom.json \
               --fail-on HIGH --auto-save
 
       - name: Upload Results
@@ -431,13 +431,13 @@ security-scan:
         -v $(pwd):/workspace:ro \
         -v $(pwd)/results:/app/sbom_storage \
         threat-radar:latest \
-        threat-radar sbom generate /workspace -o /app/sbom_storage/sbom.json
+        tradar sbom generate /workspace -o /app/sbom_storage/sbom.json
     - |
       docker run --rm \
         -v $(pwd)/results:/app/sbom_storage \
         -v $(pwd)/results:/app/storage \
         threat-radar:latest \
-        threat-radar cve scan-sbom /app/sbom_storage/sbom.json --auto-save
+        tradar cve scan-sbom /app/sbom_storage/sbom.json --auto-save
   artifacts:
     paths:
       - results/
@@ -461,7 +461,7 @@ security-scan:
 2. ✅ Always use `:ro` (read-only) for safety
 3. ✅ Output results to `/app/sbom_storage` or `/app/storage`
 4. ✅ Use `make docker-shell-project PROJECT=/path` for convenience
-5. ✅ Scan the mounted directory with `threat-radar sbom generate /workspace`
+5. ✅ Scan the mounted directory with `tradar sbom generate /workspace`
 
 ---
 

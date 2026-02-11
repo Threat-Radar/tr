@@ -65,12 +65,12 @@ def scan_docker_image(
     timestamped filenames. This is useful for keeping a history of scan results.
 
     Examples:
-        threat-radar cve scan-image alpine:3.18
-        threat-radar cve scan-image python:3.11 --severity HIGH
-        threat-radar cve scan-image ubuntu:22.04 --only-fixed -o results.json
-        threat-radar cve scan-image nginx:latest --cleanup  # Remove after scan
-        threat-radar cve scan-image myapp:latest --auto-save  # Auto-save to storage/cve_storage/
-        threat-radar cve scan-image myapp:latest --as --cleanup  # Both features
+        tr cve scan-image alpine:3.18
+        tr cve scan-image python:3.11 --severity HIGH
+        tr cve scan-image ubuntu:22.04 --only-fixed -o results.json
+        tr cve scan-image nginx:latest --cleanup  # Remove after scan
+        tr cve scan-image myapp:latest --auto-save  # Auto-save to storage/cve_storage/
+        tr cve scan-image myapp:latest --as --cleanup  # Both features
     """
     with handle_cli_error("scanning image", console):
         # Use cleanup context to manage Docker image lifecycle
@@ -229,11 +229,11 @@ def scan_sbom_file(
     timestamped filenames.
 
     Examples:
-        threat-radar cve scan-sbom my-app-sbom.json
-        threat-radar cve scan-sbom docker-sbom.json --severity HIGH
-        threat-radar cve scan-sbom sbom.json --only-fixed -o results.json
-        threat-radar cve scan-sbom sbom.json --cleanup --image alpine:3.18
-        threat-radar cve scan-sbom sbom.json --auto-save  # Auto-save to storage/cve_storage/
+        tr cve scan-sbom my-app-sbom.json
+        tr cve scan-sbom docker-sbom.json --severity HIGH
+        tr cve scan-sbom sbom.json --only-fixed -o results.json
+        tr cve scan-sbom sbom.json --cleanup --image alpine:3.18
+        tr cve scan-sbom sbom.json --auto-save  # Auto-save to storage/cve_storage/
     """
     with handle_cli_error("scanning SBOM", console):
         # Determine if we should cleanup and what image to cleanup
@@ -404,10 +404,10 @@ def scan_directory(
     timestamped filenames.
 
     Examples:
-        threat-radar cve scan-directory ./my-app
-        threat-radar cve scan-directory /path/to/project --severity MEDIUM
-        threat-radar cve scan-directory . --only-fixed -o results.json
-        threat-radar cve scan-directory ./src --auto-save  # Auto-save to storage/cve_storage/
+        tr cve scan-directory ./my-app
+        tr cve scan-directory /path/to/project --severity MEDIUM
+        tr cve scan-directory . --only-fixed -o results.json
+        tr cve scan-directory ./src --auto-save  # Auto-save to storage/cve_storage/
     """
     with handle_cli_error("scanning directory", console):
         with Progress(
@@ -519,7 +519,7 @@ def update_database():
     This is typically done automatically, but can be forced manually.
 
     Example:
-        threat-radar cve db-update
+        tr cve db-update
     """
     with handle_cli_error("updating database", console):
         with Progress(
@@ -549,7 +549,7 @@ def database_status():
     Displays information about the current Grype database.
 
     Example:
-        threat-radar cve db-status
+        tr cve db-status
     """
     with handle_cli_error("fetching database status", console):
         grype = GrypeClient()
@@ -687,12 +687,12 @@ def list_scans(
     scan target, type, total vulnerabilities, severity breakdown, and scan date.
 
     Examples:
-        threat-radar cve list-scans
-        threat-radar cve list-scans --type image
-        threat-radar cve list-scans --severity critical
-        threat-radar cve list-scans --details
-        threat-radar cve list-scans --limit 10 --sort-by vulnerabilities
-        threat-radar cve list-scans --format json
+        tr cve list-scans
+        tr cve list-scans --type image
+        tr cve list-scans --severity critical
+        tr cve list-scans --details
+        tr cve list-scans --limit 10 --sort-by vulnerabilities
+        tr cve list-scans --format json
     """
     from ..core.cve_storage_manager import CVEStorageManager
     from ..utils.cve_utils import display_scans_table
@@ -767,13 +767,13 @@ def show_scan(
     Shows vulnerabilities with filtering, grouping, and export capabilities.
 
     Examples:
-        threat-radar cve show storage/cve_storage/alpine*.json
-        threat-radar cve show node_16_*.json --severity critical
-        threat-radar cve show scan.json --package openssl
-        threat-radar cve show scan.json --cve-id CVE-2023-4863
-        threat-radar cve show scan.json --no-fix --severity high
-        threat-radar cve show scan.json --group-by package
-        threat-radar cve show scan.json --severity high --export critical.json
+        tr cve show storage/cve_storage/alpine*.json
+        tr cve show node_16_*.json --severity critical
+        tr cve show scan.json --package openssl
+        tr cve show scan.json --cve-id CVE-2023-4863
+        tr cve show scan.json --no-fix --severity high
+        tr cve show scan.json --group-by package
+        tr cve show scan.json --severity high --export critical.json
     """
     from ..core.cve_storage_manager import CVEStorageManager
     from ..utils.cve_utils import (
@@ -916,12 +916,12 @@ def search_scans(
     Searches through all scans in storage/cve_storage/ directory.
 
     Examples:
-        threat-radar cve search CVE-2023-4863
-        threat-radar cve search openssl --query-type package
-        threat-radar cve search "buffer overflow" --query-type description
-        threat-radar cve search "node" --severity critical
-        threat-radar cve search "CVE-2023*" --scans "*node*"
-        threat-radar cve search "libwebp" --exact-match
+        tr cve search CVE-2023-4863
+        tr cve search openssl --query-type package
+        tr cve search "buffer overflow" --query-type description
+        tr cve search "node" --severity critical
+        tr cve search "CVE-2023*" --scans "*node*"
+        tr cve search "libwebp" --exact-match
     """
     from ..core.cve_storage_manager import CVEStorageManager
     from ..utils.cve_utils import display_search_results
@@ -975,10 +975,10 @@ def show_stats(
     Displays total vulnerabilities, severity breakdown, top CVEs, and more.
 
     Examples:
-        threat-radar cve stats
-        threat-radar cve stats --type image
-        threat-radar cve stats --scans "*node*"
-        threat-radar cve stats --format json
+        tr cve stats
+        tr cve stats --type image
+        tr cve stats --scans "*node*"
+        tr cve stats --format json
     """
     from ..core.cve_storage_manager import CVEStorageManager
     from ..utils.cve_utils import display_aggregate_stats

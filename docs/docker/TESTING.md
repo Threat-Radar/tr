@@ -25,22 +25,22 @@ cat /app/quick-test.sh
 
 ```bash
 # Show help
-threat-radar --help
+tradar --help
 
 # Version info
-threat-radar --version
+tradar --version
 
 # Health ping (quick)
-threat-radar health ping
+tradar health ping
 
 # Full health check
-threat-radar health check
+tradar health check
 
 # Verbose health check
-threat-radar health check --verbose
+tradar health check --verbose
 
 # Show version details
-threat-radar health version
+tradar health version
 ```
 
 **Expected Results:**
@@ -77,11 +77,11 @@ syft version
 
 #### Test Small Image (Alpine)
 ```bash
-threat-radar sbom docker alpine:3.18 -o /app/sbom_storage/alpine.json
+tradar sbom docker alpine:3.18 -o /app/sbom_storage/alpine.json
 
 # Verify output
 ls -lh /app/sbom_storage/alpine.json
-threat-radar sbom read /app/sbom_storage/alpine.json
+tradar sbom read /app/sbom_storage/alpine.json
 ```
 
 **Expected Results:**
@@ -91,10 +91,10 @@ threat-radar sbom read /app/sbom_storage/alpine.json
 
 #### Test Medium Image (Python)
 ```bash
-threat-radar sbom docker python:3.11-alpine -o /app/sbom_storage/python.json
+tradar sbom docker python:3.11-alpine -o /app/sbom_storage/python.json
 
 # View stats
-threat-radar sbom stats /app/sbom_storage/python.json
+tradar sbom stats /app/sbom_storage/python.json
 ```
 
 **Expected Results:**
@@ -104,7 +104,7 @@ threat-radar sbom stats /app/sbom_storage/python.json
 
 #### Test Large Image (Full Python)
 ```bash
-threat-radar sbom docker python:3.11 -o /app/sbom_storage/python-full.json
+tradar sbom docker python:3.11 -o /app/sbom_storage/python-full.json
 
 # Compare sizes
 ls -lh /app/sbom_storage/python*.json
@@ -121,13 +121,13 @@ ls -lh /app/sbom_storage/python*.json
 #### Scan Docker Image Directly
 ```bash
 # Basic scan
-threat-radar cve scan-image alpine:3.18 -o /tmp/scan-alpine.json
+tradar cve scan-image alpine:3.18 -o /tmp/scan-alpine.json
 
 # With severity filter
-threat-radar cve scan-image alpine:3.18 --severity HIGH -o /tmp/scan-high.json
+tradar cve scan-image alpine:3.18 --severity HIGH -o /tmp/scan-high.json
 
 # With auto-save
-threat-radar cve scan-image busybox:latest --auto-save
+tradar cve scan-image busybox:latest --auto-save
 ```
 
 **Expected Results:**
@@ -139,10 +139,10 @@ threat-radar cve scan-image busybox:latest --auto-save
 #### Scan SBOM File
 ```bash
 # Generate SBOM first
-threat-radar sbom docker nginx:alpine -o /app/sbom_storage/nginx.json
+tradar sbom docker nginx:alpine -o /app/sbom_storage/nginx.json
 
 # Scan the SBOM
-threat-radar cve scan-sbom /app/sbom_storage/nginx.json --auto-save
+tradar cve scan-sbom /app/sbom_storage/nginx.json --auto-save
 
 # Check results
 ls -lh /app/storage/cve_storage/
@@ -156,10 +156,10 @@ ls -lh /app/storage/cve_storage/
 #### Database Operations
 ```bash
 # Check database status
-threat-radar cve db-status
+tradar cve db-status
 
 # Update database
-threat-radar cve db-update
+tradar cve db-update
 ```
 
 **Expected Results:**
@@ -173,10 +173,10 @@ threat-radar cve db-update
 #### Build Vulnerability Graph
 ```bash
 # Scan image first
-threat-radar cve scan-image alpine:3.18 --auto-save -o /tmp/scan.json
+tradar cve scan-image alpine:3.18 --auto-save -o /tmp/scan.json
 
 # Build graph
-threat-radar graph build /tmp/scan.json -o /tmp/graph.graphml
+tradar graph build /tmp/scan.json -o /tmp/graph.graphml
 
 # Verify
 ls -lh /tmp/graph.graphml
@@ -190,13 +190,13 @@ ls -lh /tmp/graph.graphml
 #### Query Graph
 ```bash
 # Show statistics
-threat-radar graph query /tmp/graph.graphml --stats
+tradar graph query /tmp/graph.graphml --stats
 
 # Query specific CVE (if exists)
-threat-radar graph query /tmp/graph.graphml --cve CVE-2023-1234
+tradar graph query /tmp/graph.graphml --cve CVE-2023-1234
 
 # Top vulnerable packages
-threat-radar graph query /tmp/graph.graphml --top-packages 10
+tradar graph query /tmp/graph.graphml --top-packages 10
 ```
 
 **Expected Results:**
@@ -207,13 +207,13 @@ threat-radar graph query /tmp/graph.graphml --top-packages 10
 #### List Stored Graphs
 ```bash
 # Build with auto-save
-threat-radar graph build /tmp/scan.json --auto-save
+tradar graph build /tmp/scan.json --auto-save
 
 # List all graphs
-threat-radar graph list
+tradar graph list
 
 # Show graph info
-threat-radar graph info /app/storage/graph_storage/*.graphml
+tradar graph info /app/storage/graph_storage/*.graphml
 ```
 
 **Expected Results:**
@@ -226,7 +226,7 @@ threat-radar graph info /app/storage/graph_storage/*.graphml
 
 #### JSON Report
 ```bash
-threat-radar report generate /tmp/scan.json -o /tmp/report.json -f json
+tradar report generate /tmp/scan.json -o /tmp/report.json -f json
 
 # View summary
 cat /tmp/report.json | jq '.summary'
@@ -238,7 +238,7 @@ cat /tmp/report.json | jq '.summary'
 
 #### Markdown Report
 ```bash
-threat-radar report generate /tmp/scan.json -o /tmp/report.md -f markdown
+tradar report generate /tmp/scan.json -o /tmp/report.md -f markdown
 
 # View
 head -50 /tmp/report.md
@@ -250,7 +250,7 @@ head -50 /tmp/report.md
 
 #### HTML Report
 ```bash
-threat-radar report generate /tmp/scan.json -o /tmp/report.html -f html
+tradar report generate /tmp/scan.json -o /tmp/report.html -f html
 
 # Check size
 ls -lh /tmp/report.html
@@ -263,7 +263,7 @@ ls -lh /tmp/report.html
 
 #### Dashboard Export
 ```bash
-threat-radar report dashboard-export /tmp/scan.json -o /tmp/dashboard.json
+tradar report dashboard-export /tmp/scan.json -o /tmp/dashboard.json
 
 # View structure
 cat /tmp/dashboard.json | jq 'keys'
@@ -288,13 +288,13 @@ Inside container:
 ls -la /workspace
 
 # Generate SBOM from local directory
-threat-radar sbom generate /workspace -o /app/sbom_storage/my-project.json
+tradar sbom generate /workspace -o /app/sbom_storage/my-project.json
 
 # View stats
-threat-radar sbom stats /app/sbom_storage/my-project.json
+tradar sbom stats /app/sbom_storage/my-project.json
 
 # Scan for vulnerabilities
-threat-radar cve scan-sbom /app/sbom_storage/my-project.json --auto-save
+tradar cve scan-sbom /app/sbom_storage/my-project.json --auto-save
 
 # Check results
 ls -lh /app/storage/cve_storage/
@@ -340,18 +340,18 @@ rm /app/storage/test.txt
 
 ```bash
 # Lightweight images
-threat-radar cve scan-image alpine:3.18 --auto-save
-threat-radar cve scan-image busybox:latest --auto-save
+tradar cve scan-image alpine:3.18 --auto-save
+tradar cve scan-image busybox:latest --auto-save
 
 # Language runtimes
-threat-radar cve scan-image python:3.11-alpine --auto-save
-threat-radar cve scan-image node:20-alpine --auto-save
-threat-radar cve scan-image golang:1.21-alpine --auto-save
+tradar cve scan-image python:3.11-alpine --auto-save
+tradar cve scan-image node:20-alpine --auto-save
+tradar cve scan-image golang:1.21-alpine --auto-save
 
 # Application images
-threat-radar cve scan-image nginx:alpine --auto-save
-threat-radar cve scan-image redis:alpine --auto-save
-threat-radar cve scan-image postgres:16-alpine --auto-save
+tradar cve scan-image nginx:alpine --auto-save
+tradar cve scan-image redis:alpine --auto-save
+tradar cve scan-image postgres:16-alpine --auto-save
 
 # Check all results
 ls -lh /app/storage/cve_storage/
@@ -368,10 +368,10 @@ ls -lh /app/storage/cve_storage/
 
 #### Compare SBOMs
 ```bash
-threat-radar sbom docker alpine:3.17 -o /tmp/alpine-3.17.json
-threat-radar sbom docker alpine:3.18 -o /tmp/alpine-3.18.json
+tradar sbom docker alpine:3.17 -o /tmp/alpine-3.17.json
+tradar sbom docker alpine:3.18 -o /tmp/alpine-3.18.json
 
-threat-radar sbom compare /tmp/alpine-3.17.json /tmp/alpine-3.18.json
+tradar sbom compare /tmp/alpine-3.17.json /tmp/alpine-3.18.json
 ```
 
 **Expected Results:**
@@ -380,8 +380,8 @@ threat-radar sbom compare /tmp/alpine-3.17.json /tmp/alpine-3.18.json
 
 #### Search in SBOM
 ```bash
-threat-radar sbom search /app/sbom_storage/alpine.json openssl
-threat-radar sbom search /app/sbom_storage/python.json pip
+tradar sbom search /app/sbom_storage/alpine.json openssl
+tradar sbom search /app/sbom_storage/python.json pip
 ```
 
 **Expected Results:**
@@ -390,9 +390,9 @@ threat-radar sbom search /app/sbom_storage/python.json pip
 
 #### List Components
 ```bash
-threat-radar sbom components /app/sbom_storage/python.json
-threat-radar sbom components /app/sbom_storage/python.json --type library
-threat-radar sbom components /app/sbom_storage/python.json --language python
+tradar sbom components /app/sbom_storage/python.json
+tradar sbom components /app/sbom_storage/python.json --type library
+tradar sbom components /app/sbom_storage/python.json --language python
 ```
 
 **Expected Results:**
@@ -401,7 +401,7 @@ threat-radar sbom components /app/sbom_storage/python.json --language python
 
 #### Export to CSV
 ```bash
-threat-radar sbom export /app/sbom_storage/alpine.json -o /tmp/packages.csv -f csv
+tradar sbom export /app/sbom_storage/alpine.json -o /tmp/packages.csv -f csv
 
 head -10 /tmp/packages.csv
 ```
@@ -541,9 +541,9 @@ A successful test run should show:
 
 ```bash
 # Minimal smoke test (5 minutes)
-threat-radar health check ✓
-threat-radar sbom docker alpine:3.18 -o /tmp/test.json ✓
-threat-radar cve scan-sbom /tmp/test.json ✓
+tradar health check ✓
+tradar sbom docker alpine:3.18 -o /tmp/test.json ✓
+tradar cve scan-sbom /tmp/test.json ✓
 docker ps ✓
 
 # If all pass, environment is working correctly!

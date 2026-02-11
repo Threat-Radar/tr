@@ -832,7 +832,7 @@ class PDFFormatter(ReportFormatter):
             raise ImportError(
                 "PDF export requires weasyprint. Install it with:\n"
                 "  pip install weasyprint\n"
-                "Or install threat-radar with PDF support:\n"
+                "Or install tr with PDF support:\n"
                 "  pip install threat-radar[pdf]"
             )
 

@@ -87,10 +87,10 @@ cp .env.example .env
 
 ```bash
 # Check CLI is working
-threat-radar --help
+tradar --help
 
 # Run a quick scan
-threat-radar cve scan-image alpine:3.18
+tradar cve scan-image alpine:3.18
 ```
 
 ---
@@ -101,77 +101,77 @@ threat-radar cve scan-image alpine:3.18
 
 ```bash
 # Scan Docker image for vulnerabilities
-threat-radar cve scan-image alpine:3.18
+tradar cve scan-image alpine:3.18
 
 # Scan with severity filter
-threat-radar cve scan-image python:3.11 --severity HIGH
+tradar cve scan-image python:3.11 --severity HIGH
 
 # Save results and auto-cleanup
-threat-radar cve scan-image nginx:latest --auto-save --cleanup
+tradar cve scan-image nginx:latest --auto-save --cleanup
 
 # Scan SBOM file
-threat-radar cve scan-sbom my-app-sbom.json --severity CRITICAL
+tradar cve scan-sbom my-app-sbom.json --severity CRITICAL
 
 # Scan local directory
-threat-radar cve scan-directory ./my-project
+tradar cve scan-directory ./my-project
 ```
 
 ### SBOM Generation
 
 ```bash
 # Generate SBOM from Docker image
-threat-radar sbom docker alpine:3.18 -o sbom.json
+tradar sbom docker alpine:3.18 -o sbom.json
 
 # Generate from local directory
-threat-radar sbom generate ./my-app -f cyclonedx-json
+tradar sbom generate ./my-app -f cyclonedx-json
 
 # Auto-save to organized storage
-threat-radar sbom docker python:3.11 --auto-save
+tradar sbom docker python:3.11 --auto-save
 
 # Compare two SBOMs
-threat-radar sbom compare alpine:3.17 alpine:3.18
+tradar sbom compare alpine:3.17 alpine:3.18
 ```
 
 ### AI-Powered Analysis
 
 ```bash
 # Analyze vulnerabilities with AI
-threat-radar ai analyze scan-results.json
+tradar ai analyze scan-results.json
 
 # Generate prioritized remediation list
-threat-radar ai prioritize scan-results.json --top 10
+tradar ai prioritize scan-results.json --top 10
 
 # Create remediation plan
-threat-radar ai remediate scan-results.json -o remediation.json
+tradar ai remediate scan-results.json -o remediation.json
 ```
 
 ### Comprehensive Reporting
 
 ```bash
 # Generate HTML report with AI executive summary
-threat-radar report generate scan-results.json -o report.html -f html
+tradar report generate scan-results.json -o report.html -f html
 
 # Executive summary for leadership
-threat-radar report generate scan-results.json -o exec.md -f markdown --level executive
+tradar report generate scan-results.json -o exec.md -f markdown --level executive
 
 # Critical-only issues
-threat-radar report generate scan-results.json --level critical-only
+tradar report generate scan-results.json --level critical-only
 
 # Export dashboard data
-threat-radar report dashboard-export scan-results.json -o dashboard.json
+tradar report dashboard-export scan-results.json -o dashboard.json
 ```
 
 ### Docker Analysis
 
 ```bash
 # Import and analyze image
-threat-radar docker import-image ubuntu:22.04 -o analysis.json
+tradar docker import-image ubuntu:22.04 -o analysis.json
 
 # List packages in image
-threat-radar docker packages alpine:3.18 --limit 20
+tradar docker packages alpine:3.18 --limit 20
 
 # Generate Python SBOM
-threat-radar docker python-sbom python:3.11 -o sbom.json
+tradar docker python-sbom python:3.11 -o sbom.json
 ```
 
 ---
@@ -210,7 +210,7 @@ threat-radar docker python-sbom python:3.11 -o sbom.json
 
 ```bash
 # Scan with all features
-threat-radar cve scan-image myapp:latest \
+tradar cve scan-image myapp:latest \
   --severity HIGH \
   --auto-save \
   --cleanup \
@@ -227,10 +227,10 @@ threat-radar cve scan-image myapp:latest \
 
 ```bash
 # Complete AI workflow
-threat-radar cve scan-image alpine:3.18 --auto-save -o scan.json
-threat-radar ai analyze scan.json --auto-save
-threat-radar ai prioritize scan.json --top 10
-threat-radar ai remediate scan.json -o plan.json
+tradar cve scan-image alpine:3.18 --auto-save -o scan.json
+tradar ai analyze scan.json --auto-save
+tradar ai prioritize scan.json --top 10
+tradar ai remediate scan.json -o plan.json
 ```
 
 ### 📊 Comprehensive Reporting
@@ -243,9 +243,9 @@ threat-radar ai remediate scan.json -o plan.json
 
 ```bash
 # Generate reports for different audiences
-threat-radar report generate scan.json -o exec.md --level executive  # Leadership
-threat-radar report generate scan.json -o detailed.html --level detailed  # Security team
-threat-radar report generate scan.json -o critical.json --level critical-only  # DevOps
+tradar report generate scan.json -o exec.md --level executive  # Leadership
+tradar report generate scan.json -o detailed.html --level detailed  # Security team
+tradar report generate scan.json -o critical.json --level critical-only  # DevOps
 ```
 
 ### 📦 SBOM Generation (Syft-Powered)
@@ -259,9 +259,9 @@ threat-radar report generate scan.json -o critical.json --level critical-only  #
 
 ```bash
 # Generate and compare SBOMs
-threat-radar sbom docker myapp:v1.0 --auto-save
-threat-radar sbom docker myapp:v2.0 --auto-save
-threat-radar sbom compare myapp:v1.0 myapp:v2.0
+tradar sbom docker myapp:v1.0 --auto-save
+tradar sbom docker myapp:v2.0 --auto-save
+tradar sbom compare myapp:v1.0 myapp:v2.0
 ```
 
 ### 🐳 Docker Integration
@@ -464,18 +464,18 @@ IMAGE="myapp:production"
 WEEK=$(date +%Y-W%U)
 
 # 1. Scan for vulnerabilities
-threat-radar cve scan-image $IMAGE --auto-save -o scan-${WEEK}.json
+tradar cve scan-image $IMAGE --auto-save -o scan-${WEEK}.json
 
 # 2. Generate reports
-threat-radar report generate scan-${WEEK}.json -o exec-${WEEK}.md --level executive
-threat-radar report generate scan-${WEEK}.json -o detailed-${WEEK}.html -f html
+tradar report generate scan-${WEEK}.json -o exec-${WEEK}.md --level executive
+tradar report generate scan-${WEEK}.json -o detailed-${WEEK}.html -f html
 
 # 3. AI analysis
-threat-radar ai analyze scan-${WEEK}.json --auto-save
-threat-radar ai prioritize scan-${WEEK}.json --top 10 -o priorities-${WEEK}.json
+tradar ai analyze scan-${WEEK}.json --auto-save
+tradar ai prioritize scan-${WEEK}.json --top 10 -o priorities-${WEEK}.json
 
 # 4. Export dashboard data
-threat-radar report dashboard-export scan-${WEEK}.json -o dashboard-${WEEK}.json
+tradar report dashboard-export scan-${WEEK}.json -o dashboard-${WEEK}.json
 ```
 
 ### CI/CD Integration
@@ -503,12 +503,12 @@ jobs:
 
       - name: Scan for vulnerabilities
         run: |
-          threat-radar cve scan-image app:${{ github.sha }} \
+          tradar cve scan-image app:${{ github.sha }} \
             --auto-save --cleanup -o scan.json
 
       - name: Check for critical issues
         run: |
-          threat-radar report generate scan.json \
+          tradar report generate scan.json \
             --level critical-only -o critical.json
 
           CRITICAL=$(jq '.summary.critical' critical.json)
